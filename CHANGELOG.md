@@ -1,5 +1,55 @@
 # CHANGELOG — 平行宇宙的相遇
 
+## v0.3.0 — 首页 Landing Page & 画布拖拽 (2026-05-30)
+
+### 新增
+- **首页 Landing 覆盖层**：全屏暗色背景 `#0a0a0a`，作为整个网站的入口
+- **Canvas 新娘剪影**：
+  - 程序化绘制优雅婚纱剪影（头纱、胸衣、蓬松裙摆、腰带装饰）
+  - Canvas 自适应 DPR 高清渲染
+  - 径向渐变氛围光晕
+- **画布拖拽交互**：
+  - 画布初始定位右下角（CSS `right: 8vw; bottom: 6vh`）
+  - 支持鼠标拖拽 + 触摸拖拽
+  - 发光提示环（3s 脉冲动画，拖拽开始后消失）
+- **解锁过渡**：
+  - 画布中心拖至视口中心 22% 阈值内自动触发
+  - 白色闪光 + 首页淡出动画（GSAP timeline）
+  - 过渡完成后 `ScrollTrigger.refresh()` 刷新
+- **"SAY YES" 按钮**：
+  - Playfair Display 衬线字体，`#c0392b` 古典红
+  - 1.5px 红色外框，悬停时红色填充滑入 + 白字
+  - 点击直接触发过渡（与拖拽等效）
+- **排版设计**：
+  - 引入 Google Fonts: Playfair Display + Cormorant Garamond
+  - 标题 "Love is a yes" — 4-5.5rem italic 衬线体
+  - 按钮 letter-spacing 0.35em 大写
+- **新增文件**：
+  - `css/landing.css` — 首页 + 按钮 + 过渡闪光
+  - `js/landing.js` — Canvas 绘制 + 拖拽逻辑 + 过渡动画
+  - `CONTENT_TEMPLATE.md` — 用户可修改内容清单 & 替换指南
+- **文档更新**：
+  - `PROMPT_GUIDE.md` 新增 §1 首页章节（排版/按钮/画布规格）
+  - `PROMPT_GUIDE.md` 新增 §0 整体页面流
+
+### 项目结构
+```
+my-wedding/
+├── index.html
+├── CONTENT_TEMPLATE.md    ← NEW: 内容修改清单
+├── css/
+│   ├── landing.css        ← NEW: 首页样式
+│   ├── ...
+├── js/
+│   ├── landing.js         ← NEW: 首页逻辑
+│   ├── ...
+├── assets/
+├── PROMPT_GUIDE.md
+└── CHANGELOG.md
+```
+
+---
+
 ## v0.2.0 — 模块化拆分 & 版本标识 (2026-05-30)
 
 ### 变更

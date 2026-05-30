@@ -1,0 +1,147 @@
+/* ========================================
+   Landing Page — 首页 (新娘 & 画布拖拽)
+   ======================================== */
+
+.landing-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.landing-overlay:active {
+    cursor: grabbing;
+}
+
+.landing-overlay.transitioning {
+    pointer-events: none;
+}
+
+/* ---- Draggable Canvas ---- */
+.draggable-canvas-wrap {
+    position: absolute;
+    width: 50vmin;
+    height: 70vmin;
+    min-width: 280px;
+    min-height: 380px;
+    /* 初始位置：右下角，留一点边距 */
+    right: 8vw;
+    bottom: 6vh;
+    z-index: 1;
+    will-change: transform;
+}
+
+.draggable-canvas-wrap.bottom-left {
+    right: auto;
+    left: 8vw;
+}
+
+#brideCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 4px;
+    /* 微妙的发光边框模拟婚纱光感 */
+    box-shadow: 0 0 60px rgba(244, 194, 194, 0.08),
+                0 0 120px rgba(255, 255, 255, 0.04);
+}
+
+/* ---- Drag Hint Glow (pulses when idle) ---- */
+.canvas-hint-ring {
+    position: absolute;
+    inset: -12px;
+    border: 1px solid rgba(244, 194, 194, 0.2);
+    border-radius: 6px;
+    pointer-events: none;
+    animation: hint-pulse 3s ease-in-out infinite;
+}
+
+@keyframes hint-pulse {
+    0%, 100% { border-color: rgba(244, 194, 194, 0.12); box-shadow: 0 0 20px rgba(244, 194, 194, 0); }
+    50%      { border-color: rgba(244, 194, 194, 0.35); box-shadow: 0 0 40px rgba(244, 194, 194, 0.08); }
+}
+
+/* ---- Center Content (Title + Button) ---- */
+.landing-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    pointer-events: none;
+}
+
+.landing-content > * {
+    pointer-events: auto;
+}
+
+.landing-title {
+    font-family: "Playfair Display", "Cormorant Garamond", "Noto Serif SC", Georgia, "Times New Roman", serif;
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    font-weight: 400;
+    font-style: italic;
+    color: #c0392b;
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+    margin-bottom: 2.5rem;
+    text-shadow: 0 0 80px rgba(192, 57, 43, 0.15);
+}
+
+/* ---- SAY YES Button ---- */
+.say-yes-btn {
+    display: inline-block;
+    padding: 0.9rem 3.2rem;
+    font-family: "Playfair Display", "Cormorant Garamond", "Noto Serif SC", Georgia, serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: #c0392b;
+    background: transparent;
+    border: 1.5px solid #c0392b;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    outline: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.say-yes-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #c0392b;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: -1;
+}
+
+.say-yes-btn:hover {
+    color: #fafafa;
+    border-color: #c0392b;
+}
+
+.say-yes-btn:hover::before {
+    transform: scaleX(1);
+}
+
+.say-yes-btn:active {
+    transform: scale(0.97);
+}
+
+/* ---- Transition Flash ---- */
+.transition-flash {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: #fafafa;
+    opacity: 0;
+    pointer-events: none;
+}
