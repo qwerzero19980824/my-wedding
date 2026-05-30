@@ -3,50 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>cml & zy</title>
+    <title>平行宇宙的相遇 — cml & zy</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
+        /* ========================================
+           Design System — 平行宇宙的相遇
+           ======================================== */
+        :root {
+            --bg-dark: #121212;
+            --bg-light: #fafafa;
+            --romantic-pink: #f4c2c2;
+            --text-main: #333333;
+            --text-muted: #888888;
+            --divider-width: 1px;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, Sans-Serif; 
-            background: #fafafa; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh;
+
+        body {
+            font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+
+        /* ========================================
+           Dual Track Stage — 相遇前
+           ======================================== */
+        .dual-track-wrapper {
+            position: relative;
+            width: 100%;
+            height: 300vh;
+        }
+
+        .dual-track-stage {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg-dark);
+        }
+
+        .track {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .track-left  { left: 0; }
+        .track-right { right: 0; }
+
+        .track-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 3rem;
+        }
+
+        .track-left .track-inner {
+            align-items: flex-end;
+            text-align: right;
+            padding-right: 5rem;
+        }
+
+        .track-right .track-inner {
+            align-items: flex-start;
+            text-align: left;
+            padding-left: 5rem;
+        }
+
+        /* --- Track Content --- */
+        .track-label {
+            font-size: 0.7rem;
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            opacity: 0.6;
+        }
+
+        .track-year {
+            font-size: 7rem;
+            font-weight: 100;
+            color: rgba(244, 194, 194, 0.12);
+            line-height: 1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .track-story {
+            font-size: 1rem;
+            color: var(--text-muted);
+            line-height: 2.2;
+            max-width: 300px;
+        }
+
+        .track-story span {
+            display: block;
+            margin-bottom: 0.8rem;
+        }
+
+        .track-photo-placeholder {
+            width: 180px;
+            height: 260px;
+            background: rgba(244, 194, 194, 0.05);
+            border: 1px solid rgba(244, 194, 194, 0.1);
+            margin: 2.5rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.15);
+            font-size: 0.65rem;
+            letter-spacing: 0.25em;
+        }
+
+        /* --- Divider --- */
+        .divider-line {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: var(--divider-width);
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent 5%,
+                rgba(244, 194, 194, 0.3) 25%,
+                rgba(244, 194, 194, 0.6) 50%,
+                rgba(244, 194, 194, 0.3) 75%,
+                transparent 95%
+            );
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* ========================================
+           Meeting Point — 相遇
+           ======================================== */
+        .meeting-point {
+            position: relative;
+            width: 100%;
+            height: 150vh;
+            background: linear-gradient(
+                to bottom,
+                var(--bg-dark) 0%,
+                var(--bg-dark) 30%,
+                var(--bg-light) 100%
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        .meeting-point canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .meeting-text {
+            position: relative;
+            z-index: 2;
             text-align: center;
-            max-width: 90%;
-            width: 400px;
-            cursor: pointer;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
         }
-        /* 点击翻转动画 */
-        .card.flipped { transform: rotateY(180deg); }
-        .front, .back { backface-visibility: hidden; }
-        .back { transform: rotateY(180deg); position: absolute; top: 30px; left: 0; right: 0; color: #e74c3c; }
-        h1 { font-size: 24px; color: #333; margin-bottom: 10px; }
-        p { color: #666; font-size: 14px; }
+
+        .meeting-text .meeting-headline {
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 200;
+            color: var(--text-main);
+            letter-spacing: 0.12em;
+            margin-bottom: 1.5rem;
+        }
+
+        .meeting-text .meeting-date {
+            font-size: 1.2rem;
+            color: var(--romantic-pink);
+            font-weight: 300;
+            letter-spacing: 0.25em;
+        }
+
+        /* ========================================
+           Merged Track — 相遇后
+           ======================================== */
+        .merged-section {
+            position: relative;
+            width: 100%;
+            min-height: 200vh;
+            background: var(--bg-light);
+            z-index: 3;
+            padding-bottom: 20vh;
+        }
+
+        .merged-inner {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 15vh 2rem 0;
+        }
+
+        .merged-item {
+            margin-bottom: 35vh;
+            text-align: center;
+        }
+
+        .merged-item .photo-placeholder {
+            width: 100%;
+            max-width: 560px;
+            height: 380px;
+            margin: 0 auto 2.5rem;
+            background: rgba(0,0,0,0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            letter-spacing: 0.25em;
+        }
+
+        .merged-item p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 2;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* ========================================
+           Scroll Hint
+           ======================================== */
+        .scroll-hint {
+            position: fixed;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.65rem;
+            letter-spacing: 0.35em;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .scroll-hint::after {
+            content: '';
+            display: block;
+            width: 1px;
+            height: 36px;
+            background: var(--romantic-pink);
+            margin: 0.6rem auto 0;
+            animation: pulse-down 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-down {
+            0%, 100% { opacity: 0.15; transform: scaleY(0.5); }
+            50%      { opacity: 0.9;  transform: scaleY(1); }
+        }
     </style>
 </head>
 <body>
 
-    <div class="card" onclick="this.classList.toggle('flipped')">
-        <div class="front">
-            <h1>cml & zy</h1>
-            <p>这是一个纯 HTML 交互测试页面</p>
-            <p style="margin-top: 20px; color: #aaa; font-size: 12px;">👇 点击卡片试试看</p>
-        </div>
-        <div class="back">
-            <h2>❤️</h2>
-            <p style="margin-top: 10px;">这是卡片的背面！交互成功啦！</p>
+    <!-- ==========================================
+    Dual Track — 相遇前的两个平行宇宙
+    ========================================== -->
+    <div class="dual-track-wrapper">
+
+        <div class="dual-track-stage">
+
+            <!-- 左轨 -->
+            <div class="track track-left">
+                <div class="track-inner">
+                    <div class="track-label">His Universe</div>
+                    <div class="track-year">2018</div>
+                    <div class="track-photo-placeholder">[ 照片预留 ]</div>
+                    <div class="track-story">
+                        <span>城市的另一头，他过着日复一日的生活。</span>
+                        <span>偶尔抬头看天，总觉得缺了点什么。</span>
+                        <span>世界很大，也很安静。</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右轨 -->
+            <div class="track track-right">
+                <div class="track-inner">
+                    <div class="track-label">Her Universe</div>
+                    <div class="track-year">2018</div>
+                    <div class="track-photo-placeholder">[ 照片预留 ]</div>
+                    <div class="track-story">
+                        <span>她在自己的轨道上奔跑，忙碌而充实。</span>
+                        <span>深夜的灯下，偶尔也会感到孤单。</span>
+                        <span>但明天总会如约而至。</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中央分界线 -->
+            <div class="divider-line"></div>
+
         </div>
     </div>
+
+    <!-- ==========================================
+    Meeting Point — 相遇交汇
+    ========================================== -->
+    <div class="meeting-point">
+        <div class="meeting-text">
+            <h2 class="meeting-headline">我们相遇了</h2>
+            <p class="meeting-date">2023 · 春</p>
+        </div>
+    </div>
+
+    <!-- ==========================================
+    Merged Track — 相遇后的共同记忆
+    ========================================== -->
+    <div class="merged-section">
+        <div class="merged-inner">
+
+            <div class="merged-item">
+                <div class="photo-placeholder">[ 共同记忆 · 照片预留 ]</div>
+                <p>从那天起，两条平行线开始有了交集。</p>
+            </div>
+
+            <div class="merged-item">
+                <div class="photo-placeholder">[ 共同记忆 · 照片预留 ]</div>
+                <p>一起走过的路、看过的风景，都成了共同的坐标系。</p>
+            </div>
+
+            <div class="merged-item">
+                <div class="photo-placeholder">[ 共同记忆 · 照片预留 ]</div>
+                <p>而当下的每一刻，都是未来最珍贵的原点。</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scroll Hint -->
+    <div class="scroll-hint">向下滚动</div>
+
+    <!-- ==========================================
+    GSAP + ScrollTrigger — 双轨视差驱动
+    ========================================== -->
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        /* ---------- Dual Track Parallax Timeline ---------- */
+        const parallaxTL = gsap.timeline({
+            scrollTrigger: {
+                trigger: ".dual-track-wrapper",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1.2,
+                pin: ".dual-track-stage",
+            }
+        });
+
+        parallaxTL
+            /* 异步视差：左轨移动 40%，右轨移动 70% — 不同的视觉流速 */
+            .fromTo(".track-left .track-inner",
+                { yPercent: 0 },
+                { yPercent: -45, ease: "none" },
+                0
+            )
+            .fromTo(".track-right .track-inner",
+                { yPercent: 0 },
+                { yPercent: -70, ease: "none" },
+                0
+            )
+            /* 分界线在末尾消散 */
+            .to(".divider-line", {
+                opacity: 0,
+                scaleY: 0,
+                duration: 0.2,
+                ease: "power2.in"
+            }, "+=0.15");
+
+        /* ---------- Meeting Point: Confetti Burst ---------- */
+        let confettiFired = false;
+
+        ScrollTrigger.create({
+            trigger: ".meeting-point",
+            start: "top 60%",
+            onEnter: () => {
+                if (confettiFired) return;
+                confettiFired = true;
+
+                /* 多次发射制造层次感 */
+                const colors = ['#f4c2c2', '#ffffff', '#e8a0a0', '#f0d0d0'];
+
+                const burst = (delay, count, spread) => {
+                    setTimeout(() => {
+                        confetti({
+                            particleCount: count,
+                            spread: spread,
+                            origin: { x: 0.5, y: 0.35 },
+                            colors: colors,
+                            startVelocity: 45,
+                            decay: 0.9,
+                            ticks: 200,
+                        });
+                    }, delay);
+                };
+
+                burst(0,   150, 100);
+                burst(200, 80,  160);
+                burst(450, 120, 130);
+                burst(700, 60,  180);
+            }
+        });
+
+        /* ---------- Meeting Text Fade In ---------- */
+        gsap.to(".meeting-text", {
+            scrollTrigger: {
+                trigger: ".meeting-point",
+                start: "top 50%",
+                end: "top 20%",
+                scrub: 1,
+            },
+            opacity: 1,
+            y: 0,
+        });
+
+        gsap.set(".meeting-text", { opacity: 0, y: 50 });
+
+        /* ---------- Merged Items Sequential Reveal ---------- */
+        gsap.utils.toArray(".merged-item").forEach((item, i) => {
+            gsap.fromTo(item,
+                { opacity: 0, y: 60 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1.2,
+                    ease: "power2.out",
+                    scrollTrigger: {
+                        trigger: item,
+                        start: "top 82%",
+                        toggleActions: "play none none reverse",
+                    }
+                }
+            );
+        });
+
+        /* ---------- Hide Scroll Hint After Dual Track ---------- */
+        ScrollTrigger.create({
+            trigger: ".meeting-point",
+            start: "top 80%",
+            onEnter: () => {
+                gsap.to(".scroll-hint", { opacity: 0, duration: 0.5 });
+            },
+            onLeaveBack: () => {
+                gsap.to(".scroll-hint", { opacity: 1, duration: 0.5 });
+            }
+        });
+
+        /* ---------- Smooth Body Background Transition ---------- */
+        gsap.to("body", {
+            scrollTrigger: {
+                trigger: ".meeting-point",
+                start: "top 80%",
+                end: "bottom 20%",
+                scrub: 1,
+            },
+            backgroundColor: "var(--bg-dark)",
+            duration: 0.5,
+        });
+
+        /* ---------- Fire confetti on meeting-text click too ---------- */
+        document.querySelector(".meeting-text").addEventListener("click", () => {
+            confetti({
+                particleCount: 200,
+                spread: 150,
+                origin: { x: 0.5, y: 0.3 },
+                colors: ['#f4c2c2', '#ffffff', '#e8a0a0'],
+            });
+        });
+    </script>
 
 </body>
 </html>
