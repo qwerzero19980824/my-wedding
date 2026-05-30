@@ -1,0 +1,12 @@
+/* ========================================
+   Design System — CSS 变量 & 排版
+   ======================================== */
+
+:root {
+    --bg-dark: #121212;
+    --bg-light: #fafafa;
+    --romantic-pink: #f4c2c2;
+    --text-main: #333333;
+    --text-muted: #888888;
+    --divider-width: 1px;
+}

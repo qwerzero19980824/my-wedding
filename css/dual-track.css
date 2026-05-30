@@ -1,0 +1,149 @@
+/* ========================================
+   Dual Track — 相遇前的平行宇宙
+   ======================================== */
+
+/* --- Wrapper & Stage --- */
+.dual-track-wrapper {
+    position: relative;
+    width: 100%;
+    height: 300vh;
+}
+
+.dual-track-stage {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg-dark);
+}
+
+/* --- Track Panels --- */
+.track {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.track-left  { left: 0; }
+.track-right { right: 0; }
+
+.track-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 3rem;
+}
+
+.track-left .track-inner {
+    align-items: flex-end;
+    text-align: right;
+    padding-right: 5rem;
+}
+
+.track-right .track-inner {
+    align-items: flex-start;
+    text-align: left;
+    padding-left: 5rem;
+}
+
+/* --- Track Content --- */
+.track-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 3rem;
+    opacity: 0.6;
+}
+
+.track-year {
+    font-size: 7rem;
+    font-weight: 100;
+    color: rgba(244, 194, 194, 0.12);
+    line-height: 1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+}
+
+.track-story {
+    font-size: 1rem;
+    color: var(--text-muted);
+    line-height: 2.2;
+    max-width: 300px;
+}
+
+.track-story span {
+    display: block;
+    margin-bottom: 0.8rem;
+}
+
+.track-photo-placeholder {
+    width: 180px;
+    height: 260px;
+    background: rgba(244, 194, 194, 0.05);
+    border: 1px solid rgba(244, 194, 194, 0.1);
+    margin: 2.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.15);
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+}
+
+/* --- Divider --- */
+.divider-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--divider-width);
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        transparent 5%,
+        rgba(244, 194, 194, 0.3) 25%,
+        rgba(244, 194, 194, 0.6) 50%,
+        rgba(244, 194, 194, 0.3) 75%,
+        transparent 95%
+    );
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* --- Scroll Hint --- */
+.scroll-hint {
+    position: fixed;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.65rem;
+    letter-spacing: 0.35em;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.scroll-hint::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 36px;
+    background: var(--romantic-pink);
+    margin: 0.6rem auto 0;
+    animation: pulse-down 2s ease-in-out infinite;
+}
+
+@keyframes pulse-down {
+    0%, 100% { opacity: 0.15; transform: scaleY(0.5); }
+    50%      { opacity: 0.9;  transform: scaleY(1); }
+}

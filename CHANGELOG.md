@@ -1,5 +1,48 @@
 # CHANGELOG — 平行宇宙的相遇
 
+## v0.2.0 — 模块化拆分 & 版本标识 (2026-05-30)
+
+### 变更
+- **单文件 → 模块化**：`index.html` 瘦身为入口文件，CSS/JS 各自独立
+- **CSS 模块**（`css/`）：
+  - `reset.css` — 全局重置
+  - `design-system.css` — CSS 变量（--bg-dark / --bg-light / --romantic-pink 等）
+  - `dual-track.css` — 双轨布局、分界线、滚动提示
+  - `meeting-point.css` — 相遇区渐变背景
+  - `merged-track.css` — 合并轨道记忆卡片
+  - `version-badge.css` — 页面版本标识
+- **JS 模块**（`js/`）：
+  - `config.js` — 版本常量 APP.VERSION / APP.BUILD_DATE
+  - `parallax.js` — 双轨视差 ScrollTrigger 时间线
+  - `meeting.js` — confetti 粒子爆发 & 相遇文字动画
+  - `merged.js` — 记忆卡片逐个淡入
+  - `main.js` — 全局初始化、版本标识渲染、滚动提示控制
+- **页面版本标识**：右下角固定显示 `v0.2.0`，亮/暗背景自适应切换
+
+### 项目结构
+```
+my-wedding/
+├── index.html
+├── css/
+│   ├── reset.css
+│   ├── design-system.css
+│   ├── dual-track.css
+│   ├── meeting-point.css
+│   ├── merged-track.css
+│   └── version-badge.css
+├── js/
+│   ├── config.js
+│   ├── main.js
+│   ├── parallax.js
+│   ├── meeting.js
+│   └── merged.js
+├── assets/          (预留：图片资源)
+├── PROMPT_GUIDE.md
+└── CHANGELOG.md
+```
+
+---
+
 ## v0.1.0 — 双轨视差骨架搭建 (2026-05-30)
 
 ### 新增

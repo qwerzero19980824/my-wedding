@@ -1,0 +1,45 @@
+/* ========================================
+   Merged Track — 相遇后的共同记忆
+   ======================================== */
+
+.merged-section {
+    position: relative;
+    width: 100%;
+    min-height: 200vh;
+    background: var(--bg-light);
+    z-index: 3;
+    padding-bottom: 20vh;
+}
+
+.merged-inner {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 15vh 2rem 0;
+}
+
+.merged-item {
+    margin-bottom: 35vh;
+    text-align: center;
+}
+
+.merged-item .photo-placeholder {
+    width: 100%;
+    max-width: 560px;
+    height: 380px;
+    margin: 0 auto 2.5rem;
+    background: rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+}
+
+.merged-item p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 2;
+    max-width: 400px;
+    margin: 0 auto;
+}
