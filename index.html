@@ -2,17 +2,20 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>平行宇宙的相遇 — cml & zy</title>
 
     <!-- ===== Google Fonts ===== -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Noto+Serif+SC:wght@300;400;500&display=swap" rel="stylesheet">
 
     <!-- ===== Vendor: GSAP + ScrollTrigger ===== -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <!-- ===== Vendor: Three.js ===== -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
     <!-- ===== Vendor: canvas-confetti ===== -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -29,16 +32,33 @@
 <body>
 
     <!-- ==========================================
-    Landing Page — 首页 (新娘婚纱 & 画布拖拽)
+    Layer 1: Three.js Cloth Canvas (全屏视频画布)
     ========================================== -->
-    <div class="landing-overlay" id="landing">
-        <div class="draggable-canvas-wrap">
-            <canvas id="brideCanvas"></canvas>
-            <div class="canvas-hint-ring"></div>
+    <div id="cloth-container">
+        <canvas id="clothCanvas" style="touch-action: none;"></canvas>
+        <div class="cloth-hint">
+            <span>掀开命运的帘幕</span>
         </div>
-        <div class="landing-content">
-            <h1 class="landing-title">Love is a yes</h1>
-            <button class="say-yes-btn">SAY YES</button>
+    </div>
+
+    <!-- ==========================================
+    Layer 2: Hero Card (求婚 / 大日子卡片)
+    画布滑出后显露
+    ========================================== -->
+    <div class="hero-card" id="heroCard">
+        <div class="hero-card-inner">
+            <!-- 上半部分: 可编辑情话 -->
+            <div class="hero-text" contenteditable="true">
+                世间所有的相遇<br>都是久别重逢<br><br>
+                而你的出现<br>是我生命里<br>最盛大的一场重逢
+            </div>
+            <!-- 下半部分: Say Yes 按钮 -->
+            <div class="hero-btn-wrap">
+                <button class="say-yes-btn hero-btn">
+                    <span class="btn-text">Say Yes</span>
+                    <span class="btn-glow"></span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -46,86 +66,87 @@
     <div class="transition-flash"></div>
 
     <!-- ==========================================
-    Dual Track — 相遇前的两个平行宇宙
+    Layer 3: Main Content — 双轨视差页
+    (Say Yes 点击后显示)
     ========================================== -->
-    <div class="dual-track-wrapper">
+    <div class="main-content" id="mainContent">
 
-        <div class="dual-track-stage">
+        <!-- Dual Track — 相遇前的两个平行宇宙 -->
+        <div class="dual-track-wrapper">
+            <div class="dual-track-stage">
 
-            <!-- 左轨 -->
-            <div class="track track-left">
-                <div class="track-inner">
-                    <div class="track-label">His Universe</div>
-                    <div class="track-year">2018</div>
-                    <div class="track-photo-placeholder">[ 照片预留 ]</div>
-                    <div class="track-story">
-                        <span>城市的另一头，他过着日复一日的生活。</span>
-                        <span>偶尔抬头看天，总觉得缺了点什么。</span>
-                        <span>世界很大，也很安静。</span>
+                <!-- 左轨 -->
+                <div class="track track-left">
+                    <div class="track-inner">
+                        <div class="track-label">His Universe</div>
+                        <div class="track-year">2018</div>
+                        <div class="track-photo-placeholder">[ 照片预留 ]</div>
+                        <div class="track-story">
+                            <span>城市的另一头，他过着日复一日的生活。</span>
+                            <span>偶尔抬头看天，总觉得缺了点什么。</span>
+                            <span>世界很大，也很安静。</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 右轨 -->
-            <div class="track track-right">
-                <div class="track-inner">
-                    <div class="track-label">Her Universe</div>
-                    <div class="track-year">2018</div>
-                    <div class="track-photo-placeholder">[ 照片预留 ]</div>
-                    <div class="track-story">
-                        <span>她在自己的轨道上奔跑，忙碌而充实。</span>
-                        <span>深夜的灯下，偶尔也会感到孤单。</span>
-                        <span>但明天总会如约而至。</span>
+                <!-- 右轨 -->
+                <div class="track track-right">
+                    <div class="track-inner">
+                        <div class="track-label">Her Universe</div>
+                        <div class="track-year">2018</div>
+                        <div class="track-photo-placeholder">[ 照片预留 ]</div>
+                        <div class="track-story">
+                            <span>她在自己的轨道上奔跑，忙碌而充实。</span>
+                            <span>深夜的灯下，偶尔也会感到孤单。</span>
+                            <span>但明天总会如约而至。</span>
+                        </div>
                     </div>
                 </div>
+
+                <!-- 中央分界线 -->
+                <div class="divider-line"></div>
+
             </div>
-
-            <!-- 中央分界线 -->
-            <div class="divider-line"></div>
-
         </div>
-    </div>
 
-    <!-- ==========================================
-    Meeting Point — 相遇交汇
-    ========================================== -->
-    <div class="meeting-point">
-        <div class="meeting-text">
-            <h2 class="meeting-headline">我们相遇了</h2>
-            <p class="meeting-date">2023 · 春</p>
+        <!-- Meeting Point — 相遇交汇 -->
+        <div class="meeting-point">
+            <div class="meeting-text">
+                <h2 class="meeting-headline">我们相遇了</h2>
+                <p class="meeting-date">2023 · 春</p>
+            </div>
         </div>
-    </div>
 
-    <!-- ==========================================
-    Merged Track — 相遇后的共同记忆
-    ========================================== -->
-    <div class="merged-section">
-        <div class="merged-inner">
+        <!-- Merged Track — 相遇后的共同记忆 -->
+        <div class="merged-section">
+            <div class="merged-inner">
 
-            <div class="merged-item">
-                <div class="photo-placeholder">[ 共同记忆 · 照片预留 ]</div>
-                <p>从那天起，两条平行线开始有了交集。</p>
+                <div class="merged-item">
+                    <div class="photo-placeholder">[ 共同记忆 · 照片预留 ]</div>
+                    <p>从那天起，两条平行线开始有了交集。</p>
+                </div>
+
+                <div class="merged-item">
+                    <div class="photo-placeholder">[ 共同记忆 · 照片预留 ]</div>
+                    <p>一起走过的路、看过的风景，都成了共同的坐标系。</p>
+                </div>
+
+                <div class="merged-item">
+                    <div class="photo-placeholder">[ 共同记忆 · 照片预留 ]</div>
+                    <p>而当下的每一刻，都是未来最珍贵的原点。</p>
+                </div>
+
             </div>
-
-            <div class="merged-item">
-                <div class="photo-placeholder">[ 共同记忆 · 照片预留 ]</div>
-                <p>一起走过的路、看过的风景，都成了共同的坐标系。</p>
-            </div>
-
-            <div class="merged-item">
-                <div class="photo-placeholder">[ 共同记忆 · 照片预留 ]</div>
-                <p>而当下的每一刻，都是未来最珍贵的原点。</p>
-            </div>
-
         </div>
-    </div>
 
-    <!-- Scroll Hint -->
-    <div class="scroll-hint">向下滚动</div>
+        <!-- Scroll Hint -->
+        <div class="scroll-hint">向下滚动</div>
+
+    </div><!-- /main-content -->
 
     <!-- ===== App: Scripts (order matters) ===== -->
     <script src="js/config.js"></script>
-    <script src="js/landing.js"></script>
+    <script src="js/app.js"></script>
     <script src="js/parallax.js"></script>
     <script src="js/meeting.js"></script>
     <script src="js/merged.js"></script>

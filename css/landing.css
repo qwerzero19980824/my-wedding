@@ -1,102 +1,133 @@
 /* ========================================
-   Landing Page — 首页 (新娘 & 画布拖拽)
+   Landing — Three.js 布料画布 & Hero Card
+   v1.1.0
    ======================================== */
 
-.landing-overlay {
+/* ---- Cloth Container ---- */
+#cloth-container {
     position: fixed;
     inset: 0;
     z-index: 1000;
     background: #0a0a0a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    cursor: grab;
+    cursor: default;
     user-select: none;
     -webkit-user-select: none;
 }
 
-.landing-overlay:active {
-    cursor: grabbing;
-}
-
-.landing-overlay.transitioning {
-    pointer-events: none;
-}
-
-/* ---- Draggable Canvas ---- */
-.draggable-canvas-wrap {
-    position: absolute;
-    width: 50vmin;
-    height: 70vmin;
-    min-width: 280px;
-    min-height: 380px;
-    /* 初始位置：右下角，留一点边距 */
-    right: 8vw;
-    bottom: 6vh;
-    z-index: 1;
-    will-change: transform;
-}
-
-.draggable-canvas-wrap.bottom-left {
-    right: auto;
-    left: 8vw;
-}
-
-#brideCanvas {
+#clothCanvas {
+    display: block;
     width: 100%;
     height: 100%;
-    display: block;
-    border-radius: 4px;
-    /* 微妙的发光边框模拟婚纱光感 */
-    box-shadow: 0 0 60px rgba(244, 194, 194, 0.08),
-                0 0 120px rgba(255, 255, 255, 0.04);
+    touch-action: none;
 }
 
-/* ---- Drag Hint Glow (pulses when idle) ---- */
-.canvas-hint-ring {
+/* ---- Cloth Drag Hint ---- */
+.cloth-hint {
     position: absolute;
-    inset: -12px;
-    border: 1px solid rgba(244, 194, 194, 0.2);
-    border-radius: 6px;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
     pointer-events: none;
-    animation: hint-pulse 3s ease-in-out infinite;
+    transition: opacity 0.6s ease;
 }
 
-@keyframes hint-pulse {
-    0%, 100% { border-color: rgba(244, 194, 194, 0.12); box-shadow: 0 0 20px rgba(244, 194, 194, 0); }
-    50%      { border-color: rgba(244, 194, 194, 0.35); box-shadow: 0 0 40px rgba(244, 194, 194, 0.08); }
+.cloth-hint span {
+    font-family: "Cormorant Garamond", "Noto Serif SC", Georgia, serif;
+    font-size: 0.75rem;
+    font-weight: 300;
+    font-style: italic;
+    letter-spacing: 0.2em;
+    color: rgba(244, 194, 194, 0.45);
 }
 
-/* ---- Center Content (Title + Button) ---- */
-.landing-content {
-    position: relative;
-    z-index: 2;
-    text-align: center;
+.cloth-hint::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 30px;
+    background: rgba(244, 194, 194, 0.25);
+    margin: 0.5rem auto 0;
+    animation: hint-line 2.5s ease-in-out infinite;
+}
+
+@keyframes hint-line {
+    0%, 100% { opacity: 0.12; transform: scaleY(0.5); }
+    50%      { opacity: 0.7;  transform: scaleY(1); }
+}
+
+/* ---- Hero Card (Hidden by default) ---- */
+.hero-card {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+    opacity: 0;
     pointer-events: none;
+    transition: opacity 0.6s ease;
 }
 
-.landing-content > * {
+.hero-card.visible {
+    opacity: 1;
     pointer-events: auto;
 }
 
-.landing-title {
-    font-family: "Playfair Display", "Cormorant Garamond", "Noto Serif SC", Georgia, "Times New Roman", serif;
-    font-size: clamp(2.8rem, 7vw, 5.5rem);
-    font-weight: 400;
-    font-style: italic;
-    color: #c0392b;
-    letter-spacing: 0.04em;
-    line-height: 1.15;
-    margin-bottom: 2.5rem;
-    text-shadow: 0 0 80px rgba(192, 57, 43, 0.15);
+.hero-card-inner {
+    text-align: center;
+    max-width: 640px;
+    padding: 3rem 2rem;
 }
 
-/* ---- SAY YES Button ---- */
-.say-yes-btn {
-    display: inline-block;
-    padding: 0.9rem 3.2rem;
-    font-family: "Playfair Display", "Cormorant Garamond", "Noto Serif SC", Georgia, serif;
+/* ---- Contenteditable Text Area ---- */
+.hero-text {
+    font-family: "Cormorant Garamond", "Noto Serif SC", "Songti SC", Georgia, serif;
+    font-size: clamp(1.2rem, 2.5vw, 1.55rem);
+    font-weight: 300;
+    line-height: 2.1;
+    letter-spacing: 0.08em;
+    color: #d4cfc8;
+    margin-bottom: 4rem;
+    outline: none;
+    caret-color: rgba(244, 194, 194, 0.6);
+    min-height: 200px;
+    transition: color 0.3s ease;
+    /* 可编辑提示 */
+    position: relative;
+}
+
+.hero-text:empty::before {
+    content: '✎  在此写下你想说的话...';
+    color: rgba(255, 255, 255, 0.15);
+    font-style: italic;
+    pointer-events: none;
+}
+
+.hero-text:focus {
+    color: #f0ebe4;
+}
+
+/* Contenteditable 选中高亮 */
+.hero-text::selection {
+    background: rgba(244, 194, 194, 0.2);
+    color: #fafafa;
+}
+
+/* ---- Say Yes Button (Hero Card) ---- */
+.hero-btn-wrap {
+    display: flex;
+    justify-content: center;
+}
+
+.hero-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 3.5rem;
+    font-family: "Playfair Display", "Cormorant Garamond", Georgia, serif;
     font-size: 1.05rem;
     font-weight: 500;
     letter-spacing: 0.35em;
@@ -106,34 +137,95 @@
     border: 1.5px solid #c0392b;
     border-radius: 2px;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     outline: none;
-    position: relative;
     overflow: hidden;
+    transition: color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                border-color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.say-yes-btn::before {
+.hero-btn .btn-text {
+    position: relative;
+    z-index: 2;
+}
+
+/* 呼吸光晕 (Breathing Glow) */
+.hero-btn .btn-glow {
+    position: absolute;
+    inset: -4px;
+    border-radius: 4px;
+    opacity: 0.5;
+    z-index: 1;
+    animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%, 100% {
+        box-shadow:
+            0 0 8px rgba(192, 57, 43, 0.15),
+            0 0 20px rgba(192, 57, 43, 0.06),
+            inset 0 0 8px rgba(192, 57, 43, 0.04);
+    }
+    50% {
+        box-shadow:
+            0 0 18px rgba(192, 57, 43, 0.35),
+            0 0 45px rgba(192, 57, 43, 0.12),
+            0 0 70px rgba(192, 57, 43, 0.05),
+            inset 0 0 14px rgba(192, 57, 43, 0.06);
+    }
+}
+
+/* 悬停填充动画 */
+.hero-btn::before {
     content: '';
     position: absolute;
     inset: 0;
     background: #c0392b;
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    z-index: -1;
+    transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 0;
 }
 
-.say-yes-btn:hover {
+.hero-btn:hover {
     color: #fafafa;
     border-color: #c0392b;
 }
 
-.say-yes-btn:hover::before {
+.hero-btn:hover::before {
     transform: scaleX(1);
 }
 
-.say-yes-btn:active {
+.hero-btn:hover .btn-glow {
+    animation: breathe-intense 1.5s ease-in-out infinite;
+}
+
+@keyframes breathe-intense {
+    0%, 100% {
+        box-shadow:
+            0 0 14px rgba(192, 57, 43, 0.3),
+            0 0 35px rgba(192, 57, 43, 0.15);
+    }
+    50% {
+        box-shadow:
+            0 0 25px rgba(192, 57, 43, 0.5),
+            0 0 60px rgba(192, 57, 43, 0.2),
+            0 0 90px rgba(192, 57, 43, 0.08);
+    }
+}
+
+.hero-btn:active {
     transform: scale(0.97);
+}
+
+/* ---- Main Content (Dual Track page, hidden initially) ---- */
+.main-content {
+    display: none;
+}
+
+.main-content.active {
+    display: block;
 }
 
 /* ---- Transition Flash ---- */

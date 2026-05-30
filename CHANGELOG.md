@@ -1,5 +1,50 @@
 # CHANGELOG — 平行宇宙的相遇
 
+## v1.1.0 — Three.js 布料模拟 · 转身新娘与命运画布 (2026-05-30)
+
+### 重大升级：Hero Section 重构
+
+**Three.js 布料物理引擎** (`js/app.js`)：
+- **WebGL 布料网格**：60×60 PlaneGeometry（3721 顶点），顶点级 Verlet 积分物理
+- **视频纹理映射**：`THREE.VideoTexture` 将新娘转身视频实时映射到布料表面，视频随网格变形同步弯曲
+- **约束系统**：结构约束（水平+垂直）+ 剪切约束（双对角线），每帧 3 次迭代求解
+- **物理参数**：重力 -0.0004、阻尼 0.98、拖拽力场二次衰减
+- **Fallback 纹理**：无视频时自动使用 Canvas 2D 程序化纹理（婚纱剪影 + 微光波动）
+
+**拖拽交互**：
+- Raycaster 精准检测布料左下角/右下角抓取（判定半径 0.22 世界单位）
+- 拖拽时力场影响周围顶点（二次衰减 falloff），产生逼真布料褶皱
+- 实时顶点位移追踪，超过 40% 顶点位移 > 0.08 单位时触发
+
+**滑出过渡 & Hero Card 揭示**：
+- GSAP Timeline：布料沿拖拽方向平移 + Y轴旋转 + 透明度衰减（0.9s power3.in）
+- 画布容器淡出后显露底层 Hero Card
+- Hero 文本 contenteditable 可编辑、呼吸光晕 Say Yes 按钮
+
+### 新增/修改文件
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| `js/app.js` | 新增 | Three.js 布料物理引擎 + 交互 + 过渡 |
+| `index.html` | 重构 | 三层页面结构 (cloth → hero → dual-track) |
+| `css/landing.css` | 重写 | 布料容器 + Hero Card 排版 + 呼吸光晕按钮 |
+| `js/config.js` | 更新 | 版本 → 1.1.0 |
+| `PROMPT_GUIDE.md` | 更新 | 新增 §1 Three.js 布料规格、§2 Hero Card 规格、§6 素材路径 |
+| `assets/video/` | 新增 | 视频素材目录 |
+| `assets/images/` | 新增 | 图片素材目录 |
+
+### 页面流 (v1.1.0)
+```
+[Three.js 布料] ──(掀开40%)──▶ [Hero Card] ──(Say Yes)──▶ [双轨视差] ──▶ [相遇点] ──▶ [合并轨道]
+```
+
+### 技术栈
+- Three.js r160 (WebGL 2.0)
+- GSAP 3.12.5 + ScrollTrigger
+- canvas-confetti 1.9.3
+- Google Fonts: Playfair Display + Cormorant Garamond + Noto Serif SC
+
+---
+
 ## v0.3.0 — 首页 Landing Page & 画布拖拽 (2026-05-30)
 
 ### 新增
