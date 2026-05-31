@@ -1,8 +1,10 @@
 # 项目愿景：【平行宇宙的相遇】交互式婚礼叙事网站
 
 > **版本记录**（详见 [CHANGELOG.md](./CHANGELOG.md)）
-> - v1.1.1 (2026-05-30): 物理手感修复 — 桌布掀开体验, 固定时间步, MeshBasicMaterial, 柔软约束
-> - v1.1.0 (2026-05-30): Three.js 布料模拟 — 视频纹理画布 + 物理拖拽掀开 + Hero Card 杂志排版
+> - v2.1.0 (2026-05-31): 网眼白度控制 + 掀开粒子特效 + 重返按钮 + 参数持久化保存/加载
+> - v2.0.0 (2026-05-31): 三图层 Z-Index 架构 — 六边形网纱 + 视频背景 + 15 参数控制器
+> - v1.1.1 (2026-05-30): 物理手感修复 — 桌布掀开体验
+> - v1.1.0 (2026-05-30): Three.js 布料模拟 — 视频纹理画布 + 物理拖拽掀开 + Hero Card
 > - v0.3.0 (2026-05-30): 首页画布拖拽 + 新娘剪影 + SAY YES 按钮过渡
 > - v0.2.0 (2026-05-30): 模块化拆分 — CSS/JS 独立文件，右下角版本标识
 > - v0.1.0 (2026-05-30): 双轨视差骨架 — GSAP ScrollTrigger + canvas-confetti + 合并轨道
@@ -12,90 +14,126 @@
 ## 0. 整体页面流 (Page Flow)
 
 ```
-[Three.js 布料画布] ──(掀开角落拖至40%)──▶ [Hero Card 求婚卡片] ──(点击 Say Yes)──▶ [双轨视差] ──(滚动)──▶ [相遇点] ──▶ [合并轨道]
+[三图层叠加] ──(拖拽掀开)──▶ [Hero Card] ──(Say Yes)──▶ [双轨视差] ──(滚动)──▶ [相遇点] ──▶ [合并轨道]
 ```
 
-三层结构（z-index 叠加）：
-- **Layer 1 (z:1000):** Three.js 全屏布料画布 — 顶层交互
-- **Layer 2 (z:900):** Hero Card — 画布滑出后显露
-- **Layer 3:** 双轨视差页 — Say Yes 后激活
+### 三图层 Z-Index 架构 (v2.0.0)
+
+```
+┌─────────────────────────────────┐
+│ Layer 3 (z:3)  WebGL Cloth      │  正六边形网纱 · Verlet 物理 · 双通道渲染 · 拖拽掀开
+│ ┌─────────────────────────────┐ │
+│ │ Layer 2 (z:2)  DOM Hero     │ │  毛玻璃模糊 · contenteditable 情话 · Say Yes 按钮
+│ │ ┌─────────────────────────┐ │ │
+│ │ │ Layer 1 (z:1)  Video    │ │ │  视频背景 · 边缘模糊遮罩
+│ │ └─────────────────────────┘ │ │
+│ └─────────────────────────────┘ │
+└─────────────────────────────────┘
+```
 
 ---
 
-## 1. 首页 — 转身新娘与命运画布 (Three.js Cloth) ★ v1.1.0
+## 1. Layer 3 — 正六边形网纱布料 (WebGL Cloth) ★ v2.0.0
 
-### 1.1 交互逻辑
-* 全屏 Three.js WebGL 画布，60×60 顶点 PlaneGeometry 网格模拟柔软布料。
-* **视频纹理：** 布料表面播放"新娘转身"视频（`THREE.VideoTexture`），视频随布料形变同步弯曲。
-* **物理模拟：** Verlet 积分 + 结构/剪切距离约束，顶部一行顶点固定，其余受重力 + 阻尼影响。
-* **拖拽交互：** 仅允许从布料左下角或右下角抓取（Raycaster 判定，半径 0.22 世界单位）。拖拽时鼠标位置施加二次衰减力场到附近顶点。
-* **触发临界点：** 实时追踪每个顶点距原始位置的位移。当超过 40% 顶点位移 > 0.08 单位时，触发滑出动画。
-* **滑出动画：** GSAP Timeline — 布料沿拖拽方向平移出屏 + 绕 Y 轴旋转 + 透明度衰减，持续 0.9s。
-* **Fallback 纹理：** 若无视频文件，自动使用 Canvas 2D 程序化纹理（婚纱剪影 + 微光波动动画）。
-* `touch-action: none` 确保移动端触控流畅，无浏览器默认手势干扰。
+### 1.1 物理引擎：韦尔莱积分法 (Verlet Integration)
+- 通过记录质点的**当前坐标**与**上一帧坐标**隐式计算速度
+- 公式：`NewPosition = CurrentPosition + (CurrentPosition - OldPosition) * Damping + Force * dt²`
+- 极大增强柔性布料在极端拉扯下的物理稳定性
 
-### 1.2 技术规格
-| 参数 | 值 | 说明 |
-|------|-----|------|
-| 网格密度 | 60 × 60 (3721 顶点) | PlaneGeometry segments |
-| 约束类型 | 结构 + 剪切 | 水平/垂直 + 两条对角线 |
-| 约束迭代 | 3 次/帧 | 越多越硬，越少越软 |
-| 重力 | -0.0004 | 世界单位/frame² |
-| 阻尼 | 0.98 | 速度衰减系数 |
-| 触发阈值 | 40% 顶点位移 > 0.08 | DISPLACE_THRESHOLD / TRIGGER_RATIO |
-| 时间步上限 | 33ms (~30fps) | 防止大帧跳跃穿模 |
-| 渲染器 | WebGLRenderer, DPR ≤ 2 | antialias: true |
+### 1.2 网格拓扑：质点-弹簧模型 (Mass-Spring System)
+- 42×30 质点网格，xSegs * ySegs 个质点
+- **结构弹簧**：上下左右相邻，维持基础长宽
+- **剪切弹簧**：对角线相连，防止渔网变形
+- **抗弯曲弹簧**：隔点连接（如 A 与 C），赋予挺括度，防止尖锐三角形死角
 
-### 1.3 视频配置
-* 载体：`<video autoplay muted loop playsinline>`
-* 路径：`assets/video/bride-turn.mp4`（支持 mp4/webm）
-* 纹理：`THREE.VideoTexture` → `MeshStandardMaterial.map`
-* iOS 兼容：`playsinline` + `webkit-playsinline` + muted autoplay
+### 1.3 图形学渲染：双通道防穿模
+- `MeshBack`：`THREE.BackSide`，renderOrder = 1
+- `MeshFront`：`THREE.FrontSide`，renderOrder = 2
+- 强制 GPU 永远先画背面再画正面，完美解决半透明深度排序
+
+### 1.4 材质贴图：程序化正六边形纹理
+- 利用 JS Canvas API 配合三角函数动态绘制无缝正六边形网格
+- 作为 `alphaMap` 透明通道贴图
+- `LinearMipmapLinearFilter` + 各向异性过滤，网格密度高达 600 依然平滑
+
+### 1.5 拖拽交互
+- `THREE.Raycaster` 射线检测获取被点击质点
+- 基于**高斯衰减权重**：`weight = (1 - dist/radius)²`
+- 约束求解时锁定的质点降低权重（0.08），防止拖拽中抖动
+
+### 1.6 技术规格
+
+| 参数 | 默认值 | 范围 | 说明 |
+|------|--------|------|------|
+| 网格密度 | 42 × 30 | — | xSegs × ySegs |
+| 约束求解迭代 | 4 次/帧 | — | 越多越硬挺 |
+| 面料挺括度 | 0.35 | 0.1–1 | stiffness |
+| 阻尼 | 0.98 | 0.90–0.99 | damping |
+| 重力 | 0.014 | 0–0.04 | gravity |
+| 风力 | 0.015 | 0–0.04 | wind |
+| 掀开飞行力 | 1.8 | 0.5–4.0 | flightForce |
+| 触发灵敏度 | 120px | 50–250 | threshold |
+| 六边形密度 | 448 | 10–600 | tiling |
+| 拖拽半径 | 7.0 | 1.0–10.0 | dragRadius |
 
 ---
 
-## 2. Hero Card — 求婚/大日子卡片 (新增 v1.1.0)
+## 2. Layer 2 — DOM Hero Card (v2.0.0)
 
 ### 2.1 交互逻辑
-* 布料画布完全滑出后，Hero Card 从底层淡入显现（GSAP 0.8s）。
-* 上半部分：`contenteditable="true"` 可编辑文本区，用户可直接在页面上书写情话。
-* 下半部分："Say Yes" 按钮，呼吸光晕动画 + 悬停填充。
+- 布料掀开后，Layer 2 保持可见（`backdrop-filter: blur()` 毛玻璃）
+- 上半部分：`contenteditable="true"` 可编辑情话区
+- 下半部分："Say Yes" 按钮，呼吸光晕动画
+- 点击 Say Yes → 闪光过渡 → 解锁下方滚动内容
 
 ### 2.2 排版规格
-| 元素 | 字体 | 大小 | 字重 | 颜色 | 其他 |
-|------|------|------|------|------|------|
-| 情话文本 | Cormorant Garamond / Noto Serif SC | `clamp(1.2rem, 2.5vw, 1.55rem)` | 300 | `#d4cfc8` | `letter-spacing: 0.08em`, `line-height: 2.1` |
-| Say Yes 按钮 | Playfair Display / Cormorant Garamond | `1.05rem` | 500 | `#c0392b` | `letter-spacing: 0.35em`, 大写 |
 
-### 2.3 按钮呼吸光晕 (Breathing Glow)
-```css
-@keyframes breathe {
-  0%, 100% { box-shadow: 0 0 8px rgba(192,57,43,0.15), 0 0 20px rgba(192,57,43,0.06); }
-  50%      { box-shadow: 0 0 18px rgba(192,57,43,0.35), 0 0 45px rgba(192,57,43,0.12); }
-}
-```
-悬停时呼吸频率加快（3s → 1.5s），光晕强度提升。
+| 元素 | 字体 | 大小 | 字重 | 颜色 |
+|------|------|------|------|------|
+| 标题 | Playfair Display | clamp(2rem, 5vw, 3.5rem) | 500 | `#a92929` |
+| 情话文本 | Cormorant Garamond / Noto Serif SC | clamp(1rem, 2.2vw, 1.35rem) | 300 | `#3a4044` |
+| Say Yes 按钮 | Playfair Display | 16px | 600 | white on `#a92929` |
 
 ---
 
-## 3. 核心视觉与交互逻辑 (Dual Track — 保持自 v0.1.0)
+## 3. Layer 1 — 视频背景 (v2.0.0)
 
-本网站是一个纯前端的沉浸式叙事网页，展现两个独立的个体从各自平行发展到交织相遇的浪漫故事。
+### 3.1 配置
+- 载体：`<video muted loop playsinline autoplay>`
+- 路径：`video/1.mp4`
+- 铺满策略：`object-fit: cover` + `min-width/min-height: 100%`
+- 边缘模糊遮罩：`radial-gradient` mask + `backdrop-filter: blur()`，补偿宽高比不匹配
 
-* **相遇前（上半部分页面）：** 屏幕水平一分为二（.track-left 与 .track-right）。
-    * 滚动时，两侧以微小的视差比例（Parallax Scroll）异步向上滚动。背景为极简暗色调。
-* **相遇点（黄金分割交汇线）：** 滚动到特定节点时，中央分界线散开，屏幕猛地拉开由暗转亮。
-    * 触发全屏的 Canvas 浪漫粒子汇聚/烟花特效。
-* **相遇后（下半部分页面）：** 合并为一个单轨全屏页面（.merged-track），共同记忆丝滑淡入。
+### 3.2 可调参数
 
-## 4. 技术栈约束与增强扩展 (Technical & Skills)
+| 参数 | 默认值 | 范围 | 说明 |
+|------|--------|------|------|
+| videoOpacity | 0.92 | 0.3–1.0 | 视频层透明度 |
+| edgeBlur | 0px | 0–40px | 边缘模糊遮罩强度 |
+| domBlur | 15px | 0–30px | DOM 层毛玻璃强度 |
 
-* **核心底座：** 纯原生 HTML5 / CSS3 / Vanilla JS (ES6+)。不使用 React/Vue 框架。
-* **动效增强（允许引入）：**
-    * **GSAP (GreenSock)** + **ScrollTrigger** — 滚动视差与时间轴动画
-    * **Three.js** (r160) — WebGL 布料模拟与视频纹理映射
-    * **canvas-confetti** — 相遇瞬间粒子烟花特效
-* **审美要求：** 现代杂志排版、大胆留白、精致的微动效，拒绝传统婚庆审美。
+---
+
+## 4. 下游滚动叙事 (Dual Track → Meeting → Merged)
+
+### 4.1 双轨视差
+- GSAP ScrollTrigger pinned stage
+- 左轨 yPercent: -45%（慢速）
+- 右轨 yPercent: -70%（快速）
+- scrub: 1.2 平滑跟随
+- 中央分界线末尾消散
+
+### 4.2 相遇点
+- 150vh 渐变背景（暗 → 亮）
+- canvas-confetti 四次粒子爆发
+- 相遇文字 scrub 淡入
+- 点击可重新触发 confetti
+
+### 4.3 合并轨道
+- 三张记忆卡片 ScrollTrigger 逐个淡入
+- toggleActions: "play none none reverse"
+
+---
 
 ## 5. 核心色彩与视觉变量 (Design System)
 
@@ -104,23 +142,29 @@
   --bg-dark: #121212;          /* 深邃夜空黑 */
   --bg-light: #fafafa;         /* 纯净高级白 */
   --romantic-pink: #f4c2c2;    /* 克制情感粉 */
-  --hero-red: #c0392b;         /* Hero Section 古典红 */
+  --romantic-red: #a92929;     /* 古典红 (Layer 2 按钮) */
   --text-main: #333333;
   --text-muted: #888888;
-  --hero-text: #d4cfc8;        /* Hero Card 暖灰文本 */
+  --panel-bg: rgba(255,255,255,0.40);  /* 控制面板半透明 */
+  --accent-color: #5a6a6c;     /* 滑块强调色 */
 }
 ```
+
+---
 
 ## 6. 素材存放路径
 
 ```
-assets/
+my-wedding/
 ├── video/
-│   └── bride-turn.mp4     ← 新娘转身视频 (mp4/webm, 建议 720×1280 竖屏)
-└── images/
-    ├── photo-his-01.jpg   ← 左轨照片 (他的故事)
-    ├── photo-her-01.jpg   ← 右轨照片 (她的故事)
-    ├── photo-us-01.jpg    ← 合并轨道照片 1
-    ├── photo-us-02.jpg    ← 合并轨道照片 2
-    └── photo-us-03.jpg    ← 合并轨道照片 3
+│   └── 1.mp4              ← Layer 1 背景视频
+├── assets/
+│   ├── video/
+│   │   └── bride-turn.mp4 ← 旧版布料视频纹理 (v1.x)
+│   └── images/
+│       ├── photo-his-01.jpg
+│       ├── photo-her-01.jpg
+│       ├── photo-us-01.jpg
+│       ├── photo-us-02.jpg
+│       └── photo-us-03.jpg
 ```

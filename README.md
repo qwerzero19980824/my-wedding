@@ -1,8 +1,8 @@
 # 平行宇宙的相遇 — 婚礼叙事网站
 
-> 当前版本 **v1.1.1** | 2026-05-30
+> 当前版本 **v2.1.0** | 2026-05-31
 
-纯前端沉浸式婚礼叙事网页。Three.js 布料模拟 → Hero Card → 双轨视差 → 相遇粒子 → 合并记忆。
+纯前端沉浸式婚礼叙事网页。三图层 z-index 堆叠架构：视频背景 → 毛玻璃 Hero Card → Three.js 六边形网纱布料模拟。拖拽掀开 + 粒子特效 → Say Yes → 双轨视差 → 相遇 → 合并记忆。支持参数保存到本地、一键返回婚纱。
 
 ---
 
@@ -17,24 +17,104 @@ python -m http.server 8080
 
 ---
 
+## 三图层架构 (v2.0.0 核心)
+
+```
+ ┌──────────────────────────────┐
+ │  Layer 3 (z:3)  WebGL Cloth  │  ← 正六边形网纱 · Verlet物理 · 拖拽掀开
+ │  ┌────────────────────────┐  │
+ │  │ Layer 2 (z:2) DOM Hero │  │  ← 毛玻璃模糊 · 情话编辑 · Say Yes
+ │  │  ┌──────────────────┐  │  │
+ │  │  │ Layer 1 (z:1)    │  │  │  ← 视频背景 · 边缘模糊遮罩
+ │  │  │ Video Background │  │  │
+ │  │  └──────────────────┘  │  │
+ │  └────────────────────────┘  │
+ └──────────────────────────────┘
+
+   Say Yes 点击后 ↓
+ ┌──────────────────────────────┐
+ │  Dual Track → Meeting → Merged│  ← GSAP ScrollTrigger 滚动叙事
+ └──────────────────────────────┘
+```
+
+### 技术要点
+- **Layer 3 — 六边形网纱布料**：Three.js r160 + 纯手写 Verlet 积分物理引擎
+  - 质点-弹簧模型：结构弹簧 + 剪切弹簧 + 抗弯曲弹簧
+  - 双通道渲染（FrontSide + BackSide）防半透明穿模
+  - 程序化正六边形 alphaMap 纹理（Canvas API 动态生成）
+  - Raycaster 高斯衰减权重拖拽，任意位置抓取
+- **Layer 2 — DOM Hero Card**：`backdrop-filter: blur()` 毛玻璃效果，contenteditable 情话编辑
+- **Layer 1 — 视频背景**：`video/1.mp4` 全屏播放，支持边缘模糊遮罩
+
+---
+
 ## 当前进度
 
 ### 已完成
 
-| 页面层 | 功能 | 技术 |
-|--------|------|------|
-| **Layer 1: 布料画布** | 全屏 Three.js 布料，视频纹理，Verlet 物理模拟，底角拖拽掀开，40% 位移触发滑出 | Three.js r160 + GSAP |
-| **Layer 2: Hero Card** | 画布滑出后淡入，contenteditable 可编辑情话，"Say Yes" 呼吸光晕按钮 | CSS + GSAP |
-| **Layer 3: 双轨视差** | 左右轨异步视差滚动 (yPercent -45%/-70%)，中央分界线消散 | GSAP ScrollTrigger |
-| **相遇点** | 暗→亮渐变背景，canvas-confetti 四次粒子爆发，相遇文字淡入 | canvas-confetti |
-| **合并轨道** | 三张记忆卡片逐个 ScrollTrigger 淡入 | GSAP ScrollTrigger |
-| **版本标识** | 右下角 `v1.1.1` 标识，亮/暗背景自适应 | CSS + JS |
+| 功能 | 技术 | 状态 |
+|------|------|------|
+| **Layer 3: 六边形网纱布料** | Three.js r160 + Verlet 物理 + 双通道渲染 | ✅ |
+| **Layer 2: Hero Card** | DOM + backdrop-filter 毛玻璃 + contenteditable | ✅ |
+| **Layer 1: 视频背景** | `<video>` + object-fit: cover + 边缘模糊遮罩 | ✅ |
+| **网眼白度控制** | hexFill (0–180) + hexLineWidth (2.0–10.0) 实时可调 | ✅ |
+| **掀开粒子特效** | Canvas Sparkle 钻石粒子 + confetti 彩屑双重爆发 | ✅ |
+| **参数控制器** | 17 个滑块实时调节（面料/物理/六边形/视频） | ✅ |
+| **参数持久化** | 💾 保存到 localStorage，下次自动读取 | ✅ |
+| **拖拽掀开交互** | Raycaster + 高斯衰减权重 + 飞行力 | ✅ |
+| **Say Yes 过渡** | 闪光过渡 → 滚动内容激活 | ✅ |
+| **重返帘幕按钮** | 滚动内容右下角悬浮按钮，一键返回婚纱状态 | ✅ |
+| **双轨视差** | GSAP ScrollTrigger 异步视差 (yPercent -45%/-70%) | ✅ |
+| **相遇点** | canvas-confetti 四次粒子爆发 + 文字淡入 | ✅ |
+| **合并轨道** | 三张记忆卡片逐个 ScrollTrigger 淡入 | ✅ |
+| **版本标识** | 右下角 v2.1.0 标识，亮/暗背景自适应 | ✅ |
 
 ### 待替换
 
-- `assets/video/bride-turn.mp4` — 新娘转身视频
+- `video/1.mp4` — 可替换为其他背景视频
 - `assets/images/photo-*.jpg` — 照片素材
-- `index.html` 中双轨文字和记忆卡片文案
+- 双轨文字和记忆卡片文案（直接编辑 HTML 或后续替换）
+
+---
+
+## 页面流
+
+```
+[视频背景 + 网纱布料 + Hero Card] ──拖拽掀开──▶ [Hero Card 显露] ──点击 Say Yes──▶ [双轨视差] ──滚动──▶ [相遇粒子] ──▶ [合并记忆]
+```
+
+---
+
+## 物理参数调校
+
+实时控制面板（左上角），改滑块即时生效：
+
+### 面料参数
+| 参数 | 默认值 | 范围 | 效果 |
+|------|--------|------|------|
+| `hexFill` | 80 | 0–180 | 网眼填充白度 (0=极透, 180=厚白) |
+| `hexLineWidth` | 5.0 | 2.0–10.0 | 六边形框线粗细 |
+| `opacity` | 0.86 | 0.3–1.0 | 白纱整体不透明度 |
+| `blur` | 0.6px | 0–2.5px | 薄纱柔焦微朦胧 |
+| `tiling` | 448 | 10–600 | 六边形纹理细腻度 |
+| `dragRadius` | 7.0 | 1.0–10.0 | 拖拽连带范围 |
+| `stiffness` | 0.35 | 0.1–1 | 面料挺括度 |
+
+### 物理参数
+| 参数 | 默认值 | 范围 | 效果 |
+|------|--------|------|------|
+| `flightForce` | 1.8 | 0.5–4.0 | 掀开后飞行推力 |
+| `threshold` | 120 | 50–250 | 触发掀开灵敏度 (px) |
+| `damping` | 0.98 | 0.90–0.99 | 空气阻尼 (0.9=快停, 0.99=飘摇) |
+| `gravity` | 0.014 | 0–0.04 | 悬垂重力 |
+| `wind` | 0.015 | 0–0.04 | 微风扰动强度 |
+
+### 视频/图层参数
+| 参数 | 默认值 | 范围 | 效果 |
+|------|--------|------|------|
+| `videoOpacity` | 0.92 | 0.3–1.0 | 视频层透明度 |
+| `edgeBlur` | 0px | 0–40px | 边缘模糊遮罩强度 |
+| `domBlur` | 15px | 0–30px | DOM 层毛玻璃强度 |
 
 ---
 
@@ -42,60 +122,30 @@ python -m http.server 8080
 
 ```
 my-wedding/
-├── index.html              ← 入口文件
+├── index.html              ← ★ 入口文件 (三图层集成)
 ├── README.md               ← 本文件
-├── PROMPT_GUIDE.md          ← 设计规格与版本记录
 ├── CHANGELOG.md             ← 完整变更日志
+├── PROMPT_GUIDE.md          ← 设计规格与版本记录
 ├── CONTENT_TEMPLATE.md      ← 用户可修改内容清单
-├── css/
-│   ├── reset.css            ← 全局重置
-│   ├── design-system.css    ← CSS 变量 (配色)
-│   ├── landing.css          ← 布料容器 + Hero Card + 按钮
-│   ├── dual-track.css       ← 双轨布局 + 分界线
-│   ├── meeting-point.css    ← 相遇区渐变
-│   ├── merged-track.css     ← 合并轨道卡片
-│   └── version-badge.css    ← 版本标识
-├── js/
-│   ├── config.js            ← 版本号常量
-│   ├── app.js               ← ★ Three.js 布料物理引擎 (核心)
-│   ├── landing.js           ← 旧版首页 (已废弃, git 历史保留)
-│   ├── parallax.js          ← 双轨视差 ScrollTrigger
-│   ├── meeting.js           ← confetti + 相遇文字
-│   ├── merged.js            ← 卡片淡入
-│   └── main.js              ← 全局初始化 + 版本渲染
+├── wedding_architecture.md  ← 3D 婚纱物理模拟核心架构文档
+├── code.html               ← 参考实现 (独立版布料模拟 + 控制面板)
+├── css/                    ← 独立 CSS 模块 (v1.x 遗留, v2.0 内联)
+├── js/                     ← 独立 JS 模块 (v1.x 遗留, v2.0 内联)
+├── video/
+│   └── 1.mp4              ← 背景视频 (Layer 1)
 └── assets/
-    ├── video/               ← 放新娘转身视频 (.mp4/.webm)
-    └── images/              ← 放照片素材
+    ├── video/              ← 新娘转身视频 (Layer 3 旧版用)
+    └── images/             ← 照片素材
 ```
-
----
-
-## 页面流
-
-```
-[布料画布] ──拖拽底角掀开40%──▶ [Hero Card] ──点击 Say Yes──▶ [双轨视差] ──滚动──▶ [相遇粒子] ──▶ [合并记忆]
-```
-
----
-
-## 物理参数调校
-
-`js/app.js` 顶部常量，改完刷新即可：
-
-| 参数 | 默认值 | 效果 |
-|------|--------|------|
-| `MOUSE_FORCE` | 0.55 | 拖拽跟手度 (越大越紧) |
-| `CONSTRAINT_ITERS` | 1 | 布料硬度 (1=柔软, 5=硬板) |
-| `TRIGGER_RATIO` | 0.40 | 触发滑出需要的面积比例 |
-| `GRAVITY` | -9.8 | 重力 (标准值) |
-| `DAMPING` | 0.965 | 摆动衰减 (0.9=快停, 0.99=飘摇) |
 
 ---
 
 ## 版本历史
 
 ```
-v1.1.1  物理手感修复 — 桌布掀开体验 (当前)
+v2.1.0  网眼白度 + 掀开特效 + 重返按钮 + 参数保存/加载 (当前)
+v2.0.0  三图层 z-index 架构 — 六边形网纱 + 视频背景 + 参数控制器
+v1.1.1  物理手感修复 — 桌布掀开体验
 v1.1.0  Three.js 布料模拟 + Hero Card
 v0.3.0  Canvas 2D 画布拖拽 + SAY YES
 v0.2.0  模块化拆分 CSS/JS

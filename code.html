@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高定全屏正六边形网纱网页交互系统</title>
+    <style>
+        :root {
+            --primary-bg: #dce0e2;
+            --text-color: #3a4044;
+            --romantic-red: #a92929; 
+            --panel-bg: rgba(255, 255, 255, 0.45); /* 调低不透明度，让背后的婚纱完美透出来 */
+            --accent-color: #5a6a6c;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+            background-color: var(--primary-bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none;
+        }
+
+        /* =========================================================================
+           三图层全屏架构
+           ========================================================================= */
+        #layer3-video-sim {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(125deg, #f5efe6, #e8dfd8, #d2e0e6, #e2d5dc);
+            background-size: 400% 400%;
+            animation: fluidVideoSim 20s ease infinite;
+            z-index: 1;
+        }
+
+        @keyframes fluidVideoSim {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        #layer2-dom {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 2;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            transition: opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        #layer2-dom .title {
+            font-size: 56px; font-weight: 700; color: var(--romantic-red);
+            letter-spacing: 4px; margin-bottom: 30px; text-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        #layer2-dom .say-yes-btn {
+            padding: 14px 50px; background: var(--romantic-red); color: white;
+            border: none; border-radius: 28px; font-size: 16px; font-weight: 600;
+            letter-spacing: 2px; cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(169, 41, 41, 0.3);
+        }
+        #layer2-dom .say-yes-btn:hover {
+            background: #871f1f; transform: scale(1.05); box-shadow: 0 12px 30px rgba(169, 41, 41, 0.45);
+        }
+
+        #webgl-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 3;
+            pointer-events: auto;
+            opacity: 1;
+            transition: opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* 控制面板样式优化：半透磨砂，不遮挡背后的 3D 婚纱 */
+        .controls {
+            position: absolute; top: 20px; left: 20px; width: 320px;
+            background: var(--panel-bg); padding: 22px; border-radius: 14px;
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.4);
+            z-index: 10; box-shadow: 0 10px 35px rgba(0,0,0,0.05);
+            max-height: 95vh; overflow-y: auto;
+        }
+
+        h1 { font-size: 14px; font-weight: 600; margin: 0 0 18px 0; color: var(--text-color); letter-spacing: 1px; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 10px; text-align: center; }
+        .param-group { margin-bottom: 14px; }
+        .param-group label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #111; margin-bottom: 4px; }
+        .param-desc { font-size: 11px; color: #66727a; margin-top: 3px; line-height: 1.4; }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: var(--accent-color); }
+
+        /* 复位按钮样式 */
+        .btn-system-reset {
+            width: 100%; padding: 10px; background: #fff; color: var(--text-color);
+            border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; font-size: 12px;
+            font-weight: 600; cursor: pointer; transition: all 0.2s ease; margin-top: 5px;
+        }
+        .btn-system-reset:hover {
+            background: var(--text-color); color: #fff; border-color: var(--text-color);
+        }
+
+        #completion-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(220, 224, 226, 0.96); display: none; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 100; text-align: center;
+        }
+        #completion-overlay h2 { font-size: 32px; font-weight: 300; color: var(--text-color); margin-bottom: 24px; }
+
+        .hint {
+            position: absolute; bottom: 25px; width: 100%; text-align: center;
+            color: #5a6a6c; font-size: 12px; letter-spacing: 2px; pointer-events: none; z-index: 5;
+            text-shadow: 0 2px 4px rgba(255,255,255,0.8);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div class="controls" id="ui-panel">
+        <h1>高级面料与跨图层控制器</h1>
+        
+        <div class="param-group" style="background: rgba(169,41,41,0.06); padding: 12px; border-radius: 8px;">
+            <label>白纱不透明遮罩度 (Opacity) <span id="v-opacity">0.86</span></label>
+            <input type="range" id="opacity" min="0.3" max="1.0" step="0.02" value="0.86">
+            <div class="param-desc"><strong>遮罩效果：</strong>调大增强前排白纱对文字的阻挡感与不透光白晕；调小则更加轻薄透明。</div>
+        </div>
+
+        <div class="param-group" style="background: rgba(90,106,108,0.06); padding: 12px; border-radius: 8px;">
+            <label>薄纱柔焦微朦胧 (Soft Blur) <span id="v-blur">0.6px</span></label>
+            <input type="range" id="blur" min="0" max="2.5" step="0.1" value="0.6">
+        </div>
+
+        <div class="param-group" style="background: rgba(90,106,108,0.06); padding: 12px; border-radius: 8px;">
+            <label>掀开飞行速度 (Flight Force) <span id="v-flightForce">1.8</span></label>
+            <input type="range" id="flightForce" min="0.5" max="4.0" step="0.1" value="1.8">
+        </div>
+
+        <div class="param-group" style="background: rgba(90,106,108,0.06); padding: 12px; border-radius: 8px;">
+            <label>掀开触发灵敏度 (Sensitivity) <span id="v-threshold">120</span></label>
+            <input type="range" id="threshold" min="50" max="250" step="10" value="120">
+        </div>
+
+        <div class="param-group" style="margin-top: 12px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 8px;">
+            <label>面料薄纱细腻度 (Tiling) <span id="v-tiling">448</span></label>
+            <input type="range" id="tiling" min="10" max="600" step="1" value="448">
+        </div>
+        <div class="param-group">
+            <label>手感提拉半径 (Radius) <span id="v-dragRadius">7.0</span></label>
+            <input type="range" id="dragRadius" min="1.0" max="10.0" step="0.5" value="7.0">
+        </div>
+        <div class="param-group">
+            <label>面料挺括度 (Stiffness) <span id="v-stiffness">0.35</span></label>
+            <input type="range" id="stiffness" min="0.1" max="1" step="0.05" value="0.35">
+        </div>
+        <div class="param-group">
+            <label>流体空气阻尼 (Damping) <span id="v-damping">0.98</span></label>
+            <input type="range" id="damping" min="0.90" max="0.99" step="0.01" value="0.98">
+        </div>
+        <div class="param-group">
+            <label>礼服悬垂重力 (Gravity) <span id="v-gravity">0.014</span></label>
+            <input type="range" id="gravity" min="0" max="0.04" step="0.001" value="0.014">
+        </div>
+        <div class="param-group">
+            <label>微风起伏强度 (Wind) <span id="v-wind">0.015</span></label>
+            <input type="range" id="wind" min="0" max="0.04" step="0.001" value="0.015">
+        </div>
+
+        <button class="btn-system-reset" onclick="resetSim()">复位当前全屏布料</button>
+    </div>
+
+    <div id="completion-overlay">
+        <h2>物理动态交互已完成</h2>
+        <button class="btn-return" onclick="resetSim()">重新载入白纱</button>
+    </div>
+
+    <div class="hint" id="interaction-hint">鼠标点按并大幅度向上/下滑动，即可掀开婚纱解锁中层文字</div>
+
+    <div id="webgl-container"></div>
+
+    <div id="layer2-dom">
+        <div class="title">love is a yes</div>
+        <button class="say-yes-btn" id="say-yes-trigger">say yes</button>
+    </div>
+
+    <div id="layer3-video-sim"></div>
+
+    <script>
+        // 完全匹配截图参数数据结构
+        let config = {
+            gravity: 0.014, wind: 0.015, damping: 0.98, stiffness: 0.35,
+            tiling: 448, dragRadius: 7.0,
+            flightForce: 1.8, threshold: 120, blur: 0.6, opacity: 0.86,
+            xSegs: 42, ySegs: 30, width: 54, height: 38 // 增大初始物理尺寸基数
+        };
+
+        const container = document.getElementById('webgl-container');
+        const layer2 = document.getElementById('layer2-dom');
+        const hint = document.getElementById('interaction-hint');
+        
+        ['gravity', 'wind', 'damping', 'stiffness', 'dragRadius', 'flightForce', 'threshold'].forEach(id => {
+            const el = document.getElementById(id);
+            const valDisplay = document.getElementById('v-' + id);
+            el.addEventListener('input', (e) => {
+                config[id] = parseFloat(e.target.value);
+                valDisplay.innerText = config[id];
+            });
+        });
+
+        // 柔焦滤镜
+        const blurEl = document.getElementById('blur');
+        const blurVal = document.getElementById('v-blur');
+        blurEl.addEventListener('input', (e) => {
+            config.blur = parseFloat(e.target.value);
+            blurVal.innerText = config.blur + 'px';
+            container.style.filter = `blur(${config.blur}px)`;
+        });
+        container.style.filter = `blur(${config.blur}px)`;
+
+        let alphaTexture, matBack, matFront;
+        const tilingEl = document.getElementById('tiling');
+        const tilingVal = document.getElementById('v-tiling');
+        const opacityEl = document.getElementById('opacity');
+        const opacityVal = document.getElementById('v-opacity');
+        
+        // 正六边形生成器
+        function createHexagonalTexture() {
+            const canvasTex = document.createElement('canvas');
+            canvasTex.width = 256; canvasTex.height = 256; 
+            const ctx = canvasTex.getContext('2d');
+            ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 256, 256);
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4.5;
+            
+            const hexRadius = 24; const h = hexRadius * Math.sqrt(3);
+            for (let y = -hexRadius; y < 256 + hexRadius; y += hexRadius * 1.5) {
+                let xOffset = (Math.floor(y / (hexRadius * 1.5)) % 2 === 0) ? 0 : h / 2;
+                for (let x = -h; x < 256 + h; x += h) {
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        let angle = (i * Math.PI) / 3;
+                        ctx.lineTo(x + xOffset + hexRadius * Math.cos(angle), y + hexRadius * Math.sin(angle));
+                    }
+                    ctx.closePath(); ctx.stroke();
+                }
+            }
+            alphaTexture = new THREE.CanvasTexture(canvasTex);
+            alphaTexture.wrapS = alphaTexture.wrapT = THREE.RepeatWrapping;
+            alphaTexture.minFilter = THREE.LinearMipmapLinearFilter;
+            alphaTexture.magFilter = THREE.LinearFilter;
+            alphaTexture.generateMipmaps = true;
+            alphaTexture.anisotropy = 8;
+            alphaTexture.repeat.set(config.tiling, config.tiling);
+            alphaTexture.needsUpdate = true; 
+        }
+
+        tilingEl.addEventListener('input', (e) => {
+            config.tiling = parseInt(e.target.value);
+            tilingVal.innerText = config.tiling;
+            if(alphaTexture) { alphaTexture.repeat.set(config.tiling, config.tiling); alphaTexture.needsUpdate = true; }
+        });
+
+        // 动态修改遮罩不透明度
+        opacityEl.addEventListener('input', (e) => {
+            config.opacity = parseFloat(e.target.value);
+            opacityVal.innerText = config.opacity;
+            if (matBack && matFront) {
+                matBack.opacity = config.opacity;
+                matFront.opacity = config.opacity;
+                matBack.needsUpdate = true;
+                matFront.needsUpdate = true;
+            }
+        });
+
+        class Particle {
+            constructor(x, y, z) {
+                this.position = new THREE.Vector3(x, y, z);
+                this.previous = new THREE.Vector3(x, y, z);
+                this.pinned = false;
+                this.forceAcc = new THREE.Vector3(0,0,0);
+            }
+            update() {
+                if (this.pinned) return;
+                let velX = (this.position.x - this.previous.x) * config.damping;
+                let velY = (this.position.y - this.previous.y) * config.damping;
+                let velZ = (this.position.z - this.previous.z) * config.damping;
+                this.previous.copy(this.position);
+                
+                let time = Date.now() * 0.0012;
+                let windForce = (Math.sin(time + this.position.x * 0.3) * 0.6 + Math.cos(time * 1.5 + this.position.y * 0.4) * 0.4) * config.wind;
+
+                this.position.x += velX + this.forceAcc.x;
+                this.position.y += velY - config.gravity + this.forceAcc.y; 
+                this.position.z += velZ + windForce + this.forceAcc.z;
+                this.forceAcc.set(0,0,0);
+            }
+        }
+
+        let particles = [], constraints = [], isUnveiled = false;
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0xdce0e2, 35, 90);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, -1, 44);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xb8bdc0, 0.9); scene.add(hemiLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.45); dirLight.position.set(12, 24, 18); scene.add(dirLight);
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.35); backLight.position.set(-15, 12, -22); scene.add(backLight);
+
+        createHexagonalTexture();
+
+        // ✨ 核心升级 2：计算全屏无死角物理裁切比例，大幅增加几何面域，使其超出摄像机视锥溢出边缘
+        let aspect = window.innerWidth / window.innerHeight;
+        let vHeight = 2 * 44 * Math.tan((45 * Math.PI) / 360) + 4; // 动态冗余高度
+        let vWidth = vHeight * aspect + 6;                       // 动态冗余宽度
+        
+        const geometry = new THREE.PlaneGeometry(vWidth, vHeight, config.xSegs, config.ySegs);
+        
+        const materialConfig = {
+            color: 0xffffff, roughness: 0.94, metalness: 0.0,
+            alphaMap: alphaTexture, transparent: true, opacity: config.opacity
+        };
+
+        matBack = new THREE.MeshStandardMaterial({...materialConfig, side: THREE.BackSide});
+        matFront = new THREE.MeshStandardMaterial({...materialConfig, side: THREE.FrontSide});
+
+        const meshBack = new THREE.Mesh(geometry, matBack); meshBack.renderOrder = 1; scene.add(meshBack);
+        const meshFront = new THREE.Mesh(geometry, matFront); meshFront.renderOrder = 2; scene.add(meshFront);
+
+        function initPhysics() {
+            particles = []; constraints = []; isUnveiled = false;
+            container.style.opacity = '1'; container.style.pointerEvents = 'auto';
+            layer2.style.opacity = '1'; layer2.style.pointerEvents = 'auto';
+            hint.innerText = "鼠标点按并大幅度向上/下滑动，即可掀开婚纱解锁中层文字";
+
+            // 复位几何体原始展平形态
+            const posAttr = geometry.attributes.position;
+            const initialGeo = new THREE.PlaneGeometry(vWidth, vHeight, config.xSegs, config.ySegs);
+            posAttr.copy(initialGeo.attributes.position);
+            initialGeo.dispose();
+
+            const restDistX = vWidth / config.xSegs;
+            const restDistY = vHeight / config.ySegs;
+
+            for (let i = 0; i < posAttr.count; i++) {
+                let x = posAttr.getX(i), y = posAttr.getY(i), z = posAttr.getZ(i);
+                let p = new Particle(x, y, z);
+                
+                let u = i % (config.xSegs + 1);
+                // 顶部定点固定约束锚点
+                if (y >= vHeight / 2 - 0.1 && (u % 7 === 0 || u === 0 || u === config.xSegs)) p.pinned = true; 
+                particles.push(p);
+            }
+
+            const idx = (u, v) => u + v * (config.xSegs + 1);
+            for (let v = 0; v <= config.ySegs; v++) {
+                for (let u = 0; u <= config.xSegs; u++) {
+                    if (u < config.xSegs) constraints.push([particles[idx(u, v)], particles[idx(u + 1, v)], restDistX]);
+                    if (v < config.ySegs) constraints.push([particles[idx(u, v)], particles[idx(u, v + 1)], restDistY]);
+                    if (u < config.xSegs && v < config.ySegs) constraints.push([particles[idx(u, v)], particles[idx(u + 1, v + 1)], Math.hypot(restDistX, restDistY)]);
+                }
+            }
+            for (let v = 0; v <= config.ySegs; v++) {
+                for (let u = 0; u <= config.xSegs; u++) {
+                    if (u < config.xSegs - 1) constraints.push([particles[idx(u, v)], particles[idx(u + 2, v)], restDistX * 2]);
+                    if (v < config.ySegs - 1) constraints.push([particles[idx(u, v)], particles[idx(u, v + 2)], restDistY * 2]);
+                }
+            }
+        }
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragPlane = new THREE.Plane();
+        const dragIntersection = new THREE.Vector3();
+        
+        let isDragging = false, startClientY = 0, targetCenterParticle = null;
+        let affectedParticles = []; 
+
+        window.addEventListener('mousedown', (e) => {
+            if (isUnveiled || e.clientX < 350) return; 
+
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(meshFront);
+            
+            if (intersects.length > 0) {
+                isDragging = true; startClientY = e.clientY;
+                const hitVertexIdx = intersects[0].face.a;
+                targetCenterParticle = particles[hitVertexIdx];
+                
+                dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()), targetCenterParticle.position);
+                
+                affectedParticles = [];
+                particles.forEach(p => {
+                    let dist = p.position.distanceTo(targetCenterParticle.position);
+                    if (dist < config.dragRadius) {
+                        let weight = Math.pow(1 - (dist / config.dragRadius), 2); 
+                        affectedParticles.push({ particle: p, weight: weight });
+                        if (!p.pinned) p.position.z += 2.0 * weight;
+                    }
+                });
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging || !targetCenterParticle) return;
+            
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            
+            if (raycaster.ray.intersectPlane(dragPlane, dragIntersection)) {
+                let deltaMove = dragIntersection.clone().sub(targetCenterParticle.position);
+                affectedParticles.forEach(item => {
+                    if (!item.particle.pinned) item.particle.position.addScaledVector(deltaMove, item.weight);
+                });
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!isDragging) return;
+            let swipeDeltaY = e.clientY - startClientY;
+            if (Math.abs(swipeDeltaY) > config.threshold) {
+                triggerFabricUnveil(swipeDeltaY < 0 ? 1 : -1); 
+            }
+            isDragging = false; targetCenterParticle = null; affectedParticles = []; 
+        });
+
+        function triggerFabricUnveil(dirSign) {
+            isUnveiled = true;
+            hint.innerText = "白纱已解开，中层交互按钮已解锁";
+
+            particles.forEach(p => {
+                p.pinned = false; 
+                p.forceAcc.set(0, dirSign * config.flightForce * 1.1, -config.flightForce * 0.5);
+            });
+
+            container.style.opacity = '0';
+            setTimeout(() => { container.style.pointerEvents = 'none'; }, 1200);
+        }
+
+        document.getElementById('say-yes-trigger').addEventListener('click', () => {
+            layer2.style.opacity = '0';
+            setTimeout(() => {
+                layer2.style.pointerEvents = 'none';
+                hint.innerText = "核心图层已全部解锁";
+            }, 1200);
+        });
+
+        // ✨ 核心升级 3：供全局一键物理级、重写数据缓冲区的真正复位函数
+        function resetSim() { 
+            initPhysics(); 
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            for (let p of particles) p.update();
+            
+            // 物理防自穿模排斥力
+            for (let i = 0; i < particles.length; i += 3) {
+                for (let j = i + 6; j < particles.length; j += 7) {
+                    let p1 = particles[i]; let p2 = particles[j];
+                    if (p1.pinned || p2.pinned) continue;
+                    
+                    let dx = p2.position.x - p1.position.x;
+                    let dy = p2.position.y - p1.position.y;
+                    let dz = p2.position.z - p1.position.z;
+                    let distSq = dx*dx + dy*dy + dz*dz;
+                    let limit = 1.4; 
+                    
+                    if (distSq < limit * limit && distSq > 0) {
+                        let dist = Math.sqrt(distSq);
+                        let push = (limit - dist) * 0.15; 
+                        p1.position.x -= (dx / dist) * push; p1.position.y -= (dy / dist) * push; p1.position.z -= (dz / dist) * push;
+                        p2.position.x += (dx / dist) * push; p2.position.y += (dy / dist) * push; p2.position.z += (dz / dist) * push;
+                    }
+                }
+            }
+
+            // 刚度求解
+            for (let i = 0; i < 4; i++) {
+                for (let c of constraints) {
+                    let p1 = c[0], p2 = c[1], restDist = c[2];
+                    let diff = p2.position.clone().sub(p1.position);
+                    let currentDist = diff.length();
+                    if (currentDist === 0) continue;
+                    let correction = diff.multiplyScalar(1 - restDist / currentDist).multiplyScalar(config.stiffness * 0.4);
+                    
+                    let p1Lock = isDragging && affectedParticles.some(a => a.particle === p1);
+                    let p2Lock = isDragging && affectedParticles.some(a => a.particle === p2);
+
+                    if (!p1.pinned) p1.position.addScaledVector(correction, p1Lock ? 0.08 : 0.5);
+                    if (!p2.pinned) p2.position.addScaledVector(correction, p2Lock ? -0.08 : -0.5);
+                }
+            }
+
+            const posAttr = geometry.attributes.position;
+            for (let i = 0; i < particles.length; i++) {
+                posAttr.setXYZ(i, particles[i].position.x, particles[i].position.y, particles[i].position.z);
+            }
+            posAttr.needsUpdate = true;
+            geometry.computeVertexNormals(); 
+
+            renderer.render(scene, camera);
+        }
+
+        // 缩放尺寸自适应刷新，确保面料永久铺满全屏
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            aspect = window.innerWidth / window.innerHeight;
+            vHeight = 2 * 44 * Math.tan((45 * Math.PI) / 360) + 4;
+            vWidth = vHeight * aspect + 6;
+            
+            geometry.dispose();
+            const newGeo = new THREE.PlaneGeometry(vWidth, vHeight, config.xSegs, config.ySegs);
+            geometry.attributes.position.copy(newGeo.attributes.position);
+            newGeo.dispose();
+            initPhysics();
+        });
+
+        initPhysics();
+        animate();
+    </script>
+</body>
+</html>
