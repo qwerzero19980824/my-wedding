@@ -1,0 +1,16 @@
+name = "my-wedding-poster-library"
+main = "src/index.js"
+compatibility_date = "2026-07-12"
+workers_dev = true
+preview_urls = false
+
+[[r2_buckets]]
+binding = "POSTERS"
+bucket_name = "wedding-posters"
+
+[vars]
+ALLOWED_ORIGINS = "https://www.cml-zy.love,https://cml-zy.love,http://127.0.0.1:8090,http://localhost:8090"
+MAX_ORIGINAL_BYTES = "83886080"
+
+# Never place UPLOAD_TOKEN in this file or Git.
+# Set it with: wrangler secret put UPLOAD_TOKEN

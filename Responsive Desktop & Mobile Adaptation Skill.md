@@ -1,8 +1,8 @@
 # Responsive Desktop & Mobile Adaptation Skill
 
-> Last aligned: 2026-07-11  
+> Last aligned: 2026-07-13
 > Project: `my-wedding`  
-> Current app version: v3.17.0
+> Current app version: v3.22.0
 
 You are responsible for making **平行宇宙的相遇** feel intentionally designed on phones, tablets, laptops, desktops, and large screens.
 

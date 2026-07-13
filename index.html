@@ -24,6 +24,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js">
     </script>
 
+
     <style>
         /* ==========================================
            CSS Reset & Design System Variables
@@ -275,6 +276,50 @@
             pointer-events: auto;
             opacity: 1;
             transition: opacity 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+            --cloth-light-x: 50%;
+            --cloth-light-y: 42%;
+            isolation: isolate;
+        }
+        #webgl-container canvas {
+            position: relative;
+            z-index: 1;
+            display: block;
+        }
+        #webgl-container::before,
+        #webgl-container::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.3;
+            transition: opacity 0.5s ease, filter 0.5s ease;
+        }
+        #webgl-container::before {
+            background:
+                radial-gradient(ellipse 32% 75% at var(--cloth-light-x) var(--cloth-light-y), rgba(255,255,255,0.5), transparent 60%),
+                radial-gradient(ellipse 78% 54% at 50% 42%, transparent 38%, rgba(255,245,230,0.2) 66%, transparent 82%);
+            mix-blend-mode: screen;
+            filter: blur(10px);
+        }
+        #webgl-container::after {
+            background:
+                repeating-linear-gradient(112deg, rgba(255,255,255,0.1) 0 1px, transparent 1px 12px),
+                repeating-linear-gradient(68deg, rgba(188,208,214,0.08) 0 1px, transparent 1px 17px),
+                linear-gradient(90deg, transparent 0 34%, rgba(255,255,255,0.12) 47%, transparent 62%);
+            mix-blend-mode: soft-light;
+            mask-image: radial-gradient(ellipse 72% 88% at center, #000 46%, transparent 86%);
+            -webkit-mask-image: radial-gradient(ellipse 72% 88% at center, #000 46%, transparent 86%);
+            filter: blur(0.35px);
+            opacity: 0.22;
+        }
+        #webgl-container.is-dragging::before {
+            opacity: 0.58;
+            filter: blur(6px);
+        }
+        #webgl-container.is-unveiled::before,
+        #webgl-container.is-unveiled::after {
+            opacity: 0;
         }
 
         /* ==========================================
@@ -1785,6 +1830,292 @@
             font-size: 0.88rem;
             font-weight: 500;
         }
+        .story-poster-carousel {
+            position: relative;
+            left: auto;
+            width: min(1320px, 100%);
+            margin: 0 auto clamp(2.8rem, 6vw, 5rem);
+            padding: clamp(1.8rem, 3vw, 3rem) max(1rem, calc((100vw - 1320px) / 2)) 1.2rem;
+            overflow: hidden;
+            border: 0;
+            border-radius: 0;
+            background:
+                radial-gradient(circle at 14% 22%, rgba(255,226,186,0.78) 0 1px, transparent 2px),
+                radial-gradient(circle at 84% 16%, rgba(244,194,194,0.62) 0 1px, transparent 2px),
+                radial-gradient(circle at 72% 76%, rgba(255,255,255,0.48) 0 1px, transparent 2px),
+                radial-gradient(ellipse at 50% 76%, rgba(137,78,45,0.42), transparent 37%),
+                radial-gradient(ellipse at center, rgba(46,52,82,0.62), transparent 58%),
+                linear-gradient(145deg, #02040a 0%, #0b1020 52%, #180f19 100%);
+            background-size: 170px 170px, 230px 230px, 290px 290px, auto, auto;
+            color: #fff;
+            box-shadow: 0 0 0 100vmax #050812;
+            clip-path: inset(0 -100vmax);
+            isolation: isolate;
+            touch-action: pan-y;
+            transform: none;
+        }
+        .story-poster-carousel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            background:
+                radial-gradient(ellipse at 50% 48%, transparent 0 27%, rgba(2,3,9,0.16) 47%, rgba(2,3,9,0.78) 100%),
+                linear-gradient(90deg, rgba(0,0,0,0.62), transparent 17% 83%, rgba(0,0,0,0.62));
+            pointer-events: none;
+            transition: background 0.8s ease;
+        }
+        .story-poster-carousel::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 7%;
+            z-index: 0;
+            width: min(520px, 58vw);
+            height: 32%;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(255,194,106,0.28), rgba(196,97,59,0.08) 48%, transparent 72%);
+            filter: blur(22px);
+            opacity: 0.58;
+            transform: translateX(-50%);
+            pointer-events: none;
+            transition: opacity 0.75s ease, transform 0.75s ease;
+        }
+        .story-poster-carousel.is-poster-focused::before {
+            background:
+                radial-gradient(ellipse at 50% 48%, transparent 0 19%, rgba(2,3,9,0.4) 35%, rgba(1,2,7,0.9) 100%),
+                linear-gradient(90deg, rgba(0,0,0,0.78), transparent 24% 76%, rgba(0,0,0,0.78));
+        }
+        .story-poster-carousel.is-poster-focused::after {
+            opacity: 1;
+            transform: translateX(-50%) scale(1.22);
+        }
+        .story-poster-viewport {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: clamp(370px, 46vw, 560px);
+            overflow: hidden;
+            perspective: 1500px;
+            perspective-origin: 50% 44%;
+            cursor: grab;
+        }
+        .story-poster-viewport:active { cursor: grabbing; }
+        .story-poster-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            pointer-events: none;
+        }
+        .story-poster-card {
+            position: absolute;
+            left: 50%;
+            top: 45%;
+            width: clamp(112px, 15.2vw, 202px);
+            aspect-ratio: 2 / 3;
+            opacity: 0;
+            transform: translate3d(-50%, -50%, -500px) scale(0.35);
+            transform-origin: 50% 75%;
+            filter: saturate(0.45) brightness(0.24) blur(1px);
+            pointer-events: none;
+            will-change: transform, opacity, filter;
+        }
+        .story-poster-card.is-visible { pointer-events: auto; }
+        .story-poster-card.is-visible { cursor: pointer; }
+        .story-poster-card.is-center .story-poster-card-inner {
+            border-color: rgba(255,224,174,0.64);
+        }
+        .story-poster-carousel.is-poster-focused .story-poster-card:not(.is-center) {
+            filter: saturate(0.28) brightness(0.2) blur(1.6px) !important;
+            opacity: 0.28 !important;
+        }
+        .story-poster-carousel.is-poster-focused .story-poster-card.is-center {
+            filter: saturate(1.08) brightness(1.12) drop-shadow(0 0 20px rgba(255,197,112,0.82)) !important;
+        }
+        .story-poster-card-inner {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.28);
+            border-radius: 7px;
+            background: linear-gradient(145deg, #4d3439, #101621 70%);
+            box-shadow: 0 20px 44px rgba(0,0,0,0.62), 0 0 0 1px rgba(255,255,255,0.04) inset;
+            transition: border-color 0.5s ease, box-shadow 0.7s ease;
+        }
+        .story-poster-carousel.is-poster-focused .story-poster-card.is-center .story-poster-card-inner {
+            box-shadow:
+                0 28px 64px rgba(0,0,0,0.72),
+                0 0 22px rgba(255,197,112,0.82),
+                0 0 70px rgba(204,92,48,0.72);
+        }
+        .story-poster-card img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .story-poster-card-inner::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.82));
+        }
+        .story-poster-copy {
+            position: relative;
+            z-index: 1;
+            padding: 1rem;
+        }
+        .story-poster-copy small {
+            display: block;
+            margin-bottom: 0.45rem;
+            color: rgba(244,194,194,0.88);
+            font-size: 0.62rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+        .story-poster-copy strong {
+            display: block;
+            font-family: "Playfair Display", "Noto Serif SC", Georgia, serif;
+            font-size: clamp(1.02rem, 1.7vw, 1.42rem);
+            font-weight: 400;
+            line-height: 1.2;
+        }
+        .story-poster-empty {
+            display: grid;
+            place-items: center;
+            width: min(420px, 80vw);
+            height: 100%;
+            margin: auto;
+            color: rgba(255,255,255,0.62);
+            text-align: center;
+            line-height: 1.9;
+        }
+        .story-poster-controls {
+            position: relative;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+        .story-poster-controls button {
+            min-width: 38px;
+            min-height: 34px;
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            cursor: pointer;
+        }
+        .story-poster-controls button:hover,
+        .story-poster-controls button:focus-visible { background: rgba(244,194,194,0.24); }
+        .story-poster-status {
+            min-width: 96px;
+            color: rgba(255,255,255,0.62);
+            font-size: 0.72rem;
+            letter-spacing: 0.16em;
+            text-align: center;
+        }
+        .story-poster-focus-caption {
+            position: relative;
+            z-index: 32;
+            width: min(760px, calc(100% - 2rem));
+            min-height: 1.8em;
+            margin: -0.2rem auto 0.7rem;
+            color: #fff;
+            font-family: "Noto Serif SC", Georgia, serif;
+            font-size: var(--story-poster-caption-size, 20px);
+            font-weight: 400;
+            line-height: 1.55;
+            text-align: center;
+            text-shadow: 0 2px 18px rgba(0,0,0,0.92);
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.42s ease, transform 0.42s ease;
+        }
+        .story-poster-carousel.is-poster-focused .story-poster-focus-caption {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        body.edit-mode .story-poster-focus-caption[contenteditable="true"] {
+            outline: 1px dashed rgba(255,255,255,0.5);
+            outline-offset: 5px;
+            border-radius: 3px;
+        }
+        .story-poster-editor-controls {
+            position: relative;
+            z-index: 34;
+            display: none;
+            width: min(920px, calc(100% - 2rem));
+            margin: 0 auto 1rem;
+            padding: 0.7rem 0.9rem;
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 10px;
+            background: rgba(7,10,18,0.7);
+            color: rgba(255,255,255,0.78);
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.65rem 1rem;
+            font-size: 0.72rem;
+        }
+        body.edit-mode .story-poster-editor-controls { display: flex; }
+        .story-poster-editor-controls button {
+            min-height: 36px;
+            padding: 0 1rem;
+            border: 1px solid rgba(255,255,255,0.24);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            cursor: pointer;
+        }
+        .story-poster-editor-controls label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .story-poster-editor-controls input[type="range"] { width: 130px; }
+        .story-poster-library-status { color: rgba(255,255,255,0.58); }
+        @media (max-width: 768px) {
+            .story-poster-carousel {
+                width: 100%;
+                margin-left: 0;
+                padding-left: 0.45rem;
+                padding-right: 0.45rem;
+                border-radius: 0;
+            }
+            .story-poster-viewport {
+                height: clamp(330px, 116vw, 470px);
+                perspective: 1050px;
+            }
+            .story-poster-card {
+                top: 46%;
+                width: clamp(102px, 31vw, 142px);
+            }
+            .story-poster-copy { padding: 0.72rem; }
+            .story-poster-copy strong { font-size: clamp(0.78rem, 3.2vw, 1rem); }
+            .story-poster-copy small { font-size: 0.5rem; }
+            .story-poster-focus-caption {
+                width: calc(100% - 2.2rem);
+                margin-top: -0.35rem;
+            }
+            .story-poster-editor-controls {
+                width: calc(100% - 1.3rem);
+                align-items: stretch;
+                flex-direction: column;
+            }
+            .story-poster-editor-controls label { justify-content: space-between; }
+            .story-poster-editor-controls input[type="range"] { width: min(180px, 46vw); }
+        }
         .story-module-list {
             width: min(900px, 100%);
             margin: 0 auto;
@@ -2115,7 +2446,7 @@
         }
         .polaroid-board {
             --polaroid-gap: 18px;
-            --polaroid-card-w: clamp(72px, calc((80vw - 6 * var(--polaroid-gap)) / 7), 132px);
+            --polaroid-card-w: clamp(72px, 10vw, 140px);
             --polaroid-hover-scale: 1.6;
             --polaroid-note-size: 22px;
             position: relative;
@@ -2341,7 +2672,7 @@
             background: rgba(255,255,255,0.64);
             color: rgba(40,48,51,0.78);
             font-family: "Noto Serif SC", Georgia, serif;
-            font-size: clamp(0.52rem, 0.62vw, 0.66rem);
+            font-size: var(--polaroid-button-size, 10px);
             letter-spacing: 0.04em;
             line-height: 1;
             cursor: pointer;
@@ -2353,26 +2684,46 @@
         .polaroid-flip-btn {
             left: calc(var(--card-w) * 0.08);
             bottom: calc(var(--card-w) * 0.055);
-            width: auto;
-            min-width: clamp(30px, 2.7vw, 38px);
-            height: clamp(20px, 1.7vw, 24px);
+            width: var(--polaroid-button-width, 38px);
+            min-width: var(--polaroid-button-width, 38px);
+            height: var(--polaroid-button-height, 24px);
+            min-height: var(--polaroid-button-height, 24px);
             padding: 0 0.34rem;
         }
-        .polaroid-story-btn {
+        .polaroid-upload-btn {
+            left: auto;
             right: calc(var(--card-w) * 0.08);
             bottom: calc(var(--card-w) * 0.055);
-            width: auto;
-            min-width: clamp(30px, 2.7vw, 38px);
-            height: clamp(20px, 1.7vw, 24px);
+            width: var(--polaroid-button-width, 38px);
+            min-width: var(--polaroid-button-width, 38px);
+            height: var(--polaroid-button-height, 24px);
+            min-height: var(--polaroid-button-height, 24px);
             padding: 0 0.34rem;
-            opacity: 0.7;
+            opacity: 0.72;
+            transform: none;
+            z-index: 4;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(40,48,51,0.14);
+            border-radius: 5px;
+            background: rgba(255,255,255,0.64);
+            color: rgba(40,48,51,0.78);
+            font-family: "Noto Serif SC", Georgia, serif;
+            font-size: var(--polaroid-button-size, 10px);
+            letter-spacing: 0.04em;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(73,63,48,0.12);
+            backdrop-filter: blur(8px);
+            transition: opacity 0.22s ease, transform 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+        }
+        body.edit-mode .polaroid-card .polaroid-upload-btn {
+            opacity: 0.88;
         }
         .polaroid-flip-btn:hover,
         .polaroid-flip-btn:focus-visible,
-        .polaroid-card:focus-within .polaroid-story-btn,
-        .polaroid-card.is-polaroid-active .polaroid-story-btn,
-        .polaroid-story-btn:hover,
-        .polaroid-story-btn:focus-visible {
+        .polaroid-upload-btn:hover,
+        .polaroid-upload-btn:focus-visible {
             opacity: 1;
             transform: scale(1.08);
             background: #fff;
@@ -2457,7 +2808,31 @@
         }
         .polaroid-gap-control,
         .polaroid-scale-control,
-        .polaroid-note-size-control {
+        .polaroid-note-size-control,
+        .polaroid-button-size-control,
+        .polaroid-button-font-size-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            min-height: 36px;
+            padding: 0.45rem 0.75rem;
+            border-radius: 7px;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(40,48,51,0.12);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.07);
+        }
+        .polaroid-button-size-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            min-height: 36px;
+            padding: 0.45rem 0.75rem;
+            border-radius: 7px;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(40,48,51,0.12);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.07);
+        }
+        .polaroid-button-font-size-control {
             display: inline-flex;
             align-items: center;
             gap: 0.65rem;
@@ -2480,6 +2855,11 @@
             width: min(190px, 34vw);
             accent-color: #a92929;
         }
+        .polaroid-button-size-control input,
+        .polaroid-button-font-size-control input {
+            width: min(190px, 34vw);
+            accent-color: #a92929;
+        }
         .polaroid-gap-value,
         .polaroid-scale-value,
         .polaroid-note-size-value {
@@ -2489,17 +2869,20 @@
             font-size: 0.78rem;
         }
         .polaroid-wall-section.is-arranged .polaroid-board {
-            width: min(80vw, 1120px);
+            width: min(94vw, 1120px);
             min-height: auto;
             display: grid;
-            grid-template-columns: repeat(7, var(--polaroid-card-w));
-            gap: var(--polaroid-gap);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: clamp(8px, 1.4vw, var(--polaroid-gap));
             justify-content: center;
             align-items: start;
         }
         .polaroid-wall-section.is-arranged .polaroid-card {
             --card-w: var(--polaroid-card-w);
             position: relative;
+            left: auto;
+            top: auto;
+            width: 100%;
             transform: none;
         }
         .polaroid-wall-section.is-arranged .polaroid-card-inner {
@@ -2600,8 +2983,10 @@
             overflow: auto;
         }
         .memory-polaroid .polaroid-flip-btn {
-            width: 2.35em;
-            height: 2.35em;
+            width: var(--polaroid-button-width, 38px);
+            min-width: var(--polaroid-button-width, 38px);
+            height: var(--polaroid-button-height, 24px);
+            min-height: var(--polaroid-button-height, 24px);
             opacity: 1;
         }
         .polaroid-memory-hint {
@@ -3403,8 +3788,8 @@
                 --polaroid-hover-scale: 1.18;
             }
             .polaroid-wall-section.is-arranged .polaroid-board {
-                grid-template-columns: repeat(4, var(--polaroid-card-w));
-                --polaroid-card-w: clamp(64px, calc((80vw - 3 * var(--polaroid-gap)) / 4), 118px);
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                --polaroid-card-w: clamp(64px, 20vw, 108px);
             }
             .polaroid-memory-stage {
                 grid-template-columns: 1fr;
@@ -3530,6 +3915,10 @@
             .polaroid-gap-control,
             .polaroid-scale-control,
             .polaroid-note-size-control {
+                flex: 1 1 100%;
+            }
+            .polaroid-button-size-control,
+            .polaroid-button-font-size-control {
                 flex: 1 1 100%;
             }
             .polaroid-controls > button {
@@ -3934,6 +4323,27 @@
                 <div class="story-arc-step"><span>05 · EVERYDAY</span><strong>平凡日常</strong></div>
                 <div class="story-arc-step"><span>06 · FOREVER</span><strong>走向余生</strong></div>
             </div>
+            <section class="story-poster-carousel" id="storyPosterCarousel" aria-label="线性叙事海报轮换">
+                <div class="story-poster-editor-controls" id="storyPosterEditorControls" aria-label="海报图片库设置">
+                    <button type="button" id="storyPosterUploadBtn">批量上传海报照片</button>
+                    <button type="button" id="storyPosterCloudBtn">云端图库设置</button>
+                    <input type="file" id="storyPosterUploadInput" accept="image/*" multiple hidden>
+                    <label>字幕字号
+                        <input type="range" id="storyPosterCaptionSizeInput" min="14" max="38" step="1" value="20">
+                        <span id="storyPosterCaptionSizeValue">20px</span>
+                    </label>
+                    <span class="story-poster-library-status" id="storyPosterLibraryStatus">本机海报库 0 张</span>
+                </div>
+                <div class="story-poster-viewport" id="storyPosterViewport" tabindex="0" aria-label="拖动或使用方向键轮换故事海报">
+                    <div class="story-poster-track" id="storyPosterTrack"></div>
+                </div>
+                <div class="story-poster-focus-caption" id="storyPosterFocusCaption" aria-live="polite"></div>
+                <div class="story-poster-controls">
+                    <button type="button" data-poster-action="prev" aria-label="上一张海报">‹</button>
+                    <span class="story-poster-status" id="storyPosterStatus">01 / 01</span>
+                    <button type="button" data-poster-action="next" aria-label="下一张海报">›</button>
+                </div>
+            </section>
             <div class="story-module-list" id="storyModuleList"></div>
         </section>
 
@@ -3966,9 +4376,20 @@
                     <input type="range" id="polaroidNoteSizeInput" min="14" max="36" step="1" value="22">
                     <span class="polaroid-note-size-value" id="polaroidNoteSizeValue">22px</span>
                 </label>
+                <label class="polaroid-button-size-control" data-polaroid-edit-only>
+                    <span>按钮大</span>
+                    <input type="range" id="polaroidButtonSizeInput" min="28" max="54" step="1" value="38">
+                    <span class="polaroid-button-size-value" id="polaroidButtonSizeValue">38px</span>
+                </label>
+                <label class="polaroid-button-font-size-control" data-polaroid-edit-only>
+                    <span>按钮字</span>
+                    <input type="range" id="polaroidButtonFontSizeInput" min="8" max="16" step="1" value="10">
+                    <span class="polaroid-button-font-size-value" id="polaroidButtonFontSizeValue">10px</span>
+                </label>
                 <button type="button" id="polaroidSaveGapBtn" data-polaroid-edit-only>保存间距</button>
                 <button type="button" id="polaroidSaveScaleBtn" data-polaroid-edit-only>保存放大倍数</button>
                 <button type="button" id="polaroidSaveNoteSizeBtn" data-polaroid-edit-only>保存字大小</button>
+                <button type="button" id="polaroidSaveButtonSizeBtn" data-polaroid-edit-only>保存按钮配置</button>
             </div>
             <div class="polaroid-memory-overlay" id="polaroidMemoryOverlay" aria-hidden="true">
                 <div class="polaroid-memory-stage" role="dialog" aria-modal="true" aria-label="相纸记忆展开">
@@ -4131,8 +4552,8 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.17.0";
-        const BUILD_DATE = "2026-07-11";
+        const APP_VERSION = "3.22.0";
+        const BUILD_DATE = "2026-07-12";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
         const DEFAULTS = {
@@ -4417,6 +4838,10 @@
         const POLAROID_STORAGE_KEY = 'wedding_polaroids_v1';
         const POLAROID_LAYOUT_STORAGE_KEY = 'wedding_polaroid_layout_v1';
         const ROUTE_LABEL_SIZE_STORAGE_KEY = 'wedding_route_label_size_v1';
+        const STORY_POSTER_CONFIG_STORAGE_KEY = 'wedding_story_poster_config_v1';
+        const DEFAULT_STORY_POSTER_CLOUD_ENDPOINT = 'https://my-wedding-poster-library.yuyanp52.workers.dev';
+        const STORY_POSTER_DB_NAME = 'wedding_story_poster_library_v1';
+        const STORY_POSTER_DB_STORE = 'posters';
         const CONTENT_PACKAGE_FORMAT = 'my-wedding-content';
         const CONTENT_PACKAGE_VERSION = 1;
         const LOCAL_STORAGE_SOFT_LIMIT = 4.5 * 1024 * 1024;
@@ -4430,12 +4855,15 @@
             FIXED_PHOTO_STORAGE_KEY,
             POLAROID_STORAGE_KEY,
             POLAROID_LAYOUT_STORAGE_KEY,
-            ROUTE_LABEL_SIZE_STORAGE_KEY
+            ROUTE_LABEL_SIZE_STORAGE_KEY,
+            STORY_POSTER_CONFIG_STORAGE_KEY
         ];
         const POLAROID_COUNT = 28;
         const DEFAULT_POLAROID_GAP = 18;
         const DEFAULT_POLAROID_HOVER_SCALE = 1.45;
         const DEFAULT_POLAROID_NOTE_SIZE = 22;
+        const DEFAULT_POLAROID_BUTTON_SIZE = 10;
+        const DEFAULT_POLAROID_BUTTON_BOX_SIZE = 38;
         const DEFAULT_POLAROID_NOTE = '写给这张照片的话';
         const DEFAULT_ROUTE_LABEL_SIZE = 22;
         const FIXED_PHOTO_IDS = ['track-left', 'track-right', 'merged-1', 'merged-2', 'merged-3'];
@@ -4459,6 +4887,7 @@
         const importContentInput = document.getElementById('importContentInput');
         const fixedPhotoInput = document.getElementById('fixedPhotoInput');
         const modulePhotoInput = document.getElementById('modulePhotoInput');
+        const storyPosterUploadInput = document.getElementById('storyPosterUploadInput');
         const freePhotoInput = document.getElementById('freePhotoInput');
         const editorStorageMeter = document.getElementById('editorStorageMeter');
         const editorStorageValue = document.getElementById('editorStorageValue');
@@ -4485,11 +4914,34 @@
             arranged: false,
             gap: DEFAULT_POLAROID_GAP,
             hoverScale: DEFAULT_POLAROID_HOVER_SCALE,
-            noteFontSize: DEFAULT_POLAROID_NOTE_SIZE
+            noteFontSize: DEFAULT_POLAROID_NOTE_SIZE,
+            buttonSize: DEFAULT_POLAROID_BUTTON_BOX_SIZE,
+            buttonFontSize: DEFAULT_POLAROID_BUTTON_SIZE
         };
         let polaroidSaveDebounce = null;
         let activeMemoryNumber = null;
         let isMemoryStoryVisible = false;
+        let storyPosterIndex = 0;
+        let storyPosterPosition = 0;
+        let storyPosterAnimationFrame = 0;
+        let storyPosterPhase = 'spin';
+        let storyPosterPhaseStarted = 0;
+        let storyPosterSettle = null;
+        let storyPosterDrag = null;
+        let storyPosterVisible = true;
+        let storyPosterLibraryItems = [];
+        let storyPosterCloudItems = [];
+        let storyPosterObjectUrls = [];
+        let storyPosterPendingFocus = false;
+        let storyPosterFocusedItem = null;
+        let storyPosterSuppressClick = false;
+        let storyPosterCaptionSize = 20;
+        let storyPosterAudioContext = null;
+        let storyPosterLastTickIndex = null;
+        let storyPosterTickEnabled = false;
+        let storyPosterFocusedOriginalUrl = null;
+        let storyPosterCloudEndpoint = '';
+        let storyPosterCloudToken = '';
         let lastMemoryTrigger = null;
         const contentDirty = new Map();
         const MAX_UNDO_STEPS = 30;
@@ -4638,6 +5090,12 @@
                 return String(clamp(Number(rawValue || DEFAULT_ROUTE_LABEL_SIZE), 16, 42));
             }
             const parsed = JSON.parse(rawValue);
+            if (key === STORY_POSTER_CONFIG_STORAGE_KEY) {
+                return JSON.stringify({
+                    captionSize: clamp(Number(parsed && parsed.captionSize || 20), 14, 38),
+                    cloudEndpoint: normalizeStoryPosterCloudEndpoint(parsed && parsed.cloudEndpoint || '')
+                });
+            }
             if (key === FIXED_PHOTO_STORAGE_KEY) {
                 const safePhotos = {};
                 if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
@@ -5798,32 +6256,32 @@
             const saveScaleBtn = document.getElementById('polaroidSaveScaleBtn');
             const noteSizeInput = document.getElementById('polaroidNoteSizeInput');
             const saveNoteSizeBtn = document.getElementById('polaroidSaveNoteSizeBtn');
+            const buttonSizeInput = document.getElementById('polaroidButtonSizeInput');
+            const buttonFontSizeInput = document.getElementById('polaroidButtonFontSizeInput');
+            const saveButtonSizeBtn = document.getElementById('polaroidSaveButtonSizeBtn');
 
-            let nextLayoutIsScatter = true;
             if (layoutToggleBtn) {
                 layoutToggleBtn.addEventListener('click', () => {
-                    if (nextLayoutIsScatter) {
+                    if (polaroidLayout.arranged) {
                         polaroidLayout.arranged = false;
                         polaroidLayout.scatter = createRandomPolaroidScatter();
                         renderPolaroidWall();
-                        showToast('28 张相纸已随机摆放', 1400);
+                        showToast('28 张相纸已重新随机摆放', 1400);
                     } else {
                         polaroidLayout.arranged = true;
-                        showToast('已按 1–28 排列摆放', 1400);
+                        showToast('已按 1–28 横竖对齐排列', 1400);
                     }
-                    nextLayoutIsScatter = !nextLayoutIsScatter;
-                    layoutToggleBtn.textContent = nextLayoutIsScatter ? '随机摆放' : '排列摆放';
+                    updatePolaroidActionLabels();
                     savePolaroidLayout();
                     applyPolaroidLayout();
                 });
             }
-            let nextFlipAll = true;
             if (flipToggleBtn) {
                 flipToggleBtn.addEventListener('click', () => {
-                    setAllPolaroidsFlipped(nextFlipAll);
-                    showToast(nextFlipAll ? '28 张相纸都翻到背面了' : '已全部恢复到正面', 1500);
-                    nextFlipAll = !nextFlipAll;
-                    flipToggleBtn.textContent = nextFlipAll ? '一键翻面' : '一键复原';
+                    const shouldFlip = !polaroidItems.every(item => item.flipped);
+                    setAllPolaroidsFlipped(shouldFlip);
+                    showToast(shouldFlip ? '28 张相纸都翻到背面了' : '已全部恢复到正面', 1500);
+                    updatePolaroidActionLabels();
                 });
             }
             if (gapInput) {
@@ -5841,6 +6299,18 @@
             if (noteSizeInput) {
                 noteSizeInput.addEventListener('input', () => {
                     polaroidLayout.noteFontSize = clamp(Number(noteSizeInput.value || DEFAULT_POLAROID_NOTE_SIZE), 14, 36);
+                    applyPolaroidLayout();
+                });
+            }
+            if (buttonSizeInput) {
+                buttonSizeInput.addEventListener('input', () => {
+                    polaroidLayout.buttonSize = clamp(Number(buttonSizeInput.value || DEFAULT_POLAROID_BUTTON_BOX_SIZE), 28, 54);
+                    applyPolaroidLayout();
+                });
+            }
+            if (buttonFontSizeInput) {
+                buttonFontSizeInput.addEventListener('input', () => {
+                    polaroidLayout.buttonFontSize = clamp(Number(buttonFontSizeInput.value || DEFAULT_POLAROID_BUTTON_SIZE), 8, 16);
                     applyPolaroidLayout();
                 });
             }
@@ -5862,6 +6332,20 @@
                     showToast(`背面字大小已保存：${polaroidLayout.noteFontSize}px`, 1700);
                 });
             }
+            if (saveButtonSizeBtn) {
+                saveButtonSizeBtn.addEventListener('click', () => {
+                    savePolaroidLayout();
+                    showToast(`按钮配置已保存：${polaroidLayout.buttonSize}px / ${polaroidLayout.buttonFontSize}px（尺寸已锁定）`, 2200);
+                });
+            }
+            updatePolaroidActionLabels();
+        }
+
+        function updatePolaroidActionLabels() {
+            const layoutButton = document.getElementById('polaroidLayoutToggleBtn');
+            const flipButton = document.getElementById('polaroidFlipToggleBtn');
+            if (layoutButton) layoutButton.textContent = polaroidLayout.arranged ? '随机摆放' : '一键排列';
+            if (flipButton) flipButton.textContent = polaroidItems.length && polaroidItems.every(item => item.flipped) ? '一键复位' : '一键翻面';
         }
 
         function loadPolaroidItems() {
@@ -5928,6 +6412,8 @@
                     gap: clamp(Number(saved.gap || DEFAULT_POLAROID_GAP), 4, 42),
                     hoverScale: clamp(Number(saved.hoverScale || DEFAULT_POLAROID_HOVER_SCALE), 1.05, 1.45),
                     noteFontSize: clamp(Number(saved.noteFontSize || DEFAULT_POLAROID_NOTE_SIZE), 14, 36),
+                    buttonSize: clamp(Number(saved.buttonSize || DEFAULT_POLAROID_BUTTON_BOX_SIZE), 28, 54),
+                    buttonFontSize: clamp(Number(saved.buttonFontSize || DEFAULT_POLAROID_BUTTON_SIZE), 8, 16),
                     scatter: sanitizePolaroidScatter(saved.scatter)
                 };
             } catch (e) {
@@ -5936,6 +6422,8 @@
                     gap: DEFAULT_POLAROID_GAP,
                     hoverScale: DEFAULT_POLAROID_HOVER_SCALE,
                     noteFontSize: DEFAULT_POLAROID_NOTE_SIZE,
+                    buttonSize: DEFAULT_POLAROID_BUTTON_BOX_SIZE,
+                    buttonFontSize: DEFAULT_POLAROID_BUTTON_SIZE,
                     scatter: null
                 };
             }
@@ -5948,6 +6436,8 @@
                     gap: clamp(Number(polaroidLayout.gap || DEFAULT_POLAROID_GAP), 4, 42),
                     hoverScale: clamp(Number(polaroidLayout.hoverScale || DEFAULT_POLAROID_HOVER_SCALE), 1.05, 1.45),
                     noteFontSize: clamp(Number(polaroidLayout.noteFontSize || DEFAULT_POLAROID_NOTE_SIZE), 14, 36),
+                    buttonSize: clamp(Number(polaroidLayout.buttonSize || DEFAULT_POLAROID_BUTTON_BOX_SIZE), 28, 54),
+                    buttonFontSize: clamp(Number(polaroidLayout.buttonFontSize || DEFAULT_POLAROID_BUTTON_SIZE), 8, 16),
                     scatter: sanitizePolaroidScatter(polaroidLayout.scatter)
                 }));
             } catch (e) { /* ignore */ }
@@ -6003,16 +6493,14 @@
                                     ${imageMarkup}
                                     <div class="polaroid-placeholder">添加照片</div>
                                 </button>
-                                <button type="button" class="polaroid-upload-btn" data-polaroid-action="upload">换照片</button>
+                                <button type="button" class="polaroid-upload-btn" data-polaroid-action="upload" data-polaroid-edit-only>${item.front ? '更换照片' : '上传照片'}</button>
                                 <input class="polaroid-file-input" type="file" accept="image/*">
-                                <button type="button" class="polaroid-story-btn" data-polaroid-action="memory" aria-label="打开第 ${number} 张拍立得回忆">回忆</button>
                                 <button type="button" class="polaroid-flip-btn" data-polaroid-action="flip" aria-label="翻到第 ${number} 张拍立得背面">翻转</button>
                                 <span class="polaroid-number">${number}</span>
                             </div>
                             <div class="polaroid-face polaroid-back">
                                 <div class="polaroid-note" contenteditable="true" data-polaroid-field="note">${note}</div>
-                                <button type="button" class="polaroid-story-btn" data-polaroid-action="memory" aria-label="打开第 ${number} 张拍立得回忆">回忆</button>
-                                <button type="button" class="polaroid-flip-btn" data-polaroid-action="flip" aria-label="翻回第 ${number} 张拍立得正面">翻转</button>
+                                <button type="button" class="polaroid-flip-btn" data-polaroid-action="flip" aria-label="回到第 ${number} 张拍立得照片正面">回到照片</button>
                                 <span class="polaroid-number">${number}-2</span>
                             </div>
                         </div>
@@ -6030,24 +6518,39 @@
             const hoverScaleValue = document.getElementById('polaroidHoverScaleValue');
             const noteSizeInput = document.getElementById('polaroidNoteSizeInput');
             const noteSizeValue = document.getElementById('polaroidNoteSizeValue');
+            const buttonSizeInput = document.getElementById('polaroidButtonSizeInput');
+            const buttonSizeValue = document.getElementById('polaroidButtonSizeValue');
+            const buttonFontSizeInput = document.getElementById('polaroidButtonFontSizeInput');
+            const buttonFontSizeValue = document.getElementById('polaroidButtonFontSizeValue');
             if (!section || !board) return;
 
             const gap = clamp(Number(polaroidLayout.gap || DEFAULT_POLAROID_GAP), 4, 42);
             const hoverScale = clamp(Number(polaroidLayout.hoverScale || DEFAULT_POLAROID_HOVER_SCALE), 1.05, 1.45);
             const noteFontSize = clamp(Number(polaroidLayout.noteFontSize || DEFAULT_POLAROID_NOTE_SIZE), 14, 36);
+            const buttonSize = clamp(Number(polaroidLayout.buttonSize || DEFAULT_POLAROID_BUTTON_BOX_SIZE), 28, 54);
+            const buttonFontSize = clamp(Number(polaroidLayout.buttonFontSize || DEFAULT_POLAROID_BUTTON_SIZE), 8, 16);
             polaroidLayout.gap = gap;
             polaroidLayout.hoverScale = hoverScale;
             polaroidLayout.noteFontSize = noteFontSize;
+            polaroidLayout.buttonSize = buttonSize;
+            polaroidLayout.buttonFontSize = buttonFontSize;
             section.classList.toggle('is-arranged', Boolean(polaroidLayout.arranged));
             board.style.setProperty('--polaroid-gap', `${gap}px`);
             board.style.setProperty('--polaroid-hover-scale', String(hoverScale));
             board.style.setProperty('--polaroid-note-size', `${noteFontSize}px`);
+            board.style.setProperty('--polaroid-button-width', `${buttonSize}px`);
+            board.style.setProperty('--polaroid-button-height', `${Math.max(22, Math.round(buttonSize * 0.63))}px`);
+            board.style.setProperty('--polaroid-button-size', `${buttonFontSize}px`);
             if (gapInput) gapInput.value = String(gap);
             if (gapValue) gapValue.textContent = `${gap}px`;
             if (hoverScaleInput) hoverScaleInput.value = hoverScale.toFixed(2);
             if (hoverScaleValue) hoverScaleValue.textContent = formatPolaroidScale(hoverScale);
             if (noteSizeInput) noteSizeInput.value = String(noteFontSize);
             if (noteSizeValue) noteSizeValue.textContent = `${noteFontSize}px`;
+            if (buttonSizeInput) buttonSizeInput.value = String(buttonSize);
+            if (buttonSizeValue) buttonSizeValue.textContent = `${buttonSize}px`;
+            if (buttonFontSizeInput) buttonFontSizeInput.value = String(buttonFontSize);
+            if (buttonFontSizeValue) buttonFontSizeValue.textContent = `${buttonFontSize}px`;
         }
 
         function formatPolaroidScale(value) {
@@ -6059,6 +6562,7 @@
             if (uploadBtn) {
                 e.preventDefault();
                 e.stopPropagation();
+                if (!isEditMode) return;
                 const card = uploadBtn.closest('.polaroid-card');
                 if (!card || card.classList.contains('is-flipped')) return;
                 const input = card ? card.querySelector('.polaroid-file-input') : null;
@@ -6385,7 +6889,7 @@
                 });
         }
 
-        function resizePolaroidImage(file) {
+        function resizePolaroidImage(file, options = {}) {
             return new Promise((resolve, reject) => {
                 if (!file || !file.type || !file.type.startsWith('image/')) {
                     reject(new Error('not-image'));
@@ -6398,21 +6902,29 @@
                     const img = new Image();
                     img.onerror = reject;
                     img.onload = () => {
-                        const maxEdge = 900;
+                        const maxEdge = Number(options.maxEdge) || 900;
+                        const targetBytes = Number(options.targetBytes) || 96 * 1024;
+                        const minimumQuality = Number(options.minimumQuality) || 0.42;
                         const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
-                        const width = Math.max(1, Math.round(img.width * scale));
-                        const height = Math.max(1, Math.round(img.height * scale));
+                        let width = Math.max(1, Math.round(img.width * scale));
+                        let height = Math.max(1, Math.round(img.height * scale));
                         const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        const targetBytes = 96 * 1024;
+                        let dataUrl = '';
                         let quality = 0.82;
-                        let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                        while (new Blob([dataUrl]).size > targetBytes && quality > 0.42) {
-                            quality -= 0.08;
+                        for (let resizePass = 0; resizePass < 5; resizePass += 1) {
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx.drawImage(img, 0, 0, width, height);
+                            quality = 0.82;
                             dataUrl = canvas.toDataURL('image/jpeg', quality);
+                            while (new Blob([dataUrl]).size > targetBytes && quality > minimumQuality) {
+                                quality = Math.max(minimumQuality, quality - 0.07);
+                                dataUrl = canvas.toDataURL('image/jpeg', quality);
+                            }
+                            if (new Blob([dataUrl]).size <= targetBytes || Math.max(width, height) <= 360) break;
+                            width = Math.max(1, Math.round(width * 0.82));
+                            height = Math.max(1, Math.round(height * 0.82));
                         }
                         resolve(dataUrl);
                     };
@@ -6505,6 +7017,7 @@
             storyModuleList.addEventListener('input', onStoryModuleInput);
             storyModuleList.addEventListener('blur', onStoryModuleBlur, true);
             if (modulePhotoInput) modulePhotoInput.addEventListener('change', onModulePhotoFileChange);
+            initStoryPosterCarousel();
         }
 
         function createStoryModule(type) {
@@ -6586,14 +7099,753 @@
             }
         }
 
+        function openStoryPosterDatabase() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) {
+                    reject(new Error('indexeddb-unavailable'));
+                    return;
+                }
+                const request = indexedDB.open(STORY_POSTER_DB_NAME, 1);
+                request.onerror = () => reject(request.error || new Error('indexeddb-open-failed'));
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(STORY_POSTER_DB_STORE)) {
+                        db.createObjectStore(STORY_POSTER_DB_STORE, { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+            });
+        }
+
+        async function getStoryPosterLibraryRecords() {
+            const db = await openStoryPosterDatabase();
+            try {
+                return await new Promise((resolve, reject) => {
+                    const request = db.transaction(STORY_POSTER_DB_STORE, 'readonly').objectStore(STORY_POSTER_DB_STORE).getAll();
+                    request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
+                    request.onerror = () => reject(request.error || new Error('indexeddb-read-failed'));
+                });
+            } finally {
+                db.close();
+            }
+        }
+
+        async function putStoryPosterLibraryRecord(record) {
+            const db = await openStoryPosterDatabase();
+            try {
+                await new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORY_POSTER_DB_STORE, 'readwrite');
+                    transaction.objectStore(STORY_POSTER_DB_STORE).put(record);
+                    transaction.oncomplete = resolve;
+                    transaction.onerror = () => reject(transaction.error || new Error('indexeddb-write-failed'));
+                    transaction.onabort = () => reject(transaction.error || new Error('indexeddb-write-aborted'));
+                });
+            } finally {
+                db.close();
+            }
+        }
+
+        function createStoryPosterThumbnail(file) {
+            return new Promise((resolve, reject) => {
+                const sourceUrl = URL.createObjectURL(file);
+                const image = new Image();
+                image.onerror = () => {
+                    URL.revokeObjectURL(sourceUrl);
+                    reject(new Error('poster-image-decode-failed'));
+                };
+                image.onload = () => {
+                    const maxEdge = 960;
+                    const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+                    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+                    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(sourceUrl);
+                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('poster-thumbnail-failed')), 'image/jpeg', 0.76);
+                };
+                image.src = sourceUrl;
+            });
+        }
+
+        async function updateStoryPosterLibraryStatus(prefix = '') {
+            const status = document.getElementById('storyPosterLibraryStatus');
+            if (!status) return;
+            let storageText = '';
+            if (navigator.storage && navigator.storage.estimate) {
+                try {
+                    const estimate = await navigator.storage.estimate();
+                    storageText = estimate.usage ? ` · 本站已用 ${formatStorageSize(estimate.usage)}` : '';
+                } catch (error) {
+                    storageText = '';
+                }
+            }
+            const cloudText = storyPosterCloudEndpoint ? ` · 云端 ${storyPosterCloudItems.length} 张` : '';
+            status.textContent = prefix || `本机 ${storyPosterLibraryItems.length} 张${cloudText}${storageText}`;
+        }
+
+        async function loadStoryPosterLibrary() {
+            try {
+                const records = await getStoryPosterLibraryRecords();
+                storyPosterObjectUrls.forEach(url => URL.revokeObjectURL(url));
+                storyPosterObjectUrls = [];
+                storyPosterLibraryItems = records
+                    .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+                    .map(record => {
+                        const photoUrl = URL.createObjectURL(record.thumbnail || record.original);
+                        storyPosterObjectUrls.push(photoUrl);
+                        return {
+                            id: record.id,
+                            type: 'photo',
+                            source: 'library',
+                            photo: photoUrl,
+                            meta: 'PHOTO MEMORY',
+                            title: record.caption || record.name || '我们的照片',
+                            caption: record.caption || record.name || '我们的照片',
+                            record
+                        };
+                    });
+                renderStoryPosterCarousel();
+                updateStoryPosterLibraryStatus();
+            } catch (error) {
+                updateStoryPosterLibraryStatus('当前浏览器无法打开本机海报库');
+            }
+        }
+
+        async function storyPosterCloudRequest(path, options = {}, requiresToken = false) {
+            if (!storyPosterCloudEndpoint) throw new Error('cloud-not-configured');
+            const headers = new Headers(options.headers || {});
+            if (requiresToken) {
+                if (!storyPosterCloudToken) {
+                    storyPosterCloudToken = window.prompt('请输入云端海报库管理口令。口令只保留到本页关闭，不会写入网页或本地存储。') || '';
+                }
+                if (!storyPosterCloudToken) throw new Error('cloud-token-required');
+                headers.set('Authorization', `Bearer ${storyPosterCloudToken}`);
+            }
+            const response = await fetch(`${storyPosterCloudEndpoint}${path}`, { ...options, headers });
+            if (response.status === 401 || response.status === 403) {
+                storyPosterCloudToken = '';
+                throw new Error('cloud-auth-failed');
+            }
+            if (!response.ok) throw new Error(`cloud-request-failed:${response.status}`);
+            return response;
+        }
+
+        async function loadStoryPosterCloudLibrary() {
+            if (!storyPosterCloudEndpoint) {
+                storyPosterCloudItems = [];
+                renderStoryPosterCarousel();
+                updateStoryPosterLibraryStatus();
+                return;
+            }
+            try {
+                const response = await storyPosterCloudRequest('/api/posters');
+                const payload = await response.json();
+                const records = Array.isArray(payload.posters) ? payload.posters : [];
+                storyPosterCloudItems = records.map(record => ({
+                    id: record.id,
+                    type: 'photo',
+                    source: 'cloud',
+                    photo: `${storyPosterCloudEndpoint}/media/${encodeURIComponent(record.id)}/thumbnail`,
+                    originalUrl: `${storyPosterCloudEndpoint}/media/${encodeURIComponent(record.id)}/original`,
+                    meta: 'CLOUD MEMORY',
+                    title: record.caption || record.name || '我们的照片',
+                    caption: record.caption || record.name || '我们的照片',
+                    record
+                }));
+                renderStoryPosterCarousel();
+                updateStoryPosterLibraryStatus();
+            } catch (error) {
+                storyPosterCloudItems = [];
+                updateStoryPosterLibraryStatus('云端图库暂时无法连接，本机图库仍可使用');
+            }
+        }
+
+        async function uploadStoryPosterFilesToCloud(imageFiles) {
+            let saved = 0;
+            let failed = 0;
+            for (let fileIndex = 0; fileIndex < imageFiles.length; fileIndex += 1) {
+                const file = imageFiles[fileIndex];
+                updateStoryPosterLibraryStatus(`正在上传云端 ${fileIndex + 1} / ${imageFiles.length} · ${file.name}`);
+                const id = window.crypto && crypto.randomUUID
+                    ? `poster-${crypto.randomUUID()}`
+                    : `poster-${Date.now()}-${fileIndex}-${Math.random().toString(36).slice(2, 8)}`;
+                try {
+                    const thumbnail = await createStoryPosterThumbnail(file);
+                    const baseName = String(file.name || `照片 ${fileIndex + 1}`).replace(/\.[^.]+$/, '');
+                    await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(id)}/original`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+                        body: file
+                    }, true);
+                    await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(id)}/thumbnail`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'image/jpeg' },
+                        body: thumbnail
+                    }, true);
+                    await storyPosterCloudRequest('/api/posters', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id, name: baseName, caption: baseName, createdAt: Date.now() + fileIndex })
+                    }, true);
+                    saved += 1;
+                } catch (error) {
+                    const reason = String(error && error.message || '');
+                    if (reason.includes('cloud-auth-failed') || reason.includes('cloud-token-required')) throw error;
+                    failed += 1;
+                    try {
+                        await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(id)}`, { method: 'DELETE' }, true);
+                    } catch (cleanupError) { /* Best-effort cleanup; keep processing the remaining photos. */ }
+                }
+            }
+            await loadStoryPosterCloudLibrary();
+            showToast(failed
+                ? `云端上传完成：成功 ${saved} 张，失败 ${failed} 张，可重新选择失败照片重试`
+                : `已把 ${saved} 张原图上传到云端图库`, failed ? 4200 : 2500);
+        }
+
+        async function uploadStoryPosterFiles(files) {
+            const imageFiles = Array.from(files || []).filter(file => file.type && file.type.startsWith('image/'));
+            if (!imageFiles.length) return;
+            if (storyPosterCloudEndpoint) {
+                await uploadStoryPosterFilesToCloud(imageFiles);
+                return;
+            }
+            const totalBytes = imageFiles.reduce((sum, file) => sum + Number(file.size || 0), 0);
+            if (navigator.storage && navigator.storage.estimate) {
+                const estimate = await navigator.storage.estimate();
+                const available = Math.max(0, Number(estimate.quota || 0) - Number(estimate.usage || 0));
+                if (estimate.quota && available < totalBytes * 1.08) {
+                    showToast(`本机可用网页存储不足，所选原图约 ${formatStorageSize(totalBytes)}`, 3200);
+                    return;
+                }
+            }
+            if (navigator.storage && navigator.storage.persist) {
+                try { await navigator.storage.persist(); } catch (error) { /* Best-effort storage remains available. */ }
+            }
+            let saved = 0;
+            for (const file of imageFiles) {
+                updateStoryPosterLibraryStatus(`正在保存 ${saved + 1} / ${imageFiles.length} · ${file.name}`);
+                const thumbnail = await createStoryPosterThumbnail(file);
+                const baseName = String(file.name || `照片 ${saved + 1}`).replace(/\.[^.]+$/, '');
+                const id = window.crypto && crypto.randomUUID
+                    ? `poster-${crypto.randomUUID()}`
+                    : `poster-${Date.now()}-${saved}-${Math.random().toString(36).slice(2, 8)}`;
+                await putStoryPosterLibraryRecord({
+                    id,
+                    name: baseName,
+                    caption: baseName,
+                    original: file,
+                    thumbnail,
+                    originalSize: Number(file.size || 0),
+                    createdAt: Date.now() + saved
+                });
+                saved += 1;
+            }
+            await loadStoryPosterLibrary();
+            showToast(`已把 ${saved} 张照片加入本机海报库`, 2400);
+        }
+
+        function normalizeStoryPosterCloudEndpoint(value) {
+            const raw = String(value || '').trim().replace(/\/+$/, '');
+            if (!raw) return '';
+            try {
+                const url = new URL(raw);
+                if (url.protocol === 'https:' || (url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname))) {
+                    return url.origin + url.pathname.replace(/\/+$/, '');
+                }
+            } catch (error) { /* Invalid endpoints are disabled. */ }
+            return '';
+        }
+
+        function loadStoryPosterConfig() {
+            try {
+                const savedRaw = localStorage.getItem(STORY_POSTER_CONFIG_STORAGE_KEY);
+                const saved = JSON.parse(savedRaw || '{}');
+                storyPosterCaptionSize = clamp(Number(saved.captionSize || 20), 14, 38);
+                const configuredEndpoint = Object.prototype.hasOwnProperty.call(saved, 'cloudEndpoint')
+                    ? saved.cloudEndpoint
+                    : DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
+                storyPosterCloudEndpoint = normalizeStoryPosterCloudEndpoint(configuredEndpoint);
+            } catch (error) {
+                storyPosterCaptionSize = 20;
+                storyPosterCloudEndpoint = DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
+            }
+            const carousel = document.getElementById('storyPosterCarousel');
+            const input = document.getElementById('storyPosterCaptionSizeInput');
+            const value = document.getElementById('storyPosterCaptionSizeValue');
+            if (carousel) carousel.style.setProperty('--story-poster-caption-size', `${storyPosterCaptionSize}px`);
+            if (input) input.value = String(storyPosterCaptionSize);
+            if (value) value.textContent = `${storyPosterCaptionSize}px`;
+        }
+
+        function saveStoryPosterConfig() {
+            localStorage.setItem(STORY_POSTER_CONFIG_STORAGE_KEY, JSON.stringify({
+                captionSize: storyPosterCaptionSize,
+                cloudEndpoint: storyPosterCloudEndpoint
+            }));
+            updateEditorStorageMeter();
+        }
+
+        function initStoryPosterCarousel() {
+            const carousel = document.getElementById('storyPosterCarousel');
+            const viewport = document.getElementById('storyPosterViewport');
+            if (!carousel || !viewport) return;
+            const uploadButton = document.getElementById('storyPosterUploadBtn');
+            const cloudButton = document.getElementById('storyPosterCloudBtn');
+            const captionSizeInput = document.getElementById('storyPosterCaptionSizeInput');
+            const focusCaption = document.getElementById('storyPosterFocusCaption');
+            loadStoryPosterConfig();
+            carousel.addEventListener('click', e => {
+                const button = e.target.closest('[data-poster-action]');
+                if (button) {
+                    e.preventDefault();
+                    enableStoryPosterTickFeedback();
+                    deactivateStoryPosterFocus();
+                    moveStoryPoster(button.dataset.posterAction === 'prev' ? -1 : 1);
+                    return;
+                }
+                const card = e.target.closest('.story-poster-card');
+                if (!card || storyPosterSuppressClick) return;
+                e.preventDefault();
+                if (storyPosterDrag && !storyPosterDrag.moved) storyPosterDrag = null;
+                enableStoryPosterTickFeedback();
+                requestStoryPosterFocus(Number(card.dataset.posterIndex || 0));
+            });
+            viewport.addEventListener('pointerdown', startStoryPosterDrag);
+            viewport.addEventListener('pointermove', dragStoryPoster);
+            viewport.addEventListener('pointerup', endStoryPosterDrag);
+            viewport.addEventListener('pointercancel', endStoryPosterDrag);
+            window.addEventListener('pointerup', endStoryPosterDrag);
+            window.addEventListener('pointercancel', endStoryPosterDrag);
+            viewport.addEventListener('keydown', e => {
+                if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                e.preventDefault();
+                enableStoryPosterTickFeedback();
+                deactivateStoryPosterFocus();
+                moveStoryPoster(e.key === 'ArrowLeft' ? -1 : 1);
+            });
+            if (uploadButton && storyPosterUploadInput) {
+                uploadButton.addEventListener('click', () => {
+                    if (!isEditMode) return;
+                    storyPosterUploadInput.click();
+                });
+                storyPosterUploadInput.addEventListener('change', async () => {
+                    try {
+                        await uploadStoryPosterFiles(storyPosterUploadInput.files);
+                    } catch (error) {
+                        showToast(error && error.name === 'QuotaExceededError'
+                            ? '本机图片库空间不足，请减少照片或改用云端对象存储'
+                            : '批量照片保存失败，请分批重试', 3000);
+                    } finally {
+                        storyPosterUploadInput.value = '';
+                    }
+                });
+            }
+            if (cloudButton) {
+                cloudButton.addEventListener('click', async () => {
+                    const entered = window.prompt(
+                        '请输入 Cloudflare Worker 地址；留空表示关闭云端模式并继续使用本机图片库。',
+                        storyPosterCloudEndpoint
+                    );
+                    if (entered === null) return;
+                    const normalized = normalizeStoryPosterCloudEndpoint(entered);
+                    if (String(entered).trim() && !normalized) {
+                        showToast('云端地址必须使用 HTTPS（本机调试允许 localhost）', 2400);
+                        return;
+                    }
+                    storyPosterCloudEndpoint = normalized;
+                    storyPosterCloudToken = '';
+                    saveStoryPosterConfig();
+                    await loadStoryPosterCloudLibrary();
+                    showToast(storyPosterCloudEndpoint ? '云端图库地址已保存' : '已切回本机图片库', 1800);
+                });
+            }
+            if (captionSizeInput) {
+                captionSizeInput.addEventListener('input', () => {
+                    storyPosterCaptionSize = clamp(Number(captionSizeInput.value || 20), 14, 38);
+                    carousel.style.setProperty('--story-poster-caption-size', `${storyPosterCaptionSize}px`);
+                    const value = document.getElementById('storyPosterCaptionSizeValue');
+                    if (value) value.textContent = `${storyPosterCaptionSize}px`;
+                    saveStoryPosterConfig();
+                });
+            }
+            if (focusCaption) {
+                focusCaption.addEventListener('input', updateFocusedStoryPosterCaption);
+                focusCaption.addEventListener('blur', () => saveFocusedStoryPosterCaption());
+            }
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver(entries => {
+                    storyPosterVisible = Boolean(entries[0] && entries[0].isIntersecting);
+                }, { rootMargin: '240px 0px' });
+                observer.observe(carousel);
+            }
+            renderStoryPosterCarousel();
+            loadStoryPosterLibrary();
+            loadStoryPosterCloudLibrary();
+            storyPosterPhaseStarted = performance.now();
+            if (!storyPosterAnimationFrame) storyPosterAnimationFrame = requestAnimationFrame(animateStoryPosters);
+        }
+
+        function getStoryPosterItems() {
+            const photoItems = storyModules.filter(module => module.type === 'photo');
+            const moduleItems = photoItems.length ? photoItems : storyModules;
+            const uploadedItems = [...storyPosterCloudItems, ...storyPosterLibraryItems];
+            const sourceItems = uploadedItems.length ? [...uploadedItems, ...moduleItems] : moduleItems;
+            if (!sourceItems.length || sourceItems.length >= 12) return sourceItems;
+            return Array.from({ length: 12 }, (_, index) => sourceItems[index % sourceItems.length]);
+        }
+
+        function escapeStoryPosterText(value) {
+            const node = document.createElement('div');
+            node.textContent = String(value || '').replace(/<[^>]*>/g, '');
+            return node.innerHTML;
+        }
+
+        function renderStoryPosterCarousel() {
+            const track = document.getElementById('storyPosterTrack');
+            const status = document.getElementById('storyPosterStatus');
+            if (!track) return;
+            const items = getStoryPosterItems();
+            if (!items.length) {
+                track.innerHTML = '<div class="story-poster-empty">在编辑模式添加故事照片后，这里会自动变成线性海报轮换。</div>';
+                if (status) status.textContent = '01 / 01';
+                return;
+            }
+            storyPosterIndex = ((storyPosterIndex % items.length) + items.length) % items.length;
+            storyPosterPosition = storyPosterIndex;
+            const posterMarkup = (module, index) => {
+                const hasPhoto = isSafeImageDataUrl(module.photo)
+                    || (typeof module.photo === 'string' && module.photo.startsWith('blob:'))
+                    || (module.source === 'cloud' && typeof module.photo === 'string' && module.photo.startsWith('https://'));
+                const image = hasPhoto ? `<img data-poster-src="${module.photo}" alt="${escapeStoryPosterText(module.title || '故事海报')}" loading="lazy" decoding="async">` : '';
+                return `<article class="story-poster-card" data-poster-index="${index}" data-poster-id="${escapeStoryPosterText(module.id || '')}" aria-hidden="true"><div class="story-poster-card-inner">${image}<div class="story-poster-copy"><small>${escapeStoryPosterText(module.meta || 'OUR CHAPTER')}</small><strong>${escapeStoryPosterText(module.title || '未命名章节')}</strong></div></div></article>`;
+            };
+            track.innerHTML = items.map(posterMarkup).join('');
+            layoutStoryPosters();
+            updateStoryPosterStatus(items.length);
+        }
+
+        function moveStoryPoster(step) {
+            const items = getStoryPosterItems();
+            if (!items.length) return;
+            const target = Math.round(storyPosterPosition) + step;
+            beginStoryPosterSettle(target, 760);
+        }
+
+        function updateStoryPosterStatus(total) {
+            const status = document.getElementById('storyPosterStatus');
+            if (status) status.textContent = `${String(storyPosterIndex + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
+        }
+
+        function wrapStoryPosterOffset(value, total) {
+            if (total <= 1) return 0;
+            let wrapped = value % total;
+            if (wrapped > total / 2) wrapped -= total;
+            if (wrapped < -total / 2) wrapped += total;
+            return wrapped;
+        }
+
+        function layoutStoryPosters() {
+            const track = document.getElementById('storyPosterTrack');
+            const viewport = document.getElementById('storyPosterViewport');
+            const items = getStoryPosterItems();
+            if (!track || !viewport || !items.length) return;
+            const mobile = viewport.clientWidth <= 768;
+            const halfWidth = viewport.clientWidth * (mobile ? 0.48 : 0.47);
+            const visibleRadius = items.length <= 12 ? 6 : 5.99;
+            let closestIndex = 0;
+            let closestDistance = Infinity;
+            track.querySelectorAll('.story-poster-card').forEach((card, index) => {
+                const offset = wrapStoryPosterOffset(index - storyPosterPosition, items.length);
+                const distance = Math.abs(offset);
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestIndex = index;
+                }
+                const visible = distance <= visibleRadius + 0.4;
+                const image = card.querySelector('img[data-poster-src]');
+                card.classList.toggle('is-visible', visible);
+                card.setAttribute('aria-hidden', String(!visible));
+                if (!visible) {
+                    if (image && image.getAttribute('src') !== storyPosterFocusedOriginalUrl) image.removeAttribute('src');
+                    card.style.opacity = '0';
+                    card.style.pointerEvents = 'none';
+                    return;
+                }
+                if (image && !image.getAttribute('src')) image.setAttribute('src', image.dataset.posterSrc);
+                const side = Math.sign(offset);
+                const spread = 1 - Math.exp(-distance * (mobile ? 0.56 : 0.42));
+                const x = side * halfWidth * spread;
+                const y = Math.pow(distance, 1.24) * (mobile ? 7.2 : 8.6);
+                const z = -Math.pow(distance, 1.18) * (mobile ? 52 : 66);
+                const rotateY = side * Math.min(58, 11 + distance * 8.4);
+                const focusBoost = storyPosterPhase === 'focused' && distance < 0.02 ? (mobile ? 1.12 : 1.18) : 1;
+                const scale = Math.max(mobile ? 0.46 : 0.42, 1 - distance * (mobile ? 0.105 : 0.095)) * focusBoost;
+                const opacity = Math.max(0.14, 1 - distance * 0.135);
+                const brightness = Math.max(0.24, 1 - distance * 0.125);
+                const saturation = Math.max(0.38, 1 - distance * 0.1);
+                card.style.zIndex = String(100 - Math.round(distance * 10));
+                card.style.opacity = String(opacity);
+                card.style.filter = `saturate(${saturation}) brightness(${brightness}) blur(${Math.max(0, distance - 3.5) * 0.35}px)`;
+                card.style.transform = `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), ${z}px) rotateY(${rotateY}deg) scale(${scale})`;
+                card.style.pointerEvents = 'auto';
+            });
+            if (storyPosterLastTickIndex !== closestIndex) {
+                if (storyPosterLastTickIndex !== null) emitStoryPosterTick();
+                storyPosterLastTickIndex = closestIndex;
+            }
+            storyPosterIndex = closestIndex;
+            track.querySelectorAll('.story-poster-card').forEach((card, index) => card.classList.toggle('is-center', index === closestIndex));
+            updateStoryPosterStatus(items.length);
+        }
+
+        function enableStoryPosterTickFeedback() {
+            storyPosterTickEnabled = true;
+            const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+            if (!storyPosterAudioContext && AudioContextCtor) {
+                try { storyPosterAudioContext = new AudioContextCtor(); } catch (error) { storyPosterAudioContext = null; }
+            }
+            if (storyPosterAudioContext && storyPosterAudioContext.state === 'suspended') {
+                storyPosterAudioContext.resume().catch(() => {});
+            }
+        }
+
+        function emitStoryPosterTick() {
+            if (!storyPosterTickEnabled) return;
+            if (storyPosterAudioContext && storyPosterAudioContext.state === 'running') {
+                const now = storyPosterAudioContext.currentTime;
+                const oscillator = storyPosterAudioContext.createOscillator();
+                const gain = storyPosterAudioContext.createGain();
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(190, now);
+                oscillator.frequency.exponentialRampToValueAtTime(92, now + 0.035);
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.exponentialRampToValueAtTime(0.065, now + 0.004);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+                oscillator.connect(gain);
+                gain.connect(storyPosterAudioContext.destination);
+                oscillator.start(now);
+                oscillator.stop(now + 0.05);
+            }
+            if (navigator.vibrate) navigator.vibrate(8);
+        }
+
+        function getStoryPosterCaption(item) {
+            if (!item) return '';
+            return String(item.source === 'library' || item.source === 'cloud'
+                ? (item.caption || item.title || '我们的照片')
+                : (item.posterCaption || item.title || '我们的照片')).replace(/<[^>]*>/g, '');
+        }
+
+        function activateStoryPosterFocus(index = storyPosterIndex) {
+            const items = getStoryPosterItems();
+            if (!items.length) return;
+            const normalized = ((Math.round(index) % items.length) + items.length) % items.length;
+            storyPosterPosition = normalized;
+            storyPosterIndex = normalized;
+            storyPosterFocusedItem = items[normalized];
+            storyPosterPendingFocus = false;
+            storyPosterPhase = 'focused';
+            const carousel = document.getElementById('storyPosterCarousel');
+            const caption = document.getElementById('storyPosterFocusCaption');
+            if (carousel) carousel.classList.add('is-poster-focused');
+            if (caption) {
+                caption.textContent = getStoryPosterCaption(storyPosterFocusedItem);
+                caption.contentEditable = isEditMode ? 'true' : 'false';
+            }
+            layoutStoryPosters();
+            if (storyPosterFocusedItem.source === 'library' && storyPosterFocusedItem.record && storyPosterFocusedItem.record.original) {
+                const centerImage = document.querySelector(`.story-poster-card[data-poster-index="${normalized}"] img[data-poster-src]`);
+                if (centerImage) {
+                    storyPosterFocusedOriginalUrl = URL.createObjectURL(storyPosterFocusedItem.record.original);
+                    centerImage.src = storyPosterFocusedOriginalUrl;
+                }
+            } else if (storyPosterFocusedItem.source === 'cloud' && storyPosterFocusedItem.originalUrl) {
+                const centerImage = document.querySelector(`.story-poster-card[data-poster-index="${normalized}"] img[data-poster-src]`);
+                if (centerImage) {
+                    storyPosterFocusedOriginalUrl = storyPosterFocusedItem.originalUrl;
+                    centerImage.src = storyPosterFocusedOriginalUrl;
+                }
+            }
+            emitStoryPosterTick();
+        }
+
+        function requestStoryPosterFocus(index) {
+            const items = getStoryPosterItems();
+            if (!items.length) return;
+            const normalized = ((Math.round(index) % items.length) + items.length) % items.length;
+            if (storyPosterPhase === 'focused' && storyPosterFocusedItem === items[normalized]) {
+                deactivateStoryPosterFocus();
+                return;
+            }
+            const centeredIndex = ((Math.round(storyPosterPosition) % items.length) + items.length) % items.length;
+            if (centeredIndex === normalized) {
+                activateStoryPosterFocus(normalized);
+                return;
+            }
+            storyPosterPendingFocus = true;
+            beginStoryPosterSettle(normalized, 280);
+        }
+
+        function deactivateStoryPosterFocus() {
+            const carousel = document.getElementById('storyPosterCarousel');
+            if (carousel) carousel.classList.remove('is-poster-focused');
+            if (storyPosterFocusedOriginalUrl) {
+                const centerImage = document.querySelector('.story-poster-card.is-center img[data-poster-src]');
+                if (centerImage) centerImage.src = centerImage.dataset.posterSrc;
+                if (storyPosterFocusedOriginalUrl.startsWith('blob:')) URL.revokeObjectURL(storyPosterFocusedOriginalUrl);
+                storyPosterFocusedOriginalUrl = null;
+            }
+            storyPosterPendingFocus = false;
+            storyPosterFocusedItem = null;
+            if (storyPosterPhase === 'focused') {
+                storyPosterPhase = 'spin';
+                storyPosterPhaseStarted = performance.now();
+            }
+        }
+
+        function updateFocusedStoryPosterCaption(event) {
+            if (!storyPosterFocusedItem) return;
+            const value = String(event.target.textContent || '').trim();
+            if (storyPosterFocusedItem.source === 'library' || storyPosterFocusedItem.source === 'cloud') {
+                storyPosterFocusedItem.caption = value;
+                storyPosterFocusedItem.title = value || storyPosterFocusedItem.record.name || '我们的照片';
+                storyPosterFocusedItem.record.caption = value;
+            } else {
+                storyPosterFocusedItem.posterCaption = value;
+            }
+        }
+
+        async function saveFocusedStoryPosterCaption() {
+            if (!storyPosterFocusedItem) return;
+            if (storyPosterFocusedItem.source === 'library') {
+                try {
+                    await putStoryPosterLibraryRecord(storyPosterFocusedItem.record);
+                    showToast('海报字幕已保存到本机图片库', 1500);
+                } catch (error) {
+                    showToast('海报字幕保存失败', 1700);
+                }
+            } else if (storyPosterFocusedItem.source === 'cloud') {
+                try {
+                    await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(storyPosterFocusedItem.id)}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ caption: storyPosterFocusedItem.caption })
+                    }, true);
+                    showToast('云端海报字幕已保存', 1500);
+                } catch (error) {
+                    showToast('云端字幕保存失败，请检查管理口令', 2100);
+                }
+            } else {
+                persistStoryModules();
+            }
+        }
+
+        function beginStoryPosterSettle(target, duration = 720) {
+            const carousel = document.getElementById('storyPosterCarousel');
+            if (carousel) carousel.classList.remove('is-poster-focused');
+            storyPosterPhase = 'settle';
+            storyPosterPhaseStarted = performance.now();
+            storyPosterSettle = {
+                from: storyPosterPosition,
+                to: target,
+                duration: Math.max(320, duration)
+            };
+        }
+
+        function animateStoryPosters(now) {
+            storyPosterAnimationFrame = requestAnimationFrame(animateStoryPosters);
+            if (!storyPosterVisible || storyPosterDrag || !getStoryPosterItems().length) return;
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduceMotion) {
+                storyPosterPosition = Math.round(storyPosterPosition);
+                layoutStoryPosters();
+                return;
+            }
+            if (!storyPosterPhaseStarted) storyPosterPhaseStarted = now;
+            const elapsed = now - storyPosterPhaseStarted;
+            if (storyPosterPhase === 'focused') {
+                layoutStoryPosters();
+                animateStoryPosters.lastNow = now;
+                return;
+            }
+            if (storyPosterPhase === 'spin') {
+                const speed = 0.00058;
+                storyPosterPosition += Math.min(32, now - (animateStoryPosters.lastNow || now)) * speed;
+            } else if (storyPosterPhase === 'settle' && storyPosterSettle) {
+                const progress = Math.min(1, elapsed / storyPosterSettle.duration);
+                const eased = 1 - Math.pow(1 - progress, 4);
+                storyPosterPosition = storyPosterSettle.from + (storyPosterSettle.to - storyPosterSettle.from) * eased;
+                if (progress >= 1) {
+                    storyPosterPosition = storyPosterSettle.to;
+                    if (storyPosterPendingFocus) {
+                        activateStoryPosterFocus(storyPosterSettle.to);
+                    } else {
+                        storyPosterPhase = 'spin';
+                        storyPosterPhaseStarted = now;
+                    }
+                }
+            }
+            animateStoryPosters.lastNow = now;
+            layoutStoryPosters();
+        }
+
+        function startStoryPosterDrag(e) {
+            if (e.button !== undefined && e.button !== 0) return;
+            const viewport = document.getElementById('storyPosterViewport');
+            if (!viewport || !getStoryPosterItems().length) return;
+            enableStoryPosterTickFeedback();
+            const tappedCard = e.target.closest ? e.target.closest('.story-poster-card') : null;
+            storyPosterDrag = {
+                pointerId: e.pointerId,
+                x: e.clientX,
+                position: storyPosterPosition,
+                moved: false,
+                tapIndex: tappedCard ? Number(tappedCard.dataset.posterIndex || 0) : null
+            };
+            const carousel = document.getElementById('storyPosterCarousel');
+            if (carousel) carousel.classList.remove('is-poster-focused');
+        }
+
+        function dragStoryPoster(e) {
+            if (!storyPosterDrag || e.pointerId !== storyPosterDrag.pointerId) return;
+            const viewport = document.getElementById('storyPosterViewport');
+            const stepWidth = Math.max(70, (viewport ? viewport.clientWidth : 700) * 0.12);
+            if (Math.abs(e.clientX - storyPosterDrag.x) > 6 && !storyPosterDrag.moved) {
+                storyPosterDrag.moved = true;
+                deactivateStoryPosterFocus();
+                if (viewport && viewport.setPointerCapture) viewport.setPointerCapture(e.pointerId);
+            }
+            storyPosterPosition = storyPosterDrag.position - (e.clientX - storyPosterDrag.x) / stepWidth;
+            layoutStoryPosters();
+        }
+
+        function endStoryPosterDrag(e) {
+            if (!storyPosterDrag || e.pointerId !== storyPosterDrag.pointerId) return;
+            const moved = storyPosterDrag.moved;
+            const tapIndex = storyPosterDrag.tapIndex;
+            storyPosterDrag = null;
+            if (moved) {
+                storyPosterSuppressClick = true;
+                window.setTimeout(() => { storyPosterSuppressClick = false; }, 180);
+                beginStoryPosterSettle(Math.round(storyPosterPosition), 520);
+            } else if (tapIndex !== null) {
+                storyPosterSuppressClick = true;
+                window.setTimeout(() => { storyPosterSuppressClick = false; }, 360);
+                requestStoryPosterFocus(tapIndex);
+            }
+        }
+
         function renderStoryModules() {
             if (!storyModules.length) {
                 storyModuleList.innerHTML = '<div class="story-module-empty">打开编辑模式后，用右上角工具条添加第一段故事、照片、时间线或誓言。</div>';
+                renderStoryPosterCarousel();
                 return;
             }
 
             storyModuleList.innerHTML = storyModules.map((module, index) => renderStoryModule(module, index)).join('');
             setStoryModulesEditable(isEditMode);
+            renderStoryPosterCarousel();
         }
 
         function renderStoryModule(module, index) {
@@ -6649,6 +7901,8 @@
                 button.tabIndex = enabled ? 0 : -1;
                 button.setAttribute('aria-disabled', String(!enabled));
             });
+            const posterCaption = document.getElementById('storyPosterFocusCaption');
+            if (posterCaption) posterCaption.contentEditable = enabled && storyPosterFocusedItem ? 'true' : 'false';
         }
 
         function commitStoryModuleEdits() {
@@ -6705,7 +7959,11 @@
             const previous = module.photo || '';
             try {
                 captureUndoSnapshot('module-photo');
-                module.photo = await resizePolaroidImage(file);
+                module.photo = await resizePolaroidImage(file, {
+                    maxEdge: 720,
+                    targetBytes: 34 * 1024,
+                    minimumQuality: 0.32
+                });
                 const projected = getContentStorageSnapshot();
                 projected[MODULE_STORAGE_KEY] = JSON.stringify(storyModules);
                 const projectedBytes = estimateStorageBytes(projected);
@@ -6850,6 +8108,8 @@
                     if (matBack && matFront) {
                         matBack.alphaMap = alphaTexture;
                         matFront.alphaMap = alphaTexture;
+                        matBack.bumpMap = alphaTexture;
+                        matFront.bumpMap = alphaTexture;
                         matBack.needsUpdate = true;
                         matFront.needsUpdate = true;
                     }
@@ -6910,14 +8170,17 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         container.appendChild(renderer.domElement);
 
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xb8bdc0, 0.9);
+        const hemiLight = new THREE.HemisphereLight(0xfffbf2, 0x8796a2, 1.05);
         scene.add(hemiLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.45);
+        const dirLight = new THREE.DirectionalLight(0xfff1dc, 0.78);
         dirLight.position.set(12, 24, 18);
         scene.add(dirLight);
-        const backLight = new THREE.DirectionalLight(0xffffff, 0.35);
+        const backLight = new THREE.DirectionalLight(0xa8d9e5, 0.52);
         backLight.position.set(-15, 12, -22);
         scene.add(backLight);
+        const rimLight = new THREE.PointLight(0xffd6c3, 1.15, 70, 1.7);
+        rimLight.position.set(-7, 5, 16);
+        scene.add(rimLight);
 
         /* ==========================================
            HEXAGONAL TEXTURE GENERATOR
@@ -6995,6 +8258,23 @@
                 }
             }
 
+            // Fine cross-weave threads keep the veil from reading like a flat grid.
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+            for (let offset = -SIZE; offset < SIZE * 2; offset += 18) {
+                ctx.beginPath();
+                ctx.moveTo(offset, 0);
+                ctx.lineTo(offset + SIZE, SIZE);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(offset, SIZE);
+                ctx.lineTo(offset + SIZE, 0);
+                ctx.stroke();
+            }
+            ctx.restore();
+
             // Dispose old texture if exists
             if (alphaTexture) {
                 alphaTexture.dispose();
@@ -7024,16 +8304,20 @@
         geometry = createClothGeometry();
 
         const materialConfig = {
-            color: 0xffffff,
-            roughness: 0.85,
+            color: 0xf7f4ef,
+            roughness: 0.62,
             metalness: 0.0,
             alphaMap: alphaTexture,
+            bumpMap: alphaTexture,
+            bumpScale: 0.055,
             transparent: true,
             opacity: config.opacity,
             // Sheen: simulates fabric/silk shimmer (MeshPhysicalMaterial only)
-            sheen: 1.2,
-            sheenColor: new THREE.Color(0xffffff),
-            sheenRoughness: 0.65,
+            sheen: 1.65,
+            sheenColor: new THREE.Color(0xffe8d4),
+            sheenRoughness: 0.32,
+            clearcoat: 0.16,
+            clearcoatRoughness: 0.48,
         };
 
         matBack = new THREE.MeshPhysicalMaterial({ ...materialConfig, side: THREE.BackSide });
@@ -7095,6 +8379,7 @@
             particles = [];
             constraints = [];
             isUnveiled = false;
+            container.classList.remove('is-dragging', 'is-unveiled');
 
             container.style.opacity = '1';
             container.style.pointerEvents = 'auto';
@@ -7124,6 +8409,17 @@
                 const y = posAttr.getY(i);
                 const z = posAttr.getZ(i);
                 const p = new Particle(x, y, z);
+
+                // Start with shallow, alternating folds so the cloth already has volume
+                // before the first drag instead of presenting as a perfectly flat sheet.
+                const vertical = (y + vHeight / 2) / vHeight;
+                const foldEnvelope = 0.28 + vertical * 0.72;
+                p.position.z = (
+                    Math.sin(x * 0.72 + y * 0.18) * 0.24 +
+                    Math.sin(x * 1.55 - y * 0.11) * 0.09 +
+                    Math.cos(y * 0.52) * 0.06
+                ) * foldEnvelope;
+                p.previous.copy(p.position);
 
                 const u = i % (config.xSegs + 1);
                 if (y >= vHeight / 2 - 0.1 && (u % 7 === 0 || u === 0 || u === config.xSegs)) {
@@ -7284,8 +8580,11 @@
             if (intersects.length > 0) {
                 e.preventDefault();
                 isDragging = true;
+                container.classList.add('is-dragging');
                 startClientY = cy;
                 startClientX = cx;
+                container.style.setProperty('--cloth-light-x', `${cx}px`);
+                container.style.setProperty('--cloth-light-y', `${cy}px`);
                 const hitVertexIdx = intersects[0].face.a;
                 targetCenterParticle = particles[hitVertexIdx];
 
@@ -7311,6 +8610,8 @@
 
             const cx = e.touches ? e.touches[0].clientX : e.clientX;
             const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            container.style.setProperty('--cloth-light-x', `${cx}px`);
+            container.style.setProperty('--cloth-light-y', `${cy}px`);
 
             mouse.x = (cx / window.innerWidth) * 2 - 1;
             mouse.y = -(cy / window.innerHeight) * 2 + 1;
@@ -7338,6 +8639,7 @@
             }
 
             isDragging = false;
+            container.classList.remove('is-dragging');
             targetCenterParticle = null;
             affectedParticles = [];
         }
@@ -7347,6 +8649,8 @@
            ========================================== */
         function triggerFabricUnveil(dirSign, clientX, clientY) {
             isUnveiled = true;
+            container.classList.remove('is-dragging');
+            container.classList.add('is-unveiled');
             hint.querySelector('span').textContent = '✨ 白纱已解开，中层交互按钮已解锁';
 
             // Sparkle particle burst at cursor position

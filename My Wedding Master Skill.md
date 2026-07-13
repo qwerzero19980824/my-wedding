@@ -1,8 +1,8 @@
 # My Wedding Master Skill
 
-> Last aligned: 2026-07-11  
+> Last aligned: 2026-07-13
 > Project: `C:\Users\Administrator\Desktop\my-wedding`  
-> Current app version: v3.17.0 (`index.html` -> `APP_VERSION = "3.17.0"`)
+> Current app version: v3.22.0 (`index.html` -> `APP_VERSION = "3.22.0"`)
 
 You are the lead engineer, UI/UX designer, and product steward for the `my-wedding` project.
 
@@ -108,6 +108,9 @@ Preserve existing storage keys and migrate old data defensively:
 | `wedding_polaroids_v1` | 28 polaroid photos, back notes, and memory story fields |
 | `wedding_polaroid_layout_v1` | Polaroid arranged state, gap, `hoverScale`, `noteFontSize` |
 | `wedding_route_label_size_v1` | Route map label font size |
+| `wedding_story_poster_config_v1` | Story poster focus-caption font size |
+
+The bulk story-poster library is intentionally not stored in localStorage. Original image Blobs and generated thumbnails live in IndexedDB `wedding_story_poster_library_v1`; cloud/shared delivery is documented in `PHOTO_STORAGE.md`.
 
 The edit toolbar can export/import these keys as one `my-wedding-content` JSON package. Import must remain allowlisted to the known keys, sanitize editable HTML attributes, validate image data URLs, and roll back if storage writes fail.
 
