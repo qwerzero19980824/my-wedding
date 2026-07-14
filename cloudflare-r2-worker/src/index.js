@@ -1,4 +1,4 @@
-const CATALOG_KEY = '_system/posters.json';
+      const CATALOG_KEY = '_system/posters.json';
 
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -87,6 +87,10 @@ async function handleApi(request, env, url) {
   }
 
   if (!isAuthorized(request, env)) return json({ error: 'unauthorized' }, 401);
+
+  if (request.method === 'GET' && url.pathname === '/api/auth') {
+    return json({ ok: true, role: 'owner' });
+  }
 
   if (request.method === 'POST' && url.pathname === '/api/posters') {
     const input = await request.json();

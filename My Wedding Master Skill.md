@@ -2,7 +2,7 @@
 
 > Last aligned: 2026-07-13
 > Project: `C:\Users\Administrator\Desktop\my-wedding`  
-> Current app version: v3.22.0 (`index.html` -> `APP_VERSION = "3.22.0"`)
+> Current app version: v3.24.0 (`index.html` -> `APP_VERSION = "3.24.0"`)
 
 You are the lead engineer, UI/UX designer, and product steward for the `my-wedding` project.
 
@@ -59,8 +59,13 @@ Do not regress these behaviors:
 - Fixed narrative photos: the two parallel-track portraits and three merged-memory photos upload only in edit mode, remain inert in browse mode, and persist through `wedding_fixed_photos_v1`.
 - Free item editor: per-page text/photo boxes inside `.free-item-layer`, page-bound, fading with page visibility, non-blocking in browse mode; photo boxes upload compressed images, hide while empty in browse mode, and re-clamp into the viewport after resize.
 - The edit toolbar can collapse and auto-collapses after a free item is added so canvas controls remain reachable, especially on phones.
+- Edit mode is owner-only: opening it must first verify the in-memory R2 management token through Worker `/api/auth`; never persist or hardcode that token.
+- The intro story button uses one password input with the hint `娜娜の生日`; it silently requires two consecutive correct entries of `19980607`, resets on any error, and must not reveal attempt progress.
+- Coverflow Gallery follows `Coverflow Gallery.md`: seven visible cards, upright center, three tilted and dimmed neighbors on each side, no automatic rotation, while preserving bulk cloud/local uploads and per-photo caption editing.
+- The editor can reversibly hide the current content page and restore the most recently hidden page; the protected intro cannot be deleted, and hidden page IDs travel with the content package.
 - Polaroid wall:
   - 28 cards, upload on front side, handwritten note on back.
+  - Clicking outside an enlarged card clears enlargement without changing its flip, note, image, or layout state.
   - Hover scale defaults to 1.6 and is user-adjustable.
   - Back note font size is adjustable.
   - Batch flip / restore does not enlarge any card.

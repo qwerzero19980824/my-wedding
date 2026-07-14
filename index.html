@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>平行宇宙的相遇 — cml & zy</title>
 
     <!-- ===== Google Fonts ===== -->
@@ -33,18 +33,60 @@
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
 
         :root {
+            /* Primitive tokens */
+            --color-wine-700: #8f2427;
+            --color-wine-600: #a92929;
+            --color-blush-300: #f4c2c2;
+            --color-paper-50: #fffdf8;
+            --color-paper-100: #f8f4ea;
+            --color-ink-900: #283033;
+            --color-ink-700: #3f4749;
+            --color-gold-400: #d6b57a;
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 22px;
+            --radius-full: 999px;
+            --duration-fast: 160ms;
+            --duration-normal: 280ms;
+            --duration-slow: 600ms;
+            --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+            --shadow-soft: 0 18px 55px rgba(68, 44, 38, 0.12);
+            --shadow-dialog: 0 28px 90px rgba(22, 13, 15, 0.34);
+
+            /* Semantic tokens */
             --bg-dark: #121212;
             --bg-light: #fafafa;
-            --romantic-pink: #f4c2c2;
-            --romantic-red: #a92929;
+            --romantic-pink: var(--color-blush-300);
+            --romantic-red: var(--color-wine-600);
             --text-main: #333333;
             --text-muted: #888888;
             --divider-width: 1px;
             --panel-bg: rgba(255, 255, 255, 0.40);
             --accent-color: #5a6a6c;
-            --paper: #f8f4ea;
-            --ink: #283033;
+            --paper: var(--color-paper-100);
+            --ink: var(--color-ink-900);
+            --surface-elevated: rgba(255, 253, 248, 0.96);
+            --surface-glass: rgba(255, 253, 248, 0.82);
+            --border-soft: rgba(143, 36, 39, 0.16);
+            --text-secondary: var(--color-ink-700);
+            --color-error: #a32932;
             --focus-ring: 0 0 0 4px rgba(244, 194, 194, 0.38);
+
+            /* Component tokens */
+            --button-height: 42px;
+            --button-radius: var(--radius-full);
+            --button-bg: var(--color-wine-600);
+            --button-bg-hover: var(--color-wine-700);
+            --button-fg: #fff;
+            --input-height: 48px;
+            --input-radius: var(--radius-md);
+            --dialog-width: min(440px, calc(100vw - 2rem));
         }
 
         body {
@@ -57,6 +99,13 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        button,
+        input,
+        textarea,
+        select { font: inherit; }
+
+        button { touch-action: manipulation; }
+
         ::selection {
             background: rgba(244, 194, 194, 0.72);
             color: var(--ink);
@@ -64,7 +113,9 @@
 
         button:focus-visible,
         [contenteditable="true"]:focus-visible,
-        input:focus-visible {
+        input:focus-visible,
+        textarea:focus-visible,
+        [role="button"]:focus-visible {
             outline: none;
             box-shadow: var(--focus-ring);
         }
@@ -1203,6 +1254,16 @@
             color: #fff;
             border-color: #a92929;
         }
+        .edit-mode-toolbar button[data-action-destructive] {
+            color: #8b2424;
+            border-color: rgba(139,36,36,0.34);
+            background: rgba(255,245,245,0.94);
+        }
+        .edit-mode-toolbar button[data-action-destructive]:hover {
+            color: #fff;
+            border-color: #8b2424;
+            background: #8b2424;
+        }
         .edit-mode-toolbar button:disabled {
             opacity: 0.45;
             cursor: default;
@@ -1353,6 +1414,139 @@
             .rehearsal-targets { grid-template-columns: 1fr; }
             .rehearsal-targets button { min-height: 46px; }
         }
+
+        /* ==========================================
+           Secure Story / Admin Dialogs
+           ========================================== */
+        .secure-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2100;
+            display: grid;
+            place-items: center;
+            padding: var(--space-4);
+            background: rgba(19, 12, 14, 0.68);
+            backdrop-filter: blur(16px) saturate(0.82);
+            -webkit-backdrop-filter: blur(16px) saturate(0.82);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity var(--duration-normal) ease, visibility var(--duration-normal) ease;
+        }
+        .secure-overlay.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .secure-dialog {
+            position: relative;
+            width: var(--dialog-width);
+            max-height: calc(100svh - 2rem);
+            overflow-y: auto;
+            padding: clamp(1.5rem, 5vw, 2.3rem);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-lg);
+            background:
+                radial-gradient(circle at 50% 0%, rgba(244, 194, 194, 0.2), transparent 38%),
+                var(--surface-elevated);
+            color: var(--ink);
+            box-shadow: var(--shadow-dialog);
+            text-align: left;
+            transform: translateY(12px) scale(0.985);
+            transition: transform var(--duration-normal) var(--ease-premium);
+        }
+        .secure-overlay.is-open .secure-dialog { transform: translateY(0) scale(1); }
+        .secure-dialog-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-full);
+            background: rgba(255,255,255,0.72);
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .secure-dialog-kicker {
+            margin-bottom: var(--space-2);
+            color: var(--romantic-red);
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 0.78rem;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+        }
+        .secure-dialog h2 {
+            padding-right: 2.5rem;
+            font-family: "Playfair Display", "Noto Serif SC", Georgia, serif;
+            font-size: clamp(1.8rem, 7vw, 2.65rem);
+            font-weight: 400;
+            line-height: 1.16;
+        }
+        .secure-dialog-copy {
+            margin: var(--space-3) 0 var(--space-6);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.75;
+        }
+        .secure-field-group {
+            display: grid;
+            gap: var(--space-3);
+        }
+        .secure-field label {
+            display: block;
+            margin-bottom: var(--space-2);
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+        }
+        .secure-field input {
+            width: 100%;
+            min-height: var(--input-height);
+            padding: 0 var(--space-4);
+            border: 1px solid rgba(63,71,73,0.24);
+            border-radius: var(--input-radius);
+            background: rgba(255,255,255,0.88);
+            color: var(--ink);
+            letter-spacing: 0.08em;
+            transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+        }
+        .secure-field input:hover { border-color: rgba(143,36,39,0.38); }
+        .secure-field input[aria-invalid="true"] { border-color: var(--color-error); }
+        .secure-dialog-error {
+            min-height: 1.45em;
+            margin-top: var(--space-3);
+            color: var(--color-error);
+            font-size: 0.78rem;
+            line-height: 1.45;
+        }
+        .secure-dialog-submit {
+            width: 100%;
+            min-height: 48px;
+            margin-top: var(--space-2);
+            border: 0;
+            border-radius: var(--button-radius);
+            background: var(--button-bg);
+            color: var(--button-fg);
+            cursor: pointer;
+            transition: background var(--duration-fast) ease, transform var(--duration-fast) ease, opacity var(--duration-fast) ease;
+        }
+        .secure-dialog-submit:hover { background: var(--button-bg-hover); transform: translateY(-1px); }
+        .secure-dialog-submit:active { transform: translateY(0); }
+        .secure-dialog-submit[aria-busy="true"] { opacity: 0.68; cursor: wait; }
+        .secure-dialog-note {
+            margin-top: var(--space-3);
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            line-height: 1.65;
+            text-align: center;
+        }
+        @media (max-width: 480px) {
+            .secure-overlay { padding: var(--space-3); }
+            .secure-dialog { max-height: calc(100svh - 1.5rem); padding: 1.35rem 1.1rem 1.25rem; }
+            .secure-dialog h2 { font-size: clamp(1.65rem, 8.5vw, 2.15rem); }
+            .secure-field input,
+            .secure-dialog-submit { min-height: 50px; }
+        }
         .editor-storage-meter {
             grid-column: 1 / -1;
             display: flex;
@@ -1472,6 +1666,9 @@
             --free-muted: rgba(90, 106, 108, 0.72);
             --free-border: rgba(90, 106, 108, 0.18);
             isolation: isolate;
+        }
+        .edit-page-surface.is-page-deleted {
+            display: none !important;
         }
         .edit-page-surface[data-edit-page="intro"] {
             --free-fg: #3a4044;
@@ -1833,23 +2030,15 @@
         .story-poster-carousel {
             position: relative;
             left: auto;
-            width: min(1320px, 100%);
+            width: min(1180px, 100%);
             margin: 0 auto clamp(2.8rem, 6vw, 5rem);
-            padding: clamp(1.8rem, 3vw, 3rem) max(1rem, calc((100vw - 1320px) / 2)) 1.2rem;
+            padding: clamp(1.2rem, 3vw, 2.4rem) 0 1.2rem;
             overflow: hidden;
             border: 0;
             border-radius: 0;
-            background:
-                radial-gradient(circle at 14% 22%, rgba(255,226,186,0.78) 0 1px, transparent 2px),
-                radial-gradient(circle at 84% 16%, rgba(244,194,194,0.62) 0 1px, transparent 2px),
-                radial-gradient(circle at 72% 76%, rgba(255,255,255,0.48) 0 1px, transparent 2px),
-                radial-gradient(ellipse at 50% 76%, rgba(137,78,45,0.42), transparent 37%),
-                radial-gradient(ellipse at center, rgba(46,52,82,0.62), transparent 58%),
-                linear-gradient(145deg, #02040a 0%, #0b1020 52%, #180f19 100%);
-            background-size: 170px 170px, 230px 230px, 290px 290px, auto, auto;
-            color: #fff;
-            box-shadow: 0 0 0 100vmax #050812;
-            clip-path: inset(0 -100vmax);
+            background: transparent;
+            color: var(--ink);
+            box-shadow: none;
             isolation: isolate;
             touch-action: pan-y;
             transform: none;
@@ -1857,48 +2046,32 @@
         .story-poster-carousel::before {
             content: '';
             position: absolute;
-            inset: 0;
-            z-index: 20;
-            background:
-                radial-gradient(ellipse at 50% 48%, transparent 0 27%, rgba(2,3,9,0.16) 47%, rgba(2,3,9,0.78) 100%),
-                linear-gradient(90deg, rgba(0,0,0,0.62), transparent 17% 83%, rgba(0,0,0,0.62));
-            pointer-events: none;
-            transition: background 0.8s ease;
-        }
-        .story-poster-carousel::after {
-            content: '';
-            position: absolute;
             left: 50%;
-            bottom: 7%;
+            bottom: 5.5rem;
             z-index: 0;
-            width: min(520px, 58vw);
-            height: 32%;
+            width: min(620px, 78vw);
+            height: 70px;
             border-radius: 50%;
-            background: radial-gradient(ellipse, rgba(255,194,106,0.28), rgba(196,97,59,0.08) 48%, transparent 72%);
-            filter: blur(22px);
-            opacity: 0.58;
+            background: radial-gradient(ellipse, rgba(84,58,50,0.14), transparent 68%);
+            filter: blur(18px);
             transform: translateX(-50%);
             pointer-events: none;
-            transition: opacity 0.75s ease, transform 0.75s ease;
+            transition: opacity var(--duration-slow) ease;
         }
-        .story-poster-carousel.is-poster-focused::before {
-            background:
-                radial-gradient(ellipse at 50% 48%, transparent 0 19%, rgba(2,3,9,0.4) 35%, rgba(1,2,7,0.9) 100%),
-                linear-gradient(90deg, rgba(0,0,0,0.78), transparent 24% 76%, rgba(0,0,0,0.78));
+        .story-poster-carousel::after {
+            content: none;
         }
-        .story-poster-carousel.is-poster-focused::after {
-            opacity: 1;
-            transform: translateX(-50%) scale(1.22);
-        }
+        .story-poster-carousel.is-poster-focused::before { opacity: 0.74; }
         .story-poster-viewport {
             position: relative;
             z-index: 1;
             width: 100%;
-            height: clamp(370px, 46vw, 560px);
+            height: clamp(430px, 50vw, 560px);
             overflow: hidden;
-            perspective: 1500px;
-            perspective-origin: 50% 44%;
+            perspective: 1600px;
+            perspective-origin: 50% 50%;
             cursor: grab;
+            outline: none;
         }
         .story-poster-viewport:active { cursor: grabbing; }
         .story-poster-track {
@@ -1911,27 +2084,25 @@
         .story-poster-card {
             position: absolute;
             left: 50%;
-            top: 45%;
-            width: clamp(112px, 15.2vw, 202px);
-            aspect-ratio: 2 / 3;
+            top: 50%;
+            width: clamp(180px, 23vw, 276px);
+            aspect-ratio: 69 / 116;
             opacity: 0;
-            transform: translate3d(-50%, -50%, -500px) scale(0.35);
-            transform-origin: 50% 75%;
-            filter: saturate(0.45) brightness(0.24) blur(1px);
+            transform: translate3d(-50%, -50%, -480px) scale(0.4);
+            transform-origin: center center;
+            filter: none;
             pointer-events: none;
-            will-change: transform, opacity, filter;
+            will-change: transform, opacity;
+            transform-style: preserve-3d;
         }
         .story-poster-card.is-visible { pointer-events: auto; }
         .story-poster-card.is-visible { cursor: pointer; }
-        .story-poster-card.is-center .story-poster-card-inner {
-            border-color: rgba(255,224,174,0.64);
-        }
+        .story-poster-card.is-center .story-poster-card-inner { box-shadow: 0 24px 55px rgba(54,38,34,0.23); }
         .story-poster-carousel.is-poster-focused .story-poster-card:not(.is-center) {
-            filter: saturate(0.28) brightness(0.2) blur(1.6px) !important;
-            opacity: 0.28 !important;
+            opacity: 1 !important;
         }
         .story-poster-carousel.is-poster-focused .story-poster-card.is-center {
-            filter: saturate(1.08) brightness(1.12) drop-shadow(0 0 20px rgba(255,197,112,0.82)) !important;
+            filter: none !important;
         }
         .story-poster-card-inner {
             position: relative;
@@ -1941,17 +2112,14 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.28);
-            border-radius: 7px;
-            background: linear-gradient(145deg, #4d3439, #101621 70%);
-            box-shadow: 0 20px 44px rgba(0,0,0,0.62), 0 0 0 1px rgba(255,255,255,0.04) inset;
-            transition: border-color 0.5s ease, box-shadow 0.7s ease;
+            border: 0;
+            border-radius: 12.5%;
+            background: #1a1a1a;
+            box-shadow: 0 18px 42px rgba(54,38,34,0.18);
+            transition: box-shadow var(--duration-slow) var(--ease-premium);
         }
         .story-poster-carousel.is-poster-focused .story-poster-card.is-center .story-poster-card-inner {
-            box-shadow:
-                0 28px 64px rgba(0,0,0,0.72),
-                0 0 22px rgba(255,197,112,0.82),
-                0 0 70px rgba(204,92,48,0.72);
+            box-shadow: 0 28px 65px rgba(54,38,34,0.28);
         }
         .story-poster-card img {
             position: absolute;
@@ -1964,12 +2132,14 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.82));
+            z-index: 2;
+            background: #000;
+            opacity: var(--poster-dim, 0.42);
+            pointer-events: none;
+            transition: opacity var(--duration-slow) var(--ease-premium);
         }
         .story-poster-copy {
-            position: relative;
-            z-index: 1;
-            padding: 1rem;
+            display: none;
         }
         .story-poster-copy small {
             display: block;
@@ -2006,19 +2176,20 @@
             margin-top: 1rem;
         }
         .story-poster-controls button {
-            min-width: 38px;
-            min-height: 34px;
-            border: 1px solid rgba(255,255,255,0.22);
+            min-width: 44px;
+            min-height: 44px;
+            border: 1px solid var(--border-soft);
             border-radius: 999px;
-            background: rgba(255,255,255,0.08);
-            color: #fff;
+            background: var(--surface-glass);
+            color: var(--ink);
             cursor: pointer;
+            transition: transform var(--duration-fast) ease, background var(--duration-fast) ease;
         }
         .story-poster-controls button:hover,
-        .story-poster-controls button:focus-visible { background: rgba(244,194,194,0.24); }
+        .story-poster-controls button:focus-visible { background: rgba(244,194,194,0.34); transform: translateY(-1px); }
         .story-poster-status {
             min-width: 96px;
-            color: rgba(255,255,255,0.62);
+            color: var(--text-muted);
             font-size: 0.72rem;
             letter-spacing: 0.16em;
             text-align: center;
@@ -2029,13 +2200,13 @@
             width: min(760px, calc(100% - 2rem));
             min-height: 1.8em;
             margin: -0.2rem auto 0.7rem;
-            color: #fff;
+            color: var(--ink);
             font-family: "Noto Serif SC", Georgia, serif;
             font-size: var(--story-poster-caption-size, 20px);
             font-weight: 400;
             line-height: 1.55;
             text-align: center;
-            text-shadow: 0 2px 18px rgba(0,0,0,0.92);
+            text-shadow: none;
             opacity: 0;
             transform: translateY(8px);
             pointer-events: none;
@@ -2047,7 +2218,7 @@
             pointer-events: auto;
         }
         body.edit-mode .story-poster-focus-caption[contenteditable="true"] {
-            outline: 1px dashed rgba(255,255,255,0.5);
+            outline: 1px dashed rgba(169,41,41,0.46);
             outline-offset: 5px;
             border-radius: 3px;
         }
@@ -2058,10 +2229,10 @@
             width: min(920px, calc(100% - 2rem));
             margin: 0 auto 1rem;
             padding: 0.7rem 0.9rem;
-            border: 1px solid rgba(255,255,255,0.16);
-            border-radius: 10px;
-            background: rgba(7,10,18,0.7);
-            color: rgba(255,255,255,0.78);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md);
+            background: var(--surface-glass);
+            color: var(--text-secondary);
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
@@ -2070,12 +2241,12 @@
         }
         body.edit-mode .story-poster-editor-controls { display: flex; }
         .story-poster-editor-controls button {
-            min-height: 36px;
+            min-height: 42px;
             padding: 0 1rem;
-            border: 1px solid rgba(255,255,255,0.24);
+            border: 1px solid var(--border-soft);
             border-radius: 999px;
-            background: rgba(255,255,255,0.1);
-            color: #fff;
+            background: rgba(255,255,255,0.78);
+            color: var(--ink);
             cursor: pointer;
         }
         .story-poster-editor-controls label {
@@ -2084,7 +2255,7 @@
             gap: 0.5rem;
         }
         .story-poster-editor-controls input[type="range"] { width: 130px; }
-        .story-poster-library-status { color: rgba(255,255,255,0.58); }
+        .story-poster-library-status { color: var(--text-muted); }
         @media (max-width: 768px) {
             .story-poster-carousel {
                 width: 100%;
@@ -2094,12 +2265,12 @@
                 border-radius: 0;
             }
             .story-poster-viewport {
-                height: clamp(330px, 116vw, 470px);
-                perspective: 1050px;
+                height: clamp(380px, 128vw, 510px);
+                perspective: 1600px;
             }
             .story-poster-card {
-                top: 46%;
-                width: clamp(102px, 31vw, 142px);
+                top: 50%;
+                width: clamp(176px, 58vw, 236px);
             }
             .story-poster-copy { padding: 0.72rem; }
             .story-poster-copy strong { font-size: clamp(0.78rem, 3.2vw, 1rem); }
@@ -3976,6 +4147,7 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
             .route-path-flow,
             .map-point circle.ring {
                 animation: none;
@@ -3991,6 +4163,9 @@
             .proposal-reveal-btn,
             .proposal-answer-btn,
             .proposal-answer-state,
+            .secure-overlay,
+            .secure-dialog,
+            .story-poster-card-inner::after,
             .map-point text {
                 transition: none;
             }
@@ -4064,6 +4239,8 @@
         <span class="toolbar-divider" aria-hidden="true"></span>
         <button type="button" id="resetLayoutBtn">复位位置</button>
         <button type="button" id="resetContentBtn">恢复文字</button>
+        <button type="button" id="deleteCurrentPageBtn" data-action-destructive="true">删除当前页</button>
+        <button type="button" id="restoreDeletedPageBtn">恢复删页</button>
         <span class="toolbar-divider" aria-hidden="true"></span>
         <button type="button" id="exportContentBtn">导出内容包</button>
         <button type="button" id="importContentBtn">导入内容包</button>
@@ -4094,6 +4271,39 @@
         </div>
     </div>
 
+    <div class="secure-overlay" id="storyGateOverlay" aria-hidden="true">
+        <form class="secure-dialog" id="storyGateForm" role="dialog" aria-modal="true" aria-labelledby="storyGateTitle" novalidate>
+            <button type="button" class="secure-dialog-close" id="storyGateCloseBtn" aria-label="关闭故事密码窗口">×</button>
+            <p class="secure-dialog-kicker">PRIVATE STORY</p>
+            <h2 id="storyGateTitle">先说出那一天</h2>
+            <p class="secure-dialog-copy">娜娜の生日</p>
+            <div class="secure-field-group">
+                <div class="secure-field">
+                    <label for="storyGatePassword">输入密码</label>
+                    <input type="password" id="storyGatePassword" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" aria-describedby="storyGateError" required>
+                </div>
+            </div>
+            <p class="secure-dialog-error" id="storyGateError" role="alert" aria-live="polite"></p>
+            <button type="submit" class="secure-dialog-submit">确认进入</button>
+        </form>
+    </div>
+
+    <div class="secure-overlay" id="adminAuthOverlay" aria-hidden="true">
+        <form class="secure-dialog" id="adminAuthForm" role="dialog" aria-modal="true" aria-labelledby="adminAuthTitle" novalidate>
+            <button type="button" class="secure-dialog-close" id="adminAuthCloseBtn" aria-label="关闭管理员解锁窗口">×</button>
+            <p class="secure-dialog-kicker">OWNER EDIT MODE</p>
+            <h2 id="adminAuthTitle">仅限网站主人编辑</h2>
+            <p class="secure-dialog-copy">请输入 Cloudflare 海报库的管理员上传口令。验证通过后，本标签页才能显示上传和编辑工具。</p>
+            <div class="secure-field">
+                <label for="adminAuthToken">管理员上传口令</label>
+                <input type="password" id="adminAuthToken" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="adminAuthError" required>
+            </div>
+            <p class="secure-dialog-error" id="adminAuthError" role="alert" aria-live="polite"></p>
+            <button type="submit" class="secure-dialog-submit" id="adminAuthSubmitBtn">验证并开启编辑</button>
+            <p class="secure-dialog-note">口令只保留在当前标签页内存，不写入网页、浏览器存储或 GitHub。</p>
+        </form>
+    </div>
+
     <!-- ==========================================
     Control Panel
     ========================================== -->
@@ -4113,8 +4323,8 @@
                 <div class="param-desc">六边形框线粗细，线越粗白纱越明显</div>
             </div>
             <div class="param-group">
-                <label>面料薄纱细腻度 <span class="val" id="v-tiling">448</span></label>
-                <input type="range" id="tiling" min="10" max="600" step="5" value="448">
+                <label>面料薄纱细腻度 <span class="val" id="v-tiling">450</span></label>
+                <input type="range" id="tiling" min="10" max="600" step="5" value="450">
                 <div class="param-desc">六边形纹理重复次数，越大网眼越密</div>
             </div>
         </div>
@@ -4323,7 +4533,7 @@
                 <div class="story-arc-step"><span>05 · EVERYDAY</span><strong>平凡日常</strong></div>
                 <div class="story-arc-step"><span>06 · FOREVER</span><strong>走向余生</strong></div>
             </div>
-            <section class="story-poster-carousel" id="storyPosterCarousel" aria-label="线性叙事海报轮换">
+            <section class="story-poster-carousel" id="storyPosterCarousel" aria-label="Coverflow Gallery 照片轮换">
                 <div class="story-poster-editor-controls" id="storyPosterEditorControls" aria-label="海报图片库设置">
                     <button type="button" id="storyPosterUploadBtn">批量上传海报照片</button>
                     <button type="button" id="storyPosterCloudBtn">云端图库设置</button>
@@ -4552,15 +4762,15 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.22.0";
-        const BUILD_DATE = "2026-07-12";
+        const APP_VERSION = "3.24.0";
+        const BUILD_DATE = "2026-07-14";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
         const DEFAULTS = {
             // Hex texture
             hexFill: 80,
             hexLineWidth: 5.0,
-            tiling: 448,
+            tiling: 450,
 
             // Cloth material
             opacity: 0.86,
@@ -4839,6 +5049,7 @@
         const POLAROID_LAYOUT_STORAGE_KEY = 'wedding_polaroid_layout_v1';
         const ROUTE_LABEL_SIZE_STORAGE_KEY = 'wedding_route_label_size_v1';
         const STORY_POSTER_CONFIG_STORAGE_KEY = 'wedding_story_poster_config_v1';
+        const HIDDEN_PAGES_STORAGE_KEY = 'wedding_hidden_pages_v1';
         const DEFAULT_STORY_POSTER_CLOUD_ENDPOINT = 'https://my-wedding-poster-library.yuyanp52.workers.dev';
         const STORY_POSTER_DB_NAME = 'wedding_story_poster_library_v1';
         const STORY_POSTER_DB_STORE = 'posters';
@@ -4856,7 +5067,8 @@
             POLAROID_STORAGE_KEY,
             POLAROID_LAYOUT_STORAGE_KEY,
             ROUTE_LABEL_SIZE_STORAGE_KEY,
-            STORY_POSTER_CONFIG_STORAGE_KEY
+            STORY_POSTER_CONFIG_STORAGE_KEY,
+            HIDDEN_PAGES_STORAGE_KEY
         ];
         const POLAROID_COUNT = 28;
         const DEFAULT_POLAROID_GAP = 18;
@@ -4874,6 +5086,12 @@
         const editModeToggle = document.getElementById('editModeToggle');
         const editModeToolbar = document.getElementById('editModeToolbar');
         const editToolbarCollapseBtn = document.getElementById('editToolbarCollapseBtn');
+        const adminAuthOverlay = document.getElementById('adminAuthOverlay');
+        const adminAuthForm = document.getElementById('adminAuthForm');
+        const adminAuthCloseBtn = document.getElementById('adminAuthCloseBtn');
+        const adminAuthTokenInput = document.getElementById('adminAuthToken');
+        const adminAuthError = document.getElementById('adminAuthError');
+        const adminAuthSubmitBtn = document.getElementById('adminAuthSubmitBtn');
         const rehearsalOpenBtn = document.getElementById('rehearsalOpenBtn');
         const rehearsalOverlay = document.getElementById('rehearsalOverlay');
         const rehearsalCloseBtn = document.getElementById('rehearsalCloseBtn');
@@ -4882,6 +5100,8 @@
         const saveAllBtn = document.getElementById('saveAllBtn');
         const resetLayoutBtn = document.getElementById('resetLayoutBtn');
         const resetContentBtn = document.getElementById('resetContentBtn');
+        const deleteCurrentPageBtn = document.getElementById('deleteCurrentPageBtn');
+        const restoreDeletedPageBtn = document.getElementById('restoreDeletedPageBtn');
         const exportContentBtn = document.getElementById('exportContentBtn');
         const importContentBtn = document.getElementById('importContentBtn');
         const importContentInput = document.getElementById('importContentInput');
@@ -4893,9 +5113,12 @@
         const editorStorageValue = document.getElementById('editorStorageValue');
         const storyModuleList = document.getElementById('storyModuleList');
         let isEditMode = false;
+        let isAdminUnlocked = false;
+        let lastAdminAuthFocus = null;
         let storyModules = [];
         let freeItems = [];
         let fixedPhotos = {};
+        let hiddenPages = [];
         let activeFixedPhotoId = null;
         let activeModulePhotoId = null;
         let activeFreePhotoId = null;
@@ -4924,7 +5147,7 @@
         let storyPosterIndex = 0;
         let storyPosterPosition = 0;
         let storyPosterAnimationFrame = 0;
-        let storyPosterPhase = 'spin';
+        let storyPosterPhase = 'idle';
         let storyPosterPhaseStarted = 0;
         let storyPosterSettle = null;
         let storyPosterDrag = null;
@@ -4956,6 +5179,17 @@
             { id: 'proposal-threshold', selector: '#proposalThreshold' },
             { id: 'proposal', selector: '#proposalFinale' }
         ];
+        const EDIT_SURFACE_LABELS = {
+            intro: '开场页',
+            parallel: '平行轨迹',
+            meeting: '相遇页',
+            merged: '汇合页',
+            story: '线性叙事',
+            polaroids: '相纸墙',
+            'route-map': '路线地图',
+            'proposal-threshold': '求婚过渡页',
+            proposal: '求婚终章'
+        };
         const POLAROID_SCATTER_LAYOUT = [
             { x: 5, y: 7, r: -8 }, { x: 17, y: 4, r: 6 }, { x: 30, y: 8, r: -3 }, { x: 43, y: 5, r: 9 },
             { x: 57, y: 7, r: -7 }, { x: 69, y: 4, r: 4 }, { x: 82, y: 8, r: -5 }, { x: 10, y: 28, r: 7 },
@@ -5095,6 +5329,13 @@
                     captionSize: clamp(Number(parsed && parsed.captionSize || 20), 14, 38),
                     cloudEndpoint: normalizeStoryPosterCloudEndpoint(parsed && parsed.cloudEndpoint || '')
                 });
+            }
+            if (key === HIDDEN_PAGES_STORAGE_KEY) {
+                const allowed = new Set(EDIT_SURFACES.map(surface => surface.id).filter(id => id !== 'intro'));
+                const safeHiddenPages = Array.isArray(parsed)
+                    ? parsed.filter(id => typeof id === 'string' && allowed.has(id))
+                    : [];
+                return JSON.stringify(Array.from(new Set(safeHiddenPages)));
             }
             if (key === FIXED_PHOTO_STORAGE_KEY) {
                 const safePhotos = {};
@@ -5298,6 +5539,101 @@
             });
         }
 
+        function trapModalFocus(event, container) {
+            if (event.key !== 'Tab' || !container) return;
+            const focusable = Array.from(container.querySelectorAll('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+                .filter(element => element.offsetParent !== null);
+            if (!focusable.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        }
+
+        function setAdminAuthError(message = '') {
+            if (!adminAuthError || !adminAuthTokenInput) return;
+            adminAuthError.textContent = message;
+            adminAuthTokenInput.setAttribute('aria-invalid', String(Boolean(message)));
+        }
+
+        function openAdminAuthDialog() {
+            if (!adminAuthOverlay || !adminAuthTokenInput) return;
+            lastAdminAuthFocus = document.activeElement;
+            setAdminAuthError('');
+            adminAuthTokenInput.value = '';
+            adminAuthOverlay.classList.add('is-open');
+            adminAuthOverlay.setAttribute('aria-hidden', 'false');
+            window.setTimeout(() => adminAuthTokenInput.focus({ preventScroll: true }), 320);
+        }
+
+        function closeAdminAuthDialog(restoreFocus = true) {
+            if (!adminAuthOverlay) return;
+            adminAuthOverlay.classList.remove('is-open');
+            adminAuthOverlay.setAttribute('aria-hidden', 'true');
+            setAdminAuthError('');
+            if (restoreFocus && lastAdminAuthFocus && document.contains(lastAdminAuthFocus)) {
+                lastAdminAuthFocus.focus({ preventScroll: true });
+            }
+            lastAdminAuthFocus = null;
+        }
+
+        async function verifyAdminUploadToken(token) {
+            const endpoint = storyPosterCloudEndpoint || DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
+            const response = await fetch(`${endpoint}/api/auth`, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` },
+                cache: 'no-store'
+            });
+            if (!response.ok) {
+                if (response.status === 401) throw new Error('invalid-admin-token');
+                if (response.status === 403) throw new Error('admin-origin-not-allowed');
+                throw new Error('admin-auth-unavailable');
+            }
+            return true;
+        }
+
+        async function submitAdminAuth(event) {
+            event.preventDefault();
+            if (!adminAuthTokenInput || !adminAuthSubmitBtn) return;
+            const token = adminAuthTokenInput.value.trim();
+            if (!token) {
+                setAdminAuthError('请输入管理员上传口令。');
+                adminAuthTokenInput.focus();
+                return;
+            }
+            setAdminAuthError('');
+            adminAuthSubmitBtn.setAttribute('aria-busy', 'true');
+            adminAuthSubmitBtn.disabled = true;
+            adminAuthSubmitBtn.textContent = '正在验证…';
+            try {
+                await verifyAdminUploadToken(token);
+                storyPosterCloudToken = token;
+                isAdminUnlocked = true;
+                closeAdminAuthDialog(false);
+                isEditMode = true;
+                enterEditMode();
+                showToast('已验证网站主人身份；本页可安全上传照片', 2200);
+            } catch (error) {
+                const errorCode = error && error.message;
+                const message = errorCode === 'invalid-admin-token'
+                    ? '管理员口令不正确，请重新输入。'
+                    : errorCode === 'admin-origin-not-allowed'
+                        ? '当前网址未获编辑权限，请从正式网站或 localhost:8080 打开。'
+                        : '暂时无法连接验证服务，请检查网络后重试。';
+                setAdminAuthError(message);
+                adminAuthTokenInput.select();
+            } finally {
+                adminAuthSubmitBtn.removeAttribute('aria-busy');
+                adminAuthSubmitBtn.disabled = false;
+                adminAuthSubmitBtn.textContent = '验证并开启编辑';
+            }
+        }
+
         function initContentEditor() {
             // Capture all default texts from [data-ck] elements
             document.querySelectorAll('[data-ck]').forEach(el => {
@@ -5311,6 +5647,7 @@
             }
 
             applyLayout(loadLayout());
+            initHiddenPages();
             initFreeItems();
             initFixedPhotos();
             initPolaroidWall();
@@ -5319,13 +5656,25 @@
 
             // Edit mode toggle button
             editModeToggle.addEventListener('click', () => {
-                isEditMode = !isEditMode;
                 if (isEditMode) {
-                    enterEditMode();
-                } else {
+                    isEditMode = false;
                     exitEditMode();
+                    return;
                 }
+                if (!isAdminUnlocked) {
+                    openAdminAuthDialog();
+                    return;
+                }
+                isEditMode = true;
+                enterEditMode();
             });
+            if (adminAuthForm) adminAuthForm.addEventListener('submit', submitAdminAuth);
+            if (adminAuthCloseBtn) adminAuthCloseBtn.addEventListener('click', () => closeAdminAuthDialog(true));
+            if (adminAuthOverlay) {
+                adminAuthOverlay.addEventListener('click', event => {
+                    if (event.target === adminAuthOverlay) closeAdminAuthDialog(true);
+                });
+            }
             if (editToolbarCollapseBtn) {
                 editToolbarCollapseBtn.addEventListener('click', () => {
                     setEditToolbarCollapsed(!editModeToolbar.classList.contains('is-collapsed'));
@@ -5345,14 +5694,22 @@
                 });
             }
             document.addEventListener('keydown', e => {
+                if (adminAuthOverlay && adminAuthOverlay.classList.contains('is-open')) {
+                    trapModalFocus(e, adminAuthForm);
+                }
                 if (e.key === 'Escape' && rehearsalOverlay && rehearsalOverlay.classList.contains('is-open')) {
                     e.preventDefault();
                     closeRehearsalDialog(true);
+                } else if (e.key === 'Escape' && adminAuthOverlay && adminAuthOverlay.classList.contains('is-open')) {
+                    e.preventDefault();
+                    closeAdminAuthDialog(true);
                 }
             });
 
             resetLayoutBtn.addEventListener('click', resetLayout);
             resetContentBtn.addEventListener('click', resetContent);
+            if (deleteCurrentPageBtn) deleteCurrentPageBtn.addEventListener('click', deleteCurrentPage);
+            if (restoreDeletedPageBtn) restoreDeletedPageBtn.addEventListener('click', restoreLastDeletedPage);
             undoEditBtn.addEventListener('click', undoLastEdit);
             saveAllBtn.addEventListener('click', () => saveAllEditorState(true));
             if (exportContentBtn) exportContentBtn.addEventListener('click', exportContentPackage);
@@ -5481,7 +5838,8 @@
                 content: collectContentMap(),
                 layout: collectLayoutMap(),
                 storyModules: cloneEditorData(storyModules),
-                freeItems: cloneEditorData(freeItems)
+                freeItems: cloneEditorData(freeItems),
+                hiddenPages: cloneEditorData(hiddenPages)
             };
             const signature = JSON.stringify(snapshot);
             const last = undoStack[undoStack.length - 1];
@@ -5506,6 +5864,10 @@
 
             freeItems = cloneEditorData(snapshot.freeItems || []);
             renderFreeItems();
+
+            hiddenPages = cloneEditorData(snapshot.hiddenPages || []);
+            persistHiddenPages();
+            applyHiddenPages();
 
             if (isEditMode) {
                 document.querySelectorAll('[data-ck]').forEach(ensureDragHandle);
@@ -5533,6 +5895,7 @@
             saveStoryModules();
             saveFreeItems();
             persistFixedPhotos();
+            persistHiddenPages();
             updateEditorStorageMeter();
             if (showNotice) {
                 showToast('💾 已保存，下次打开会自动读取', 1800);
@@ -5774,6 +6137,95 @@
                 el.classList.add('edit-page-surface');
                 el.dataset.editPage = surface.id;
             });
+        }
+
+        function loadHiddenPages() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(HIDDEN_PAGES_STORAGE_KEY) || '[]');
+                const allowed = new Set(EDIT_SURFACES.map(surface => surface.id).filter(id => id !== 'intro'));
+                return Array.isArray(parsed)
+                    ? Array.from(new Set(parsed.filter(id => typeof id === 'string' && allowed.has(id))))
+                    : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function persistHiddenPages() {
+            try {
+                localStorage.setItem(HIDDEN_PAGES_STORAGE_KEY, JSON.stringify(hiddenPages));
+            } catch (error) { /* ignore */ }
+            updateDeletedPageControls();
+        }
+
+        function updateDeletedPageControls() {
+            if (!restoreDeletedPageBtn) return;
+            restoreDeletedPageBtn.disabled = hiddenPages.length === 0;
+            restoreDeletedPageBtn.textContent = hiddenPages.length
+                ? `恢复删页（${hiddenPages.length}）`
+                : '恢复删页';
+        }
+
+        function applyHiddenPages() {
+            ensureEditSurfaces();
+            const deleted = new Set(hiddenPages);
+            EDIT_SURFACES.forEach(surface => {
+                const el = document.querySelector(surface.selector);
+                if (el) el.classList.toggle('is-page-deleted', deleted.has(surface.id));
+            });
+            updateDeletedPageControls();
+            window.requestAnimationFrame(() => {
+                if (typeof ScrollTrigger !== 'undefined' && ScrollTrigger.refresh) ScrollTrigger.refresh();
+            });
+        }
+
+        function initHiddenPages() {
+            ensureEditSurfaces();
+            hiddenPages = loadHiddenPages();
+            applyHiddenPages();
+        }
+
+        function getNextVisibleEditSurface(deletedId) {
+            const currentIndex = EDIT_SURFACES.findIndex(surface => surface.id === deletedId);
+            const ordered = [
+                ...EDIT_SURFACES.slice(currentIndex + 1),
+                ...EDIT_SURFACES.slice(1, Math.max(1, currentIndex))
+            ];
+            const deleted = new Set(hiddenPages);
+            const next = ordered.find(surface => surface.id !== 'intro' && !deleted.has(surface.id));
+            return next ? document.querySelector(next.selector) : null;
+        }
+
+        function deleteCurrentPage() {
+            if (!isEditMode) return;
+            const surface = getActiveEditSurface();
+            const pageId = surface && surface.dataset.editPage;
+            if (!pageId || pageId === 'intro') {
+                showToast('开场入口页不可删除', 1800);
+                return;
+            }
+            const label = EDIT_SURFACE_LABELS[pageId] || '当前页';
+            if (!window.confirm(`删除“${label}”吗？之后可以用“恢复删页”找回。`)) return;
+            captureUndoSnapshot('delete-page');
+            hiddenPages = hiddenPages.filter(id => id !== pageId);
+            hiddenPages.push(pageId);
+            const nextSurface = getNextVisibleEditSurface(pageId);
+            persistHiddenPages();
+            applyHiddenPages();
+            if (nextSurface) window.requestAnimationFrame(() => nextSurface.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+            showToast(`已删除“${label}” · 可随时恢复`, 2000);
+        }
+
+        function restoreLastDeletedPage() {
+            if (!isEditMode || !hiddenPages.length) return;
+            captureUndoSnapshot('restore-page');
+            const pageId = hiddenPages.pop();
+            persistHiddenPages();
+            applyHiddenPages();
+            const surface = EDIT_SURFACES.find(item => item.id === pageId);
+            const el = surface ? document.querySelector(surface.selector) : null;
+            if (el) window.requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+            showToast(`已恢复“${EDIT_SURFACE_LABELS[pageId] || '页面'}”`, 1800);
         }
 
         function loadFreeItems() {
@@ -6246,6 +6698,7 @@
             board.addEventListener('click', onPolaroidClick);
             board.addEventListener('input', onPolaroidInput);
             board.addEventListener('change', onPolaroidFileChange);
+            document.addEventListener('pointerdown', onPolaroidClickAway, true);
             initPolaroidMemoryOverlay();
 
             const layoutToggleBtn = document.getElementById('polaroidLayoutToggleBtn');
@@ -6821,6 +7274,15 @@
             if (activeElement && activeElement.closest && activeElement.closest('.polaroid-card')) {
                 activeElement.blur();
             }
+        }
+
+        function onPolaroidClickAway(event) {
+            const board = document.getElementById('polaroidBoard');
+            const activeCard = board ? board.querySelector('.polaroid-card.is-polaroid-active') : null;
+            if (!activeCard || activeCard.contains(event.target)) return;
+            const memoryOverlay = document.getElementById('polaroidMemoryOverlay');
+            if (memoryOverlay && memoryOverlay.classList.contains('is-open') && memoryOverlay.contains(event.target)) return;
+            clearActivePolaroidCard();
         }
 
         function focusPolaroidNote(card) {
@@ -7476,9 +7938,11 @@
             if ('IntersectionObserver' in window) {
                 const observer = new IntersectionObserver(entries => {
                     storyPosterVisible = Boolean(entries[0] && entries[0].isIntersecting);
+                    if (storyPosterVisible) window.requestAnimationFrame(layoutStoryPosters);
                 }, { rootMargin: '240px 0px' });
                 observer.observe(carousel);
             }
+            window.addEventListener('resize', () => window.requestAnimationFrame(layoutStoryPosters));
             renderStoryPosterCarousel();
             loadStoryPosterLibrary();
             loadStoryPosterCloudLibrary();
@@ -7529,7 +7993,7 @@
             const items = getStoryPosterItems();
             if (!items.length) return;
             const target = Math.round(storyPosterPosition) + step;
-            beginStoryPosterSettle(target, 760);
+            beginStoryPosterSettle(target, 600);
         }
 
         function updateStoryPosterStatus(total) {
@@ -7551,8 +8015,10 @@
             const items = getStoryPosterItems();
             if (!track || !viewport || !items.length) return;
             const mobile = viewport.clientWidth <= 768;
-            const halfWidth = viewport.clientWidth * (mobile ? 0.48 : 0.47);
-            const visibleRadius = items.length <= 12 ? 6 : 5.99;
+            const coverflowGap = mobile
+                ? Math.min(88, viewport.clientWidth * 0.16)
+                : Math.min(180, viewport.clientWidth * 0.13);
+            const visibleRadius = 3.01;
             let closestIndex = 0;
             let closestDistance = Infinity;
             track.querySelectorAll('.story-poster-card').forEach((card, index) => {
@@ -7562,7 +8028,7 @@
                     closestDistance = distance;
                     closestIndex = index;
                 }
-                const visible = distance <= visibleRadius + 0.4;
+                const visible = distance <= visibleRadius;
                 const image = card.querySelector('img[data-poster-src]');
                 card.classList.toggle('is-visible', visible);
                 card.setAttribute('aria-hidden', String(!visible));
@@ -7573,21 +8039,17 @@
                     return;
                 }
                 if (image && !image.getAttribute('src')) image.setAttribute('src', image.dataset.posterSrc);
-                const side = Math.sign(offset);
-                const spread = 1 - Math.exp(-distance * (mobile ? 0.56 : 0.42));
-                const x = side * halfWidth * spread;
-                const y = Math.pow(distance, 1.24) * (mobile ? 7.2 : 8.6);
-                const z = -Math.pow(distance, 1.18) * (mobile ? 52 : 66);
-                const rotateY = side * Math.min(58, 11 + distance * 8.4);
-                const focusBoost = storyPosterPhase === 'focused' && distance < 0.02 ? (mobile ? 1.12 : 1.18) : 1;
-                const scale = Math.max(mobile ? 0.46 : 0.42, 1 - distance * (mobile ? 0.105 : 0.095)) * focusBoost;
-                const opacity = Math.max(0.14, 1 - distance * 0.135);
-                const brightness = Math.max(0.24, 1 - distance * 0.125);
-                const saturation = Math.max(0.38, 1 - distance * 0.1);
+                const x = offset * coverflowGap;
+                const z = -distance * 120;
+                const rotateY = offset * 7;
+                const rotateZ = offset * 7;
+                const focusBoost = storyPosterPhase === 'focused' && distance < 0.02 ? 1.05 : 1;
+                const scale = Math.max(0.52, 1 - distance * 0.12) * focusBoost;
                 card.style.zIndex = String(100 - Math.round(distance * 10));
-                card.style.opacity = String(opacity);
-                card.style.filter = `saturate(${saturation}) brightness(${brightness}) blur(${Math.max(0, distance - 3.5) * 0.35}px)`;
-                card.style.transform = `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), ${z}px) rotateY(${rotateY}deg) scale(${scale})`;
+                card.style.opacity = '1';
+                card.style.filter = 'none';
+                card.style.setProperty('--poster-dim', distance < 0.02 ? '0' : '0.42');
+                card.style.transform = `translate3d(calc(-50% + ${x}px), -50%, ${z}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
                 card.style.pointerEvents = 'auto';
             });
             if (storyPosterLastTickIndex !== closestIndex) {
@@ -7684,7 +8146,7 @@
                 return;
             }
             storyPosterPendingFocus = true;
-            beginStoryPosterSettle(normalized, 280);
+            beginStoryPosterSettle(normalized, 600);
         }
 
         function deactivateStoryPosterFocus() {
@@ -7699,7 +8161,7 @@
             storyPosterPendingFocus = false;
             storyPosterFocusedItem = null;
             if (storyPosterPhase === 'focused') {
-                storyPosterPhase = 'spin';
+                storyPosterPhase = 'idle';
                 storyPosterPhaseStarted = performance.now();
             }
         }
@@ -7741,7 +8203,7 @@
             }
         }
 
-        function beginStoryPosterSettle(target, duration = 720) {
+        function beginStoryPosterSettle(target, duration = 600) {
             const carousel = document.getElementById('storyPosterCarousel');
             if (carousel) carousel.classList.remove('is-poster-focused');
             storyPosterPhase = 'settle';
@@ -7749,7 +8211,7 @@
             storyPosterSettle = {
                 from: storyPosterPosition,
                 to: target,
-                duration: Math.max(320, duration)
+                duration: Math.max(220, duration)
             };
         }
 
@@ -7769,10 +8231,11 @@
                 animateStoryPosters.lastNow = now;
                 return;
             }
-            if (storyPosterPhase === 'spin') {
-                const speed = 0.00058;
-                storyPosterPosition += Math.min(32, now - (animateStoryPosters.lastNow || now)) * speed;
-            } else if (storyPosterPhase === 'settle' && storyPosterSettle) {
+            if (storyPosterPhase === 'idle') {
+                animateStoryPosters.lastNow = now;
+                return;
+            }
+            if (storyPosterPhase === 'settle' && storyPosterSettle) {
                 const progress = Math.min(1, elapsed / storyPosterSettle.duration);
                 const eased = 1 - Math.pow(1 - progress, 4);
                 storyPosterPosition = storyPosterSettle.from + (storyPosterSettle.to - storyPosterSettle.from) * eased;
@@ -7781,7 +8244,7 @@
                     if (storyPosterPendingFocus) {
                         activateStoryPosterFocus(storyPosterSettle.to);
                     } else {
-                        storyPosterPhase = 'spin';
+                        storyPosterPhase = 'idle';
                         storyPosterPhaseStarted = now;
                     }
                 }
@@ -7828,7 +8291,7 @@
             if (moved) {
                 storyPosterSuppressClick = true;
                 window.setTimeout(() => { storyPosterSuppressClick = false; }, 180);
-                beginStoryPosterSettle(Math.round(storyPosterPosition), 520);
+                beginStoryPosterSettle(Math.round(storyPosterPosition), 600);
             } else if (tapIndex !== null) {
                 storyPosterSuppressClick = true;
                 window.setTimeout(() => { storyPosterSuppressClick = false; }, 360);
@@ -8699,10 +9162,46 @@
            SAY YES HANDLER — Transition to Main Content
            ========================================== */
         const sayYesBtn = document.getElementById('say-yes-trigger');
+        const storyGateOverlay = document.getElementById('storyGateOverlay');
+        const storyGateForm = document.getElementById('storyGateForm');
+        const storyGateCloseBtn = document.getElementById('storyGateCloseBtn');
+        const storyGatePassword = document.getElementById('storyGatePassword');
+        const storyGateError = document.getElementById('storyGateError');
+        const STORY_GATE_PASSWORD = '19980607';
+        let lastStoryGateFocus = null;
+        let storyGateCorrectCount = 0;
 
-        sayYesBtn.addEventListener('click', () => {
-            if (isEditMode) return;
-            if (!isUnveiled) return;
+        function setStoryGateError(message = '') {
+            if (!storyGateError) return;
+            storyGateError.textContent = message;
+            if (storyGatePassword) storyGatePassword.setAttribute('aria-invalid', String(Boolean(message)));
+        }
+
+        function openStoryGate() {
+            if (!storyGateOverlay || !storyGatePassword) return;
+            lastStoryGateFocus = document.activeElement;
+            storyGateCorrectCount = 0;
+            storyGatePassword.value = '';
+            setStoryGateError('');
+            storyGateOverlay.classList.add('is-open');
+            storyGateOverlay.setAttribute('aria-hidden', 'false');
+            window.setTimeout(() => storyGatePassword.focus({ preventScroll: true }), 320);
+        }
+
+        function closeStoryGate(restoreFocus = true) {
+            if (!storyGateOverlay) return;
+            storyGateOverlay.classList.remove('is-open');
+            storyGateOverlay.setAttribute('aria-hidden', 'true');
+            storyGateCorrectCount = 0;
+            if (storyGatePassword) storyGatePassword.value = '';
+            setStoryGateError('');
+            if (restoreFocus && lastStoryGateFocus && document.contains(lastStoryGateFocus)) {
+                lastStoryGateFocus.focus({ preventScroll: true });
+            }
+            lastStoryGateFocus = null;
+        }
+
+        function enterWeddingStory() {
             setCeremonyMusicScene('story');
 
             const tl = gsap.timeline({
@@ -8729,6 +9228,54 @@
               .to([layerDom, container, layerVideo],
                   { opacity: 0, duration: 0.6, ease: 'power2.out' }, '+=0.1')
               .to(flash, { opacity: 0, duration: 0.5, ease: 'power2.out' }, '-=0.4');
+        }
+
+        sayYesBtn.addEventListener('click', () => {
+            if (isEditMode || !isUnveiled) return;
+            openStoryGate();
+        });
+
+        if (storyGateForm) {
+            storyGateForm.addEventListener('submit', event => {
+                event.preventDefault();
+                if (!storyGatePassword || storyGatePassword.value !== STORY_GATE_PASSWORD) {
+                    storyGateCorrectCount = 0;
+                    setStoryGateError('密码错误');
+                    if (storyGatePassword) {
+                        storyGatePassword.select();
+                        storyGatePassword.focus();
+                    }
+                    return;
+                }
+                storyGateCorrectCount += 1;
+                storyGatePassword.value = '';
+                if (storyGateCorrectCount < 2) {
+                    // The intended interaction is two consecutive correct entries:
+                    // keep the gate open and show the same feedback as the first
+                    // failed attempt, then allow the second correct entry through.
+                    setStoryGateError('密码错误');
+                    storyGatePassword.focus();
+                    return;
+                }
+                setStoryGateError('');
+                closeStoryGate(false);
+                enterWeddingStory();
+            });
+        }
+        if (storyGateCloseBtn) storyGateCloseBtn.addEventListener('click', () => closeStoryGate(true));
+        if (storyGateOverlay) {
+            storyGateOverlay.addEventListener('click', event => {
+                if (event.target === storyGateOverlay) closeStoryGate(true);
+            });
+        }
+        document.addEventListener('keydown', event => {
+            if (storyGateOverlay && storyGateOverlay.classList.contains('is-open')) {
+                trapModalFocus(event, storyGateForm);
+            }
+            if (event.key === 'Escape' && storyGateOverlay && storyGateOverlay.classList.contains('is-open')) {
+                event.preventDefault();
+                closeStoryGate(true);
+            }
         });
 
         /* ==========================================

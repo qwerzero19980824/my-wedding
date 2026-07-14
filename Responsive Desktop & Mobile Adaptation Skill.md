@@ -2,7 +2,7 @@
 
 > Last aligned: 2026-07-13
 > Project: `my-wedding`  
-> Current app version: v3.22.0
+> Current app version: v3.24.0
 
 You are responsible for making **平行宇宙的相遇** feel intentionally designed on phones, tablets, laptops, desktops, and large screens.
 
@@ -111,6 +111,10 @@ The most important practical checks for this project are 390px mobile, 430px lar
 - Route label size remains user-adjustable through `wedding_route_label_size_v1`.
 
 ### 4.7 Story Modules and Merged Memories
+
+- Coverflow Gallery must keep one upright center card and three tilted, dimmed neighbors per side (7 visible total). Mobile uses a separately calculated compact gap and must not re-enable automatic rotation.
+- The story-password and owner-auth dialogs must fit within `100svh`, keep at least 48px input/actions, trap keyboard focus, and avoid horizontal overflow at 320–430px.
+- Mobile editing/upload controls appear only after Worker-backed owner verification; the selected files input must continue supporting `image/*` and `multiple`.
 
 - Image placeholders or uploaded images must keep intentional aspect ratios.
 - Fixed narrative photos remain uploadable only in edit mode; on phones the parallel portraits stay within 150×216px and merged-memory photos use a 4:3 ratio without horizontal clipping.

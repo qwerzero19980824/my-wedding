@@ -58,7 +58,7 @@ function makeEnv() {
   return {
     POSTERS: new MockR2Bucket(),
     UPLOAD_TOKEN: 'test-upload-token',
-    ALLOWED_ORIGINS: 'https://www.cml-zy.love,http://127.0.0.1:8090',
+    ALLOWED_ORIGINS: 'https://www.cml-zy.love,http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:8090',
     MAX_ORIGINAL_BYTES: '83886080'
   };
 }
@@ -92,6 +92,19 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
     body: new Uint8Array([1, 2, 3])
   }), env);
   assert.equal(denied.status, 401);
+
+  const deniedAuth = await worker.fetch(request('/api/auth'), env);
+  assert.equal(deniedAuth.status, 401);
+
+  const ownerAuth = await worker.fetch(authorized('/api/auth'), env);
+  assert.equal(ownerAuth.status, 200);
+  assert.deepEqual(await ownerAuth.json(), { ok: true, role: 'owner' });
+
+  const localOwnerAuth = await worker.fetch(authorized('/api/auth', {
+    headers: { Origin: 'http://localhost:8080' }
+  }), env);
+  assert.equal(localOwnerAuth.status, 200);
+  assert.equal(localOwnerAuth.headers.get('Access-Control-Allow-Origin'), 'http://localhost:8080');
 
   const oversized = await worker.fetch(authorized(`/api/posters/${id}/original`, {
     method: 'PUT',

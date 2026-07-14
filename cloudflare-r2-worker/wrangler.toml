@@ -9,7 +9,7 @@ binding = "POSTERS"
 bucket_name = "wedding-posters"
 
 [vars]
-ALLOWED_ORIGINS = "https://www.cml-zy.love,https://cml-zy.love,http://127.0.0.1:8090,http://localhost:8090"
+ALLOWED_ORIGINS = "https://www.cml-zy.love,https://cml-zy.love,http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:8090,http://localhost:8090"
 MAX_ORIGINAL_BYTES = "83886080"
 
 # Never place UPLOAD_TOKEN in this file or Git.
