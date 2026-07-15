@@ -2066,7 +2066,7 @@
             position: relative;
             z-index: 1;
             width: 100%;
-            height: clamp(430px, 50vw, 560px);
+            height: clamp(300px, 36vw, 520px);
             overflow: hidden;
             perspective: 1600px;
             perspective-origin: 50% 50%;
@@ -2085,8 +2085,8 @@
             position: absolute;
             left: 50%;
             top: 50%;
-            width: clamp(180px, 23vw, 276px);
-            aspect-ratio: 69 / 116;
+            width: clamp(300px, 48vw, 760px);
+            aspect-ratio: 16 / 9;
             opacity: 0;
             transform: translate3d(-50%, -50%, -480px) scale(0.4);
             transform-origin: center center;
@@ -2138,7 +2138,7 @@
         }
         .story-poster-card .story-poster-photo {
             object-fit: contain;
-            object-position: center;
+            object-position: center center;
             background: transparent;
         }
         .story-poster-card-inner::after {
@@ -2357,12 +2357,12 @@
                 border-radius: 0;
             }
             .story-poster-viewport {
-                height: clamp(380px, 128vw, 510px);
+                height: clamp(230px, 78vw, 390px);
                 perspective: 1600px;
             }
             .story-poster-card {
                 top: 50%;
-                width: clamp(176px, 58vw, 236px);
+                width: clamp(270px, 82vw, 520px);
             }
             .story-poster-copy { padding: 0.72rem; }
             .story-poster-copy strong { font-size: clamp(0.78rem, 3.2vw, 1rem); }
@@ -8183,9 +8183,9 @@
             if (!track || !viewport || !items.length) return;
             const mobile = viewport.clientWidth <= 768;
             const coverflowGap = mobile
-                ? Math.min(112, viewport.clientWidth * 0.22)
-                : Math.min(180, viewport.clientWidth * 0.13);
-            const visibleRadius = mobile ? 2.01 : 3.01;
+                ? Math.min(250, viewport.clientWidth * 0.52)
+                : Math.min(520, viewport.clientWidth * 0.36);
+            const visibleRadius = mobile ? 1.01 : 2.01;
             let closestIndex = 0;
             let closestDistance = Infinity;
             track.querySelectorAll('.story-poster-card').forEach(card => {
