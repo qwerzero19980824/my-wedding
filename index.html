@@ -272,6 +272,66 @@
             pointer-events: none;
         }
 
+        .anniversary-counter {
+            --anniversary-font-size: 78px;
+            --anniversary-font-weight: 600;
+            --anniversary-font-color: #a92929;
+            display: grid;
+            justify-items: center;
+            gap: 0.45rem;
+            margin: -0.85rem 0 1.85rem;
+            text-align: center;
+        }
+        .anniversary-label {
+            color: rgba(51,42,42,0.78);
+            font-family: "Noto Serif SC", "Songti SC", Georgia, serif;
+            font-size: clamp(0.72rem, 1.6vw, 0.92rem);
+            letter-spacing: 0.2em;
+        }
+        .anniversary-days {
+            color: var(--anniversary-font-color);
+            font-family: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+            font-size: min(var(--anniversary-font-size), 28vw);
+            font-weight: var(--anniversary-font-weight);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.04em;
+            line-height: 0.86;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.72), 0 5px 20px rgba(24,18,18,0.16);
+        }
+        .anniversary-editor-controls {
+            display: none;
+            width: min(460px, 90vw);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.55rem;
+            margin-top: 0.8rem;
+            padding: 0.7rem;
+            border: 1px solid rgba(169,41,41,0.18);
+            border-radius: 12px;
+            background: rgba(255,253,248,0.82);
+            backdrop-filter: blur(10px);
+        }
+        body.edit-mode .anniversary-editor-controls { display: grid; }
+        .anniversary-editor-controls label {
+            display: grid;
+            gap: 0.32rem;
+            color: #5a4141;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-align: left;
+        }
+        .anniversary-editor-controls input[type="range"] { width: 100%; }
+        .anniversary-editor-controls select,
+        .anniversary-editor-controls input[type="color"] {
+            width: 100%;
+            min-height: 30px;
+            border: 1px solid rgba(74,54,54,0.18);
+            border-radius: 7px;
+            background: #fff;
+        }
+        .anniversary-editor-controls input[type="color"] { padding: 2px; cursor: pointer; }
+
         #layer-dom .say-yes-btn {
             position: relative;
             padding: 14px 50px;
@@ -2066,7 +2126,7 @@
             position: relative;
             z-index: 1;
             width: 100%;
-            height: clamp(300px, 36vw, 520px);
+            height: clamp(430px, 50vw, 560px);
             overflow: hidden;
             perspective: 1600px;
             perspective-origin: 50% 50%;
@@ -2085,8 +2145,8 @@
             position: absolute;
             left: 50%;
             top: 50%;
-            width: clamp(300px, 48vw, 760px);
-            aspect-ratio: 16 / 9;
+            width: clamp(180px, 23vw, 276px);
+            aspect-ratio: 9 / 16;
             opacity: 0;
             transform: translate3d(-50%, -50%, -480px) scale(0.4);
             transform-origin: center center;
@@ -2357,12 +2417,12 @@
                 border-radius: 0;
             }
             .story-poster-viewport {
-                height: clamp(230px, 78vw, 390px);
+                height: clamp(380px, 128vw, 510px);
                 perspective: 1600px;
             }
             .story-poster-card {
                 top: 50%;
-                width: clamp(270px, 82vw, 520px);
+                width: clamp(176px, 58vw, 236px);
             }
             .story-poster-copy { padding: 0.72rem; }
             .story-poster-copy strong { font-size: clamp(0.78rem, 3.2vw, 1rem); }
@@ -4295,6 +4355,28 @@
                 世间所有的相遇<br>都是久别重逢<br><br>
                 而你的出现<br>是我生命里<br>最盛大的一场重逢
             </div>
+            <section class="anniversary-counter" id="anniversaryCounter" aria-label="恋爱纪念日">
+                <span class="anniversary-label">恋爱纪念日</span>
+                <output class="anniversary-days" id="anniversaryDays" aria-live="polite">0</output>
+                <div class="anniversary-editor-controls" aria-label="恋爱纪念日字体设置">
+                    <label>字号 <span id="anniversarySizeValue">78px</span>
+                        <input type="range" id="anniversarySizeInput" min="32" max="140" step="1" value="78">
+                    </label>
+                    <label>字重
+                        <select id="anniversaryWeightInput">
+                            <option value="300">细</option>
+                            <option value="400">常规</option>
+                            <option value="500">中等</option>
+                            <option value="600" selected>半粗</option>
+                            <option value="700">粗</option>
+                            <option value="800">特粗</option>
+                        </select>
+                    </label>
+                    <label>颜色
+                        <input type="color" id="anniversaryColorInput" value="#a92929">
+                    </label>
+                </div>
+            </section>
             <button class="say-yes-btn" id="say-yes-trigger" aria-label="翻开我们的故事">翻开我们的故事</button>
         </div>
     </div>
@@ -5150,6 +5232,7 @@
         const ROUTE_LABEL_SIZE_STORAGE_KEY = 'wedding_route_label_size_v1';
         const STORY_POSTER_CONFIG_STORAGE_KEY = 'wedding_story_poster_config_v1';
         const HIDDEN_PAGES_STORAGE_KEY = 'wedding_hidden_pages_v1';
+        const ANNIVERSARY_STYLE_STORAGE_KEY = 'wedding_anniversary_style_v1';
         const DEFAULT_STORY_POSTER_CLOUD_ENDPOINT = 'https://my-wedding-poster-library.yuyanp52.workers.dev';
         const STORY_POSTER_DB_NAME = 'wedding_story_poster_library_v1';
         const STORY_POSTER_DB_STORE = 'posters';
@@ -5168,6 +5251,7 @@
             POLAROID_LAYOUT_STORAGE_KEY,
             ROUTE_LABEL_SIZE_STORAGE_KEY,
             STORY_POSTER_CONFIG_STORAGE_KEY,
+            ANNIVERSARY_STYLE_STORAGE_KEY,
             HIDDEN_PAGES_STORAGE_KEY
         ];
         const POLAROID_COUNT = 28;
@@ -5178,6 +5262,11 @@
         const DEFAULT_POLAROID_BUTTON_BOX_SIZE = 38;
         const DEFAULT_POLAROID_NOTE = '写给这张照片的话';
         const DEFAULT_ROUTE_LABEL_SIZE = 22;
+        const DEFAULT_ANNIVERSARY_STYLE = {
+            fontSize: 78,
+            fontWeight: 600,
+            color: '#a92929'
+        };
         const FIXED_PHOTO_IDS = ['track-left', 'track-right', 'merged-1', 'merged-2', 'merged-3'];
         const LEGACY_FREE_PAGE_ALIASES = {
             'route-points': 'route-map',
@@ -5213,6 +5302,12 @@
         const storyPosterPreviewClose = document.getElementById('storyPosterPreviewClose');
         const storyPosterPreviewImage = document.getElementById('storyPosterPreviewImage');
         const storyPosterPreviewCaption = document.getElementById('storyPosterPreviewCaption');
+        const anniversaryCounter = document.getElementById('anniversaryCounter');
+        const anniversaryDays = document.getElementById('anniversaryDays');
+        const anniversarySizeInput = document.getElementById('anniversarySizeInput');
+        const anniversarySizeValue = document.getElementById('anniversarySizeValue');
+        const anniversaryWeightInput = document.getElementById('anniversaryWeightInput');
+        const anniversaryColorInput = document.getElementById('anniversaryColorInput');
         const freePhotoInput = document.getElementById('freePhotoInput');
         const editorStorageMeter = document.getElementById('editorStorageMeter');
         const editorStorageValue = document.getElementById('editorStorageValue');
@@ -5741,6 +5836,73 @@
             }
         }
 
+        function normalizeAnniversaryStyle(value = {}) {
+            const fontSize = Math.min(140, Math.max(32, Number(value.fontSize) || DEFAULT_ANNIVERSARY_STYLE.fontSize));
+            const fontWeight = [300, 400, 500, 600, 700, 800].includes(Number(value.fontWeight))
+                ? Number(value.fontWeight)
+                : DEFAULT_ANNIVERSARY_STYLE.fontWeight;
+            const color = typeof value.color === 'string' && /^#[0-9a-f]{6}$/i.test(value.color)
+                ? value.color
+                : DEFAULT_ANNIVERSARY_STYLE.color;
+            return { fontSize, fontWeight, color };
+        }
+
+        function loadAnniversaryStyle() {
+            try {
+                return normalizeAnniversaryStyle(JSON.parse(localStorage.getItem(ANNIVERSARY_STYLE_STORAGE_KEY) || '{}'));
+            } catch (error) {
+                return { ...DEFAULT_ANNIVERSARY_STYLE };
+            }
+        }
+
+        function applyAnniversaryStyle(style) {
+            if (!anniversaryCounter) return;
+            const next = normalizeAnniversaryStyle(style);
+            anniversaryCounter.style.setProperty('--anniversary-font-size', `${next.fontSize}px`);
+            anniversaryCounter.style.setProperty('--anniversary-font-weight', String(next.fontWeight));
+            anniversaryCounter.style.setProperty('--anniversary-font-color', next.color);
+            if (anniversarySizeInput) anniversarySizeInput.value = String(next.fontSize);
+            if (anniversarySizeValue) anniversarySizeValue.textContent = `${next.fontSize}px`;
+            if (anniversaryWeightInput) anniversaryWeightInput.value = String(next.fontWeight);
+            if (anniversaryColorInput) anniversaryColorInput.value = next.color;
+        }
+
+        function updateAnniversaryDays() {
+            if (!anniversaryDays) return;
+            const start = new Date(2018, 6, 20);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const days = Math.max(0, Math.floor((today - start) / 86400000));
+            anniversaryDays.value = String(days);
+            anniversaryDays.textContent = String(days);
+            anniversaryDays.setAttribute('aria-label', `恋爱已进行 ${days} 天`);
+        }
+
+        function initAnniversaryCounter() {
+            if (!anniversaryCounter) return;
+            applyAnniversaryStyle(loadAnniversaryStyle());
+            updateAnniversaryDays();
+            const saveStyle = () => {
+                const style = normalizeAnniversaryStyle({
+                    fontSize: anniversarySizeInput && anniversarySizeInput.value,
+                    fontWeight: anniversaryWeightInput && anniversaryWeightInput.value,
+                    color: anniversaryColorInput && anniversaryColorInput.value
+                });
+                applyAnniversaryStyle(style);
+                localStorage.setItem(ANNIVERSARY_STYLE_STORAGE_KEY, JSON.stringify(style));
+                updateEditorStorageMeter();
+            };
+            if (anniversarySizeInput) anniversarySizeInput.addEventListener('input', saveStyle);
+            if (anniversaryWeightInput) anniversaryWeightInput.addEventListener('change', saveStyle);
+            if (anniversaryColorInput) anniversaryColorInput.addEventListener('input', saveStyle);
+            const tomorrow = new Date();
+            tomorrow.setHours(24, 0, 1, 0);
+            window.setTimeout(() => {
+                updateAnniversaryDays();
+                window.setInterval(updateAnniversaryDays, 86400000);
+            }, tomorrow - Date.now());
+        }
+
         function initContentEditor() {
             // Capture all default texts from [data-ck] elements
             document.querySelectorAll('[data-ck]').forEach(el => {
@@ -5760,6 +5922,7 @@
             initPolaroidWall();
             initRouteMapLabels();
             initRouteLabelControls();
+            initAnniversaryCounter();
 
             // Edit mode toggle button
             editModeToggle.addEventListener('click', () => {
@@ -8183,9 +8346,9 @@
             if (!track || !viewport || !items.length) return;
             const mobile = viewport.clientWidth <= 768;
             const coverflowGap = mobile
-                ? Math.min(250, viewport.clientWidth * 0.52)
-                : Math.min(520, viewport.clientWidth * 0.36);
-            const visibleRadius = mobile ? 1.01 : 2.01;
+                ? Math.min(112, viewport.clientWidth * 0.22)
+                : Math.min(180, viewport.clientWidth * 0.13);
+            const visibleRadius = mobile ? 2.01 : 3.01;
             let closestIndex = 0;
             let closestDistance = Infinity;
             track.querySelectorAll('.story-poster-card').forEach(card => {
