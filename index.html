@@ -2126,9 +2126,20 @@
             inset: 0;
             width: 100%;
             height: 100%;
+        }
+        .story-poster-card .story-poster-backdrop {
+            inset: -9%;
+            width: 118%;
+            height: 118%;
+            object-fit: cover;
+            filter: blur(18px) saturate(0.92) brightness(0.9);
+            transform: scale(1.04);
+            opacity: 0.82;
+        }
+        .story-poster-card .story-poster-photo {
             object-fit: contain;
             object-position: center;
-            background: #fffdf8;
+            background: transparent;
         }
         .story-poster-card-inner::after {
             content: '';
@@ -7803,8 +7814,8 @@
                     id: record.id,
                     type: 'photo',
                     source: 'cloud',
-                    photo: `${storyPosterCloudEndpoint}/media/${encodeURIComponent(record.id)}/thumbnail`,
-                    originalUrl: `${storyPosterCloudEndpoint}/media/${encodeURIComponent(record.id)}/original`,
+                    photo: `${storyPosterCloudEndpoint}/media/${encodeURIComponent(record.id)}/thumbnail?v=${encodeURIComponent(record.createdAt || record.id)}`,
+                    originalUrl: `${storyPosterCloudEndpoint}/media/${encodeURIComponent(record.id)}/original?v=${encodeURIComponent(record.createdAt || record.id)}`,
                     meta: 'CLOUD MEMORY',
                     title: record.caption || record.name || '我们的照片',
                     caption: record.caption || record.name || '我们的照片',
@@ -8130,7 +8141,9 @@
                 const hasPhoto = isSafeImageDataUrl(module.photo)
                     || (typeof module.photo === 'string' && module.photo.startsWith('blob:'))
                     || (module.source === 'cloud' && typeof module.photo === 'string' && module.photo.startsWith('https://'));
-                const image = hasPhoto ? `<img data-poster-src="${module.photo}" alt="${escapeStoryPosterText(module.title || '故事海报')}" decoding="async">` : '';
+                const image = hasPhoto
+                    ? `<img class="story-poster-backdrop" data-poster-src="${module.photo}" alt="" aria-hidden="true"><img class="story-poster-photo" data-poster-src="${module.photo}" alt="${escapeStoryPosterText(module.title || '故事海报')}" decoding="async">`
+                    : '';
                 return `<article class="story-poster-card" data-poster-index="${index}" data-poster-id="${escapeStoryPosterText(module.id || '')}" aria-hidden="true"><div class="story-poster-card-inner">${image}<div class="story-poster-copy"><small>${escapeStoryPosterText(module.meta || 'OUR CHAPTER')}</small><strong>${escapeStoryPosterText(module.title || '未命名章节')}</strong></div></div></article>`;
             };
             const renderedIndexes = [];
@@ -8184,16 +8197,20 @@
                     closestIndex = index;
                 }
                 const visible = distance <= visibleRadius;
-                const image = card.querySelector('img[data-poster-src]');
+                const images = Array.from(card.querySelectorAll('img[data-poster-src]'));
                 card.classList.toggle('is-visible', visible);
                 card.setAttribute('aria-hidden', String(!visible));
                 if (!visible) {
-                    if (image && image.getAttribute('src') !== storyPosterFocusedOriginalUrl) image.removeAttribute('src');
+                    images.forEach(image => {
+                        if (image.getAttribute('src') !== storyPosterFocusedOriginalUrl) image.removeAttribute('src');
+                    });
                     card.style.opacity = '0';
                     card.style.pointerEvents = 'none';
                     return;
                 }
-                if (image && !image.getAttribute('src')) image.setAttribute('src', image.dataset.posterSrc);
+                images.forEach(image => {
+                    if (!image.getAttribute('src')) image.setAttribute('src', image.dataset.posterSrc);
+                });
                 const x = offset * coverflowGap;
                 const z = -distance * 120;
                 const rotateY = offset * 7;
@@ -8273,13 +8290,13 @@
             }
             layoutStoryPosters();
             if (storyPosterFocusedItem.source === 'library' && storyPosterFocusedItem.record && storyPosterFocusedItem.record.original) {
-                const centerImage = document.querySelector(`.story-poster-card[data-poster-index="${normalized}"] img[data-poster-src]`);
+                const centerImage = document.querySelector(`.story-poster-card[data-poster-index="${normalized}"] img.story-poster-photo[data-poster-src]`);
                 if (centerImage) {
                     storyPosterFocusedOriginalUrl = URL.createObjectURL(storyPosterFocusedItem.record.original);
                     centerImage.src = storyPosterFocusedOriginalUrl;
                 }
             } else if (storyPosterFocusedItem.source === 'cloud' && storyPosterFocusedItem.originalUrl) {
-                const centerImage = document.querySelector(`.story-poster-card[data-poster-index="${normalized}"] img[data-poster-src]`);
+                const centerImage = document.querySelector(`.story-poster-card[data-poster-index="${normalized}"] img.story-poster-photo[data-poster-src]`);
                 if (centerImage) {
                     storyPosterFocusedOriginalUrl = storyPosterFocusedItem.originalUrl;
                     centerImage.src = storyPosterFocusedOriginalUrl;
@@ -8311,7 +8328,7 @@
             if (storyPosterPreviewBtn) storyPosterPreviewBtn.hidden = true;
             closeStoryPosterPreview();
             if (storyPosterFocusedOriginalUrl) {
-                const centerImage = document.querySelector('.story-poster-card.is-center img[data-poster-src]');
+                const centerImage = document.querySelector('.story-poster-card.is-center img.story-poster-photo[data-poster-src]');
                 if (centerImage) centerImage.src = centerImage.dataset.posterSrc;
                 if (storyPosterFocusedOriginalUrl.startsWith('blob:')) URL.revokeObjectURL(storyPosterFocusedOriginalUrl);
                 storyPosterFocusedOriginalUrl = null;
