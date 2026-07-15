@@ -2126,7 +2126,9 @@
             inset: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            object-position: center;
+            background: #fff;
         }
         .story-poster-card-inner::after {
             content: '';
@@ -2217,6 +2219,85 @@
             transform: translateY(0);
             pointer-events: auto;
         }
+        .story-poster-preview-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            margin-top: 0.55rem;
+            padding: 0.35rem 0.9rem;
+            border: 1px solid var(--border-soft);
+            border-radius: 999px;
+            background: var(--surface-glass);
+            color: var(--ink);
+            font: inherit;
+            font-size: 0.72rem;
+            cursor: pointer;
+            transition: background var(--duration-fast) ease, transform var(--duration-fast) ease;
+        }
+        .story-poster-preview-button:hover,
+        .story-poster-preview-button:focus-visible {
+            background: rgba(244,194,194,0.34);
+            transform: translateY(-1px);
+        }
+        .story-poster-preview-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: grid;
+            place-items: center;
+            padding: clamp(1rem, 3vw, 2rem);
+            background: rgba(18,18,18,0.92);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.24s ease;
+        }
+        .story-poster-preview-overlay.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .story-poster-preview-figure {
+            position: relative;
+            display: grid;
+            justify-items: center;
+            gap: 0.75rem;
+            width: min(96vw, 1100px);
+            max-height: 94vh;
+            margin: 0;
+        }
+        .story-poster-preview-figure img {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 96vw;
+            max-height: 84vh;
+            object-fit: contain;
+            background: #fff;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.42);
+        }
+        .story-poster-preview-figure figcaption {
+            max-width: min(90vw, 760px);
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            text-align: center;
+        }
+        .story-poster-preview-close {
+            position: fixed;
+            top: max(1rem, env(safe-area-inset-top));
+            right: max(1rem, env(safe-area-inset-right));
+            z-index: 1;
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(255,255,255,0.42);
+            border-radius: 50%;
+            background: rgba(0,0,0,0.34);
+            color: #fff;
+            font-size: 1.6rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        body.story-poster-preview-open { overflow: hidden; }
         body.edit-mode .story-poster-focus-caption[contenteditable="true"] {
             outline: 1px dashed rgba(169,41,41,0.46);
             outline-offset: 5px;
@@ -4548,12 +4629,20 @@
                     <div class="story-poster-track" id="storyPosterTrack"></div>
                 </div>
                 <div class="story-poster-focus-caption" id="storyPosterFocusCaption" aria-live="polite"></div>
+                <button type="button" class="story-poster-preview-button" id="storyPosterPreviewBtn" hidden>查看完整照片</button>
                 <div class="story-poster-controls">
                     <button type="button" data-poster-action="prev" aria-label="上一张海报">‹</button>
                     <span class="story-poster-status" id="storyPosterStatus">01 / 01</span>
                     <button type="button" data-poster-action="next" aria-label="下一张海报">›</button>
                 </div>
             </section>
+            <div class="story-poster-preview-overlay" id="storyPosterPreviewOverlay" aria-hidden="true">
+                <button type="button" class="story-poster-preview-close" id="storyPosterPreviewClose" aria-label="关闭完整照片预览">×</button>
+                <figure class="story-poster-preview-figure">
+                    <img id="storyPosterPreviewImage" alt="完整照片预览">
+                    <figcaption id="storyPosterPreviewCaption"></figcaption>
+                </figure>
+            </div>
             <div class="story-module-list" id="storyModuleList"></div>
         </section>
 
@@ -5108,6 +5197,11 @@
         const fixedPhotoInput = document.getElementById('fixedPhotoInput');
         const modulePhotoInput = document.getElementById('modulePhotoInput');
         const storyPosterUploadInput = document.getElementById('storyPosterUploadInput');
+        const storyPosterPreviewBtn = document.getElementById('storyPosterPreviewBtn');
+        const storyPosterPreviewOverlay = document.getElementById('storyPosterPreviewOverlay');
+        const storyPosterPreviewClose = document.getElementById('storyPosterPreviewClose');
+        const storyPosterPreviewImage = document.getElementById('storyPosterPreviewImage');
+        const storyPosterPreviewCaption = document.getElementById('storyPosterPreviewCaption');
         const freePhotoInput = document.getElementById('freePhotoInput');
         const editorStorageMeter = document.getElementById('editorStorageMeter');
         const editorStorageValue = document.getElementById('editorStorageValue');
@@ -5163,6 +5257,7 @@
         let storyPosterLastTickIndex = null;
         let storyPosterTickEnabled = false;
         let storyPosterFocusedOriginalUrl = null;
+        let storyPosterPreviewObjectUrl = null;
         let storyPosterCloudEndpoint = '';
         let storyPosterCloudToken = '';
         let lastMemoryTrigger = null;
@@ -7848,6 +7943,36 @@
             updateEditorStorageMeter();
         }
 
+        function closeStoryPosterPreview() {
+            if (!storyPosterPreviewOverlay) return;
+            storyPosterPreviewOverlay.classList.remove('is-open');
+            storyPosterPreviewOverlay.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('story-poster-preview-open');
+            if (storyPosterPreviewImage) storyPosterPreviewImage.removeAttribute('src');
+            if (storyPosterPreviewObjectUrl) {
+                URL.revokeObjectURL(storyPosterPreviewObjectUrl);
+                storyPosterPreviewObjectUrl = null;
+            }
+        }
+
+        function openStoryPosterPreview() {
+            const item = storyPosterFocusedItem || getStoryPosterItems()[storyPosterIndex];
+            if (!item || !storyPosterPreviewOverlay || !storyPosterPreviewImage) return;
+            let source = storyPosterFocusedOriginalUrl || item.originalUrl || '';
+            if (!source && item.record && item.record.original) {
+                storyPosterPreviewObjectUrl = URL.createObjectURL(item.record.original);
+                source = storyPosterPreviewObjectUrl;
+            }
+            if (!source) source = item.photo || '';
+            if (!source) return;
+            storyPosterPreviewImage.src = source;
+            storyPosterPreviewImage.alt = getStoryPosterCaption(item) || '完整照片预览';
+            if (storyPosterPreviewCaption) storyPosterPreviewCaption.textContent = getStoryPosterCaption(item);
+            storyPosterPreviewOverlay.classList.add('is-open');
+            storyPosterPreviewOverlay.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('story-poster-preview-open');
+        }
+
         function initStoryPosterCarousel() {
             const carousel = document.getElementById('storyPosterCarousel');
             const viewport = document.getElementById('storyPosterViewport');
@@ -7857,6 +7982,19 @@
             const captionSizeInput = document.getElementById('storyPosterCaptionSizeInput');
             const focusCaption = document.getElementById('storyPosterFocusCaption');
             loadStoryPosterConfig();
+            if (storyPosterPreviewBtn) storyPosterPreviewBtn.addEventListener('click', openStoryPosterPreview);
+            if (storyPosterPreviewClose) storyPosterPreviewClose.addEventListener('click', closeStoryPosterPreview);
+            if (storyPosterPreviewOverlay) {
+                storyPosterPreviewOverlay.addEventListener('click', event => {
+                    if (event.target === storyPosterPreviewOverlay) closeStoryPosterPreview();
+                });
+            }
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && storyPosterPreviewOverlay && storyPosterPreviewOverlay.classList.contains('is-open')) {
+                    event.preventDefault();
+                    closeStoryPosterPreview();
+                }
+            });
             carousel.addEventListener('click', e => {
                 const button = e.target.closest('[data-poster-action]');
                 if (button) {
@@ -8120,6 +8258,7 @@
             const carousel = document.getElementById('storyPosterCarousel');
             const caption = document.getElementById('storyPosterFocusCaption');
             if (carousel) carousel.classList.add('is-poster-focused');
+            if (storyPosterPreviewBtn) storyPosterPreviewBtn.hidden = false;
             if (caption) {
                 caption.textContent = getStoryPosterCaption(storyPosterFocusedItem);
                 caption.contentEditable = isEditMode ? 'true' : 'false';
@@ -8161,6 +8300,8 @@
         function deactivateStoryPosterFocus() {
             const carousel = document.getElementById('storyPosterCarousel');
             if (carousel) carousel.classList.remove('is-poster-focused');
+            if (storyPosterPreviewBtn) storyPosterPreviewBtn.hidden = true;
+            closeStoryPosterPreview();
             if (storyPosterFocusedOriginalUrl) {
                 const centerImage = document.querySelector('.story-poster-card.is-center img[data-poster-src]');
                 if (centerImage) centerImage.src = centerImage.dataset.posterSrc;
