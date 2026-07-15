@@ -2228,27 +2228,38 @@
         .story-poster-carousel.is-poster-focused .story-poster-card.is-center .story-poster-card-inner {
             box-shadow: 0 28px 65px rgba(54,38,34,0.28);
         }
-        .story-poster-card img {
+        .story-poster-media {
             position: absolute;
             inset: 0;
+            display: grid;
+            place-items: center;
             width: 100%;
             height: 100%;
+            overflow: hidden;
+            background: #4b4544;
+            isolation: isolate;
+        }
+        .story-poster-media img {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            transform-origin: center center;
         }
         .story-poster-card .story-poster-backdrop {
-            inset: -14%;
-            width: 128%;
-            height: 128%;
             object-fit: cover;
             object-position: center center;
-            filter: blur(28px) saturate(0.86) brightness(0.84);
-            transform: scale(1.12);
-            opacity: 0.92;
+            filter: blur(46px) saturate(1.02) brightness(0.68);
+            transform: translate(-50%, -50%) scale(1.38);
+            opacity: 1;
             z-index: 0;
         }
         .story-poster-card .story-poster-photo {
             object-fit: contain;
             object-position: center center;
             background: transparent;
+            transform: translate(-50%, -50%);
             z-index: 1;
         }
         .story-poster-delete-btn {
@@ -8727,7 +8738,7 @@
                     || (typeof module.photo === 'string' && module.photo.startsWith('blob:'))
                     || (module.source === 'cloud' && typeof module.photo === 'string' && module.photo.startsWith('https://'));
                 const image = hasPhoto
-                    ? `<img class="story-poster-backdrop" data-poster-src="${module.photo}" alt="" aria-hidden="true"><img class="story-poster-photo" data-poster-src="${module.photo}" alt="${escapeStoryPosterText(module.title || '故事海报')}" decoding="async">`
+                    ? `<div class="story-poster-media"><img class="story-poster-backdrop" data-poster-src="${module.photo}" alt="" aria-hidden="true"><img class="story-poster-photo" data-poster-src="${module.photo}" alt="${escapeStoryPosterText(module.title || '故事海报')}" decoding="async"></div>`
                     : '';
                 const remove = hasPhoto && module.id
                     ? `<button type="button" class="story-poster-delete-btn" data-poster-delete data-poster-id="${escapeStoryPosterText(module.id)}" aria-label="删除这张照片">×</button>`
