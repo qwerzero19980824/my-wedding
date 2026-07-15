@@ -1913,13 +1913,37 @@
             border-radius: 7px;
             border: 1px solid transparent;
             background: var(--free-bg, transparent);
-            color: var(--free-fg, #232829);
+            color: var(--free-font-color, var(--free-fg, #232829));
             font-family: "Noto Serif SC", "Songti SC", Georgia, serif;
-            font-size: clamp(0.92rem, 1.2vw, 1.08rem);
+            font-size: var(--free-font-size, clamp(0.92rem, 1.2vw, 1.08rem));
+            font-weight: var(--free-font-weight, 400);
             line-height: 1.8;
             box-shadow: none;
             text-shadow: 0 1px 18px rgba(0,0,0,0.12);
         }
+        .free-font-panel {
+            position: absolute;
+            top: 30px;
+            right: 0;
+            z-index: 12;
+            display: none;
+            width: 184px;
+            padding: 0.65rem;
+            border: 1px solid rgba(169,41,41,0.2);
+            border-radius: 10px;
+            background: rgba(255,253,248,0.96);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+        }
+        .free-edit-item.font-open .free-font-panel { display: grid; gap: 0.5rem; }
+        .free-font-panel label {
+            display: grid;
+            gap: 0.25rem;
+            color: #5a4141;
+            font: 600 10px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .free-font-panel input[type="range"],
+        .free-font-panel input[type="color"],
+        .free-font-panel select { width: 100%; }
         .free-edit-item.has-free-bg .free-text-box {
             border-color: rgba(0,0,0,0.08);
             box-shadow: 0 12px 34px rgba(0,0,0,0.12);
@@ -2181,9 +2205,9 @@
         .story-poster-card.is-visible { pointer-events: auto; }
         .story-poster-card.is-visible { cursor: pointer; }
         .story-poster-card.is-center .story-poster-card-inner { box-shadow: 0 24px 55px rgba(54,38,34,0.23); }
-        .story-poster-carousel.is-poster-focused .story-poster-card:not(.is-center) {
-            opacity: 1 !important;
-        }
+.story-poster-carousel.is-poster-focused .story-poster-card:not(.is-center) {
+  opacity: var(--story-poster-inactive-opacity, .5) !important;
+}
         .story-poster-carousel.is-poster-focused .story-poster-card.is-center {
             filter: none !important;
         }
@@ -2219,12 +2243,40 @@
             filter: blur(28px) saturate(0.86) brightness(0.84);
             transform: scale(1.12);
             opacity: 0.92;
+            z-index: 0;
         }
         .story-poster-card .story-poster-photo {
             object-fit: contain;
             object-position: center center;
             background: transparent;
             z-index: 1;
+        }
+        .story-poster-delete-btn {
+            position: absolute;
+            top: 0.7rem;
+            right: 0.7rem;
+            z-index: 4;
+            display: none;
+            width: 30px;
+            height: 30px;
+            border: 1px solid rgba(255,255,255,0.46);
+            border-radius: 50%;
+            background: rgba(28,24,24,0.22);
+            color: rgba(255,255,255,0.94);
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0.68;
+            transition: opacity 0.18s ease, background 0.18s ease, transform 0.18s ease;
+        }
+        body.edit-mode .story-poster-card.is-visible .story-poster-delete-btn { display: grid; place-items: center; }
+        .story-poster-delete-btn:hover,
+        .story-poster-delete-btn:focus-visible {
+            opacity: 1;
+            background: rgba(139,36,36,0.8);
+            transform: scale(1.08);
         }
         .story-poster-card-inner::after {
             content: '';
@@ -3982,6 +4034,48 @@
             box-shadow: 0 24px 58px rgba(169,41,41,0.4);
         }
         .proposal-answer-btn:active { transform: translateY(0) scale(0.97); }
+        .proposal-photo-upload-btn {
+            display: none;
+            margin: 1rem auto 0;
+            padding: 0.55rem 0.9rem;
+            border: 1px dashed rgba(214,181,109,0.56);
+            border-radius: 999px;
+            background: rgba(255,248,234,0.07);
+            color: rgba(255,248,234,0.86);
+            font: 600 0.72rem/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+        }
+        body.edit-mode .proposal-photo-upload-btn { display: inline-flex; }
+        .proposal-reveal-photo {
+            position: relative;
+            z-index: 3;
+            width: min(310px, 78vw);
+            margin: 1.6rem auto 0;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px) scale(0.94);
+            filter: blur(14px);
+            transition: opacity 1.45s ease 0.28s, transform 1.45s cubic-bezier(0.22, 1, 0.36, 1) 0.28s, filter 1.45s ease 0.28s, visibility 0s linear 1.75s;
+        }
+        .proposal-reveal-photo img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 4 / 5;
+            object-fit: cover;
+            object-position: center center;
+            border: 8px solid #fffaf1;
+            box-shadow: 0 18px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(214,181,109,0.45);
+            transform: rotate(-1.5deg);
+        }
+        .proposal-finale.is-answered .proposal-reveal-photo.has-photo,
+        body.edit-mode .proposal-reveal-photo.has-photo {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+            transition-delay: 0.28s;
+        }
         .proposal-ring-mark {
             position: relative;
             width: 40px;
@@ -4061,6 +4155,30 @@
             opacity: 0;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
             animation: proposal-petal-fall var(--petal-duration) cubic-bezier(0.2,0.5,0.4,1) var(--petal-delay) forwards;
+        }
+        .proposal-firework-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .proposal-firework-spark {
+            position: absolute;
+            left: var(--firework-x);
+            top: var(--firework-y);
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--firework-color);
+            box-shadow: 0 0 12px var(--firework-color);
+            opacity: 0;
+            animation: proposal-firework-burst 1.65s ease-out var(--firework-delay) forwards;
+        }
+        @keyframes proposal-firework-burst {
+            0% { opacity: 0; transform: translate(0, 0) scale(0.3); }
+            12% { opacity: 1; }
+            100% { opacity: 0; transform: translate(var(--firework-dx), var(--firework-dy)) scale(0.6); }
         }
         @keyframes proposal-petal-fall {
             0% { opacity: 0; transform: translate3d(0,-8vh,0) rotate(0deg); }
@@ -4346,7 +4464,8 @@
             .map-point text {
                 transition: none;
             }
-            .proposal-petal { animation: none; }
+            .proposal-petal,
+            .proposal-firework-spark { animation: none; }
             .proposal-threshold::after { animation: none; }
             .ceremony-music-btn.is-playing .ceremony-music-disc,
             .ceremony-music-btn.is-playing .ceremony-music-wave i { animation: none; }
@@ -4740,6 +4859,18 @@
                         <input type="range" id="storyPosterCaptionSizeInput" min="14" max="38" step="1" value="20">
                         <span id="storyPosterCaptionSizeValue">20px</span>
                     </label>
+                    <label>侧倾角度
+                        <input type="range" id="storyPosterTiltInput" min="0" max="18" step="1" value="12">
+                        <span id="storyPosterTiltValue">12°</span>
+                    </label>
+                    <label>轮换间距
+                        <input type="range" id="storyPosterGapInput" min="100" max="180" step="5" value="130">
+                        <span id="storyPosterGapValue">130%</span>
+                    </label>
+                    <label>非活动透明
+                        <input type="range" id="storyPosterInactiveOpacityInput" min="20" max="80" step="5" value="50">
+                        <span id="storyPosterInactiveOpacityValue">50%</span>
+                    </label>
                     <span class="story-poster-library-status" id="storyPosterLibraryStatus">本机海报库 0 张</span>
                 </div>
                 <div class="story-poster-viewport" id="storyPosterViewport" tabindex="0" aria-label="拖动或使用方向键轮换故事海报">
@@ -4945,8 +5076,13 @@
                     <h3 class="proposal-question" id="proposalQuestion" data-ck="proposal-question">你愿意嫁给我吗？</h3>
                     <button type="button" class="proposal-answer-btn" id="proposalAnswerBtn" aria-pressed="false">
                         <span class="proposal-ring-mark" aria-hidden="true"></span>
-                        <span>我愿意</span>
+                        <span>爱你</span>
                     </button>
+                    <button type="button" class="proposal-photo-upload-btn" id="proposalPhotoUploadBtn">上传结尾照片</button>
+                    <input type="file" id="proposalPhotoUploadInput" accept="image/*" hidden>
+                    <figure class="proposal-reveal-photo" id="proposalRevealPhoto">
+                        <img id="proposalRevealPhotoImage" alt="我们的照片">
+                    </figure>
                     <div class="proposal-answer-state" id="proposalAnswerState" role="status" aria-live="polite" tabindex="-1">
                         <p class="proposal-answer-title" data-ck="proposal-answer-title">余生，请多指教。</p>
                         <p class="proposal-answer-note" data-ck="proposal-answer-note">从这一刻起，我们继续一起写下所有还没有发生的春夏秋冬。</p>
@@ -4954,6 +5090,7 @@
                 </div>
             </div>
             <div class="proposal-petal-layer" id="proposalPetalLayer" aria-hidden="true"></div>
+            <div class="proposal-firework-layer" id="proposalFireworkLayer" aria-hidden="true"></div>
         </section>
 
         <div class="scroll-hint" id="scrollHint" data-ck="scroll-hint">向下滚动</div>
@@ -5260,6 +5397,7 @@
         const DEFAULT_STORY_POSTER_CLOUD_ENDPOINT = 'https://my-wedding-poster-library.yuyanp52.workers.dev';
         const STORY_POSTER_DB_NAME = 'wedding_story_poster_library_v1';
         const STORY_POSTER_DB_STORE = 'posters';
+        const PROPOSAL_PHOTO_ID = 'finale-photo';
         const CONTENT_PACKAGE_FORMAT = 'my-wedding-content';
         const CONTENT_PACKAGE_VERSION = 1;
         const LOCAL_STORAGE_SOFT_LIMIT = 4.5 * 1024 * 1024;
@@ -5387,6 +5525,9 @@
         let storyPosterFocusedItem = null;
         let storyPosterSuppressClick = false;
         let storyPosterCaptionSize = 20;
+        let storyPosterSidewaysTilt = 12;
+        let storyPosterGapScale = 1.3;
+        let storyPosterInactiveOpacity = 0.5;
         let storyPosterAudioContext = null;
         let storyPosterLastTickIndex = null;
         let storyPosterTickEnabled = false;
@@ -5557,6 +5698,9 @@
             if (key === STORY_POSTER_CONFIG_STORAGE_KEY) {
                 return JSON.stringify({
                     captionSize: clamp(Number(parsed && parsed.captionSize || 20), 14, 38),
+                    sidewaysTilt: clamp(Number.isFinite(Number(parsed && parsed.sidewaysTilt)) ? Number(parsed.sidewaysTilt) : 12, 0, 18),
+                    gapScale: clamp(Number.isFinite(Number(parsed && parsed.gapScale)) ? Number(parsed.gapScale) : 1.3, 1, 1.8),
+                    inactiveOpacity: clamp(Number.isFinite(Number(parsed && parsed.inactiveOpacity)) ? Number(parsed.inactiveOpacity) : 0.5, 0.2, 0.8),
                     cloudEndpoint: normalizeStoryPosterCloudEndpoint(parsed && parsed.cloudEndpoint || '')
                 });
             }
@@ -6627,6 +6771,9 @@
                 y: clamp(baseY + stagger, 90, Math.max(90, rect.height - 90)),
                 width,
                 bg: 'transparent',
+                fontSize: 18,
+                fontWeight: 400,
+                fontColor: '',
                 image: '',
                 content: type === 'photo' ? '[ 照片框 · 可写照片说明或稍后替换 ]' : '点击写下这一页想补充的话',
                 caption: '照片说明'
@@ -6722,11 +6869,27 @@
             el.style.setProperty('--free-y', `${Math.round(Number(item.y || 120))}px`);
             el.style.setProperty('--free-w', `${Math.round(Number(item.width || 260))}px`);
             el.style.setProperty('--free-bg', bg);
+            const fontSize = clamp(Number(item.fontSize || 18), 12, 72);
+            const fontWeight = [300, 400, 500, 600, 700, 800].includes(Number(item.fontWeight)) ? Number(item.fontWeight) : 400;
+            const fontColor = /^#[0-9a-f]{6}$/i.test(String(item.fontColor || '')) ? String(item.fontColor) : '';
+            el.style.setProperty('--free-font-size', `${fontSize}px`);
+            el.style.setProperty('--free-font-weight', String(fontWeight));
+            el.style.setProperty('--free-font-color', fontColor || 'var(--free-fg)');
+
+            const textFontControls = item.type === 'photo' ? '' : `
+                <button type="button" title="字体" data-free-action="font">字</button>
+                <div class="free-font-panel" aria-label="文本框字体设置">
+                    <label>字号 <span>${fontSize}px</span><input type="range" data-free-font="fontSize" min="12" max="72" step="1" value="${fontSize}"></label>
+                    <label>字重 <select data-free-font="fontWeight"><option value="300">细</option><option value="400">常规</option><option value="500">中等</option><option value="600">半粗</option><option value="700">粗</option><option value="800">特粗</option></select></label>
+                    <label>颜色 <input type="color" data-free-font="fontColor" value="${fontColor || '#3a4044'}"></label>
+                </div>
+            `;
 
             const controls = `
                 <div class="free-item-controls" contenteditable="false">
                     <button type="button" class="free-item-drag" title="拖动" data-free-action="drag">↕</button>
                     <button type="button" title="背景颜色" data-free-action="color">色</button>
+                    ${textFontControls}
                     <button type="button" title="复制" data-free-action="duplicate">⧉</button>
                     <button type="button" title="删除" data-free-action="delete">×</button>
                     <div class="free-color-panel" aria-label="背景颜色">
@@ -6753,6 +6916,12 @@
 
             el.querySelectorAll('[data-free-action], [data-free-photo-upload]').forEach(control => {
                 control.addEventListener('click', onFreeItemActionClick);
+            });
+            const fontWeightSelect = el.querySelector('[data-free-font="fontWeight"]');
+            if (fontWeightSelect) fontWeightSelect.value = String(fontWeight);
+            el.querySelectorAll('[data-free-font]').forEach(control => {
+                control.addEventListener('input', onFreeFontControlInput);
+                control.addEventListener('change', onFreeFontControlInput);
             });
             const dragControl = el.querySelector('[data-free-action="drag"]');
             if (dragControl) dragControl.addEventListener('pointerdown', onFreeItemDragStart);
@@ -6913,6 +7082,30 @@
             }
         }
 
+        function onFreeFontControlInput(e) {
+            const control = e.target.closest('[data-free-font]');
+            const itemEl = control && control.closest('.free-edit-item');
+            if (!control || !itemEl) return;
+            const item = freeItems.find(entry => entry.id === itemEl.dataset.freeItemId && entry.type === 'text');
+            if (!item) return;
+            const field = control.dataset.freeFont;
+            if (field === 'fontSize') {
+                item.fontSize = clamp(Number(control.value || 18), 12, 72);
+                itemEl.style.setProperty('--free-font-size', `${item.fontSize}px`);
+                const value = control.closest('label') && control.closest('label').querySelector('span');
+                if (value) value.textContent = `${item.fontSize}px`;
+            }
+            if (field === 'fontWeight') {
+                item.fontWeight = [300, 400, 500, 600, 700, 800].includes(Number(control.value)) ? Number(control.value) : 400;
+                itemEl.style.setProperty('--free-font-weight', String(item.fontWeight));
+            }
+            if (field === 'fontColor') {
+                item.fontColor = /^#[0-9a-f]{6}$/i.test(control.value) ? control.value : '';
+                itemEl.style.setProperty('--free-font-color', item.fontColor || 'var(--free-fg)');
+            }
+            persistFreeItems();
+        }
+
         function onFreeItemActionClick(e) {
             const photoUpload = e.target.closest('[data-free-photo-upload]');
             if (photoUpload) {
@@ -6936,6 +7129,10 @@
             const action = actionBtn.dataset.freeAction;
             if (action === 'color') {
                 itemEl.classList.toggle('color-open');
+                return;
+            }
+            if (action === 'font') {
+                itemEl.classList.toggle('font-open');
                 return;
             }
 
@@ -7946,6 +8143,21 @@
             }
         }
 
+        async function deleteStoryPosterLibraryRecord(id) {
+            const db = await openStoryPosterDatabase();
+            try {
+                await new Promise((resolve, reject) => {
+                    const transaction = db.transaction(STORY_POSTER_DB_STORE, 'readwrite');
+                    transaction.objectStore(STORY_POSTER_DB_STORE).delete(id);
+                    transaction.oncomplete = resolve;
+                    transaction.onerror = () => reject(transaction.error || new Error('indexeddb-delete-failed'));
+                    transaction.onabort = () => reject(transaction.error || new Error('indexeddb-delete-failed'));
+                });
+            } finally {
+                db.close();
+            }
+        }
+
         function createStoryPosterThumbnail(file) {
             return new Promise((resolve, reject) => {
                 const sourceUrl = URL.createObjectURL(file);
@@ -7966,6 +8178,52 @@
                 };
                 image.src = sourceUrl;
             });
+        }
+
+        function setProposalRevealPhotoSource(source) {
+            const figure = document.getElementById('proposalRevealPhoto');
+            const image = document.getElementById('proposalRevealPhotoImage');
+            if (!figure || !image) return;
+            figure.classList.remove('has-photo');
+            if (!source) {
+                image.removeAttribute('src');
+                return;
+            }
+            image.onload = () => figure.classList.add('has-photo');
+            image.onerror = () => {
+                figure.classList.remove('has-photo');
+                image.removeAttribute('src');
+            };
+            image.src = source;
+        }
+
+        async function uploadProposalRevealPhoto(file) {
+            if (!file || !file.type || !file.type.startsWith('image/')) return;
+            if (!storyPosterCloudEndpoint) throw new Error('cloud-not-configured');
+            const thumbnail = await createStoryPosterThumbnail(file);
+            const createdAt = Date.now();
+            await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(PROPOSAL_PHOTO_ID)}/original`, {
+                method: 'PUT',
+                headers: { 'Content-Type': file.type || 'application/octet-stream' },
+                body: file
+            }, true);
+            await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(PROPOSAL_PHOTO_ID)}/thumbnail`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'image/jpeg' },
+                body: thumbnail
+            }, true);
+            await storyPosterCloudRequest('/api/posters', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: PROPOSAL_PHOTO_ID,
+                    name: '结尾照片',
+                    caption: '爱你',
+                    createdAt
+                })
+            }, true);
+            setProposalRevealPhotoSource(`${storyPosterCloudEndpoint}/media/${encodeURIComponent(PROPOSAL_PHOTO_ID)}/original?v=${createdAt}`);
+            await loadStoryPosterCloudLibrary();
         }
 
         async function updateStoryPosterLibraryStatus(prefix = '') {
@@ -8042,7 +8300,11 @@
                 const response = await storyPosterCloudRequest('/api/posters', { cache: 'no-store' });
                 const payload = await response.json();
                 const records = Array.isArray(payload.posters) ? payload.posters : [];
-                storyPosterCloudItems = records.map(record => ({
+                const proposalPhoto = records.find(record => record && record.id === PROPOSAL_PHOTO_ID);
+                setProposalRevealPhotoSource(proposalPhoto
+                    ? `${storyPosterCloudEndpoint}/media/${encodeURIComponent(PROPOSAL_PHOTO_ID)}/original?v=${encodeURIComponent(proposalPhoto.createdAt || proposalPhoto.id)}`
+                    : '');
+                storyPosterCloudItems = records.filter(record => record && record.id !== PROPOSAL_PHOTO_ID).map(record => ({
                     id: record.id,
                     type: 'photo',
                     source: 'cloud',
@@ -8168,23 +8430,47 @@
                 const savedRaw = localStorage.getItem(STORY_POSTER_CONFIG_STORAGE_KEY);
                 const saved = JSON.parse(savedRaw || '{}');
                 storyPosterCaptionSize = clamp(Number(saved.captionSize || 20), 14, 38);
+                storyPosterSidewaysTilt = clamp(Number.isFinite(Number(saved.sidewaysTilt)) ? Number(saved.sidewaysTilt) : 12, 0, 18);
+                storyPosterGapScale = clamp(Number.isFinite(Number(saved.gapScale)) ? Number(saved.gapScale) : 1.3, 1, 1.8);
+                storyPosterInactiveOpacity = clamp(Number.isFinite(Number(saved.inactiveOpacity)) ? Number(saved.inactiveOpacity) : 0.5, 0.2, 0.8);
                 const configuredEndpoint = saved.cloudEndpoint || DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
                 storyPosterCloudEndpoint = normalizeStoryPosterCloudEndpoint(configuredEndpoint) || DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
             } catch (error) {
                 storyPosterCaptionSize = 20;
+                storyPosterSidewaysTilt = 12;
+                storyPosterGapScale = 1.3;
+                storyPosterInactiveOpacity = 0.5;
                 storyPosterCloudEndpoint = DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
             }
             const carousel = document.getElementById('storyPosterCarousel');
             const input = document.getElementById('storyPosterCaptionSizeInput');
             const value = document.getElementById('storyPosterCaptionSizeValue');
-            if (carousel) carousel.style.setProperty('--story-poster-caption-size', `${storyPosterCaptionSize}px`);
+            const tiltInput = document.getElementById('storyPosterTiltInput');
+            const tiltValue = document.getElementById('storyPosterTiltValue');
+            const gapInput = document.getElementById('storyPosterGapInput');
+            const gapValue = document.getElementById('storyPosterGapValue');
+            const opacityInput = document.getElementById('storyPosterInactiveOpacityInput');
+            const opacityValue = document.getElementById('storyPosterInactiveOpacityValue');
+            if (carousel) {
+                carousel.style.setProperty('--story-poster-caption-size', `${storyPosterCaptionSize}px`);
+                carousel.style.setProperty('--story-poster-inactive-opacity', String(storyPosterInactiveOpacity));
+            }
             if (input) input.value = String(storyPosterCaptionSize);
             if (value) value.textContent = `${storyPosterCaptionSize}px`;
+            if (tiltInput) tiltInput.value = String(storyPosterSidewaysTilt);
+            if (tiltValue) tiltValue.textContent = `${storyPosterSidewaysTilt}°`;
+            if (gapInput) gapInput.value = String(Math.round(storyPosterGapScale * 100));
+            if (gapValue) gapValue.textContent = `${Math.round(storyPosterGapScale * 100)}%`;
+            if (opacityInput) opacityInput.value = String(Math.round(storyPosterInactiveOpacity * 100));
+            if (opacityValue) opacityValue.textContent = `${Math.round(storyPosterInactiveOpacity * 100)}%`;
         }
 
         function saveStoryPosterConfig() {
             localStorage.setItem(STORY_POSTER_CONFIG_STORAGE_KEY, JSON.stringify({
                 captionSize: storyPosterCaptionSize,
+                sidewaysTilt: storyPosterSidewaysTilt,
+                gapScale: storyPosterGapScale,
+                inactiveOpacity: storyPosterInactiveOpacity,
                 cloudEndpoint: storyPosterCloudEndpoint
             }));
             updateEditorStorageMeter();
@@ -8227,6 +8513,9 @@
             const uploadButton = document.getElementById('storyPosterUploadBtn');
             const cloudButton = document.getElementById('storyPosterCloudBtn');
             const captionSizeInput = document.getElementById('storyPosterCaptionSizeInput');
+            const tiltInput = document.getElementById('storyPosterTiltInput');
+            const gapInput = document.getElementById('storyPosterGapInput');
+            const inactiveOpacityInput = document.getElementById('storyPosterInactiveOpacityInput');
             const focusCaption = document.getElementById('storyPosterFocusCaption');
             loadStoryPosterConfig();
             if (storyPosterPreviewBtn) storyPosterPreviewBtn.addEventListener('click', openStoryPosterPreview);
@@ -8243,6 +8532,14 @@
                 }
             });
             carousel.addEventListener('click', e => {
+                const deleteButton = e.target.closest('[data-poster-delete]');
+                if (deleteButton) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isEditMode) return;
+                    deleteStoryPosterById(deleteButton.dataset.posterId);
+                    return;
+                }
                 const button = e.target.closest('[data-poster-action]');
                 if (button) {
                     e.preventDefault();
@@ -8316,6 +8613,35 @@
                     saveStoryPosterConfig();
                 });
             }
+            if (tiltInput) {
+                tiltInput.addEventListener('input', () => {
+                    storyPosterSidewaysTilt = clamp(Number(tiltInput.value || 12), 0, 18);
+                    const value = document.getElementById('storyPosterTiltValue');
+                    if (value) value.textContent = `${storyPosterSidewaysTilt}°`;
+                    saveStoryPosterConfig();
+                    layoutStoryPosters();
+                });
+            }
+            if (gapInput) {
+                gapInput.addEventListener('input', () => {
+                    storyPosterGapScale = clamp(Number(gapInput.value || 130) / 100, 1, 1.8);
+                    const value = document.getElementById('storyPosterGapValue');
+                    if (value) value.textContent = `${Math.round(storyPosterGapScale * 100)}%`;
+                    saveStoryPosterConfig();
+                    layoutStoryPosters();
+                });
+            }
+            if (inactiveOpacityInput) {
+                inactiveOpacityInput.addEventListener('input', () => {
+                    storyPosterInactiveOpacity = clamp(Number(inactiveOpacityInput.value || 50) / 100, 0.2, 0.8);
+                    const value = document.getElementById('storyPosterInactiveOpacityValue');
+                    if (value) value.textContent = `${Math.round(storyPosterInactiveOpacity * 100)}%`;
+                    const carousel = document.getElementById('storyPosterCarousel');
+                    if (carousel) carousel.style.setProperty('--story-poster-inactive-opacity', String(storyPosterInactiveOpacity));
+                    saveStoryPosterConfig();
+                    layoutStoryPosters();
+                });
+            }
             if (focusCaption) {
                 focusCaption.addEventListener('input', updateFocusedStoryPosterCaption);
                 focusCaption.addEventListener('blur', () => saveFocusedStoryPosterCaption());
@@ -8348,6 +8674,33 @@
             return Array.from({ length: 12 }, (_, index) => sourceItems[index % sourceItems.length]);
         }
 
+        async function deleteStoryPosterById(id) {
+            const targetId = String(id || '');
+            const item = getStoryPosterItems().find(entry => String(entry.id || '') === targetId);
+            if (!item) return;
+            if (!window.confirm('删除这张照片吗？此操作不能自动恢复。')) return;
+            try {
+                if (item.source === 'cloud') {
+                    await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(targetId)}`, { method: 'DELETE' }, true);
+                    await loadStoryPosterCloudLibrary();
+                } else if (item.source === 'library') {
+                    await deleteStoryPosterLibraryRecord(targetId);
+                    await loadStoryPosterLibrary();
+                } else {
+                    const module = storyModules.find(entry => String(entry.id || '') === targetId);
+                    if (module) {
+                        module.photo = '';
+                        persistStoryModules();
+                        renderStoryModules();
+                    }
+                }
+                deactivateStoryPosterFocus();
+                showToast('这张照片已删除', 1600);
+            } catch (error) {
+                showToast('删除没有完成，请检查管理员口令后重试', 2200);
+            }
+        }
+
         function escapeStoryPosterText(value) {
             const node = document.createElement('div');
             node.textContent = String(value || '').replace(/<[^>]*>/g, '');
@@ -8376,7 +8729,10 @@
                 const image = hasPhoto
                     ? `<img class="story-poster-backdrop" data-poster-src="${module.photo}" alt="" aria-hidden="true"><img class="story-poster-photo" data-poster-src="${module.photo}" alt="${escapeStoryPosterText(module.title || '故事海报')}" decoding="async">`
                     : '';
-                return `<article class="story-poster-card" data-poster-index="${index}" data-poster-id="${escapeStoryPosterText(module.id || '')}" aria-hidden="true"><div class="story-poster-card-inner">${image}<div class="story-poster-copy"><small>${escapeStoryPosterText(module.meta || 'OUR CHAPTER')}</small><strong>${escapeStoryPosterText(module.title || '未命名章节')}</strong></div></div></article>`;
+                const remove = hasPhoto && module.id
+                    ? `<button type="button" class="story-poster-delete-btn" data-poster-delete data-poster-id="${escapeStoryPosterText(module.id)}" aria-label="删除这张照片">×</button>`
+                    : '';
+                return `<article class="story-poster-card" data-poster-index="${index}" data-poster-id="${escapeStoryPosterText(module.id || '')}" aria-hidden="true"><div class="story-poster-card-inner">${image}${remove}<div class="story-poster-copy"><small>${escapeStoryPosterText(module.meta || 'OUR CHAPTER')}</small><strong>${escapeStoryPosterText(module.title || '未命名章节')}</strong></div></div></article>`;
             };
             const renderedIndexes = [];
             for (let offset = -renderRadius; offset <= renderRadius; offset += 1) {
@@ -8414,9 +8770,10 @@
             const items = getStoryPosterItems();
             if (!track || !viewport || !items.length) return;
             const mobile = viewport.clientWidth <= 768;
-            const coverflowGap = mobile
+            const baseCoverflowGap = mobile
                 ? Math.min(112, viewport.clientWidth * 0.22)
                 : Math.min(180, viewport.clientWidth * 0.13);
+            const coverflowGap = baseCoverflowGap * storyPosterGapScale;
             const visibleRadius = mobile ? 2.01 : 3.01;
             let closestIndex = 0;
             let closestDistance = Infinity;
@@ -8445,12 +8802,12 @@
                 });
                 const x = offset * coverflowGap;
                 const z = -distance * 120;
-                const rotateY = offset * 7;
-                const rotateZ = offset * 7;
+                const rotateY = offset * storyPosterSidewaysTilt;
+                const rotateZ = offset * Math.min(7, storyPosterSidewaysTilt * 0.58);
                 const focusBoost = storyPosterPhase === 'focused' && distance < 0.02 ? 1.05 : 1;
                 const scale = Math.max(0.52, 1 - distance * 0.12) * focusBoost;
                 card.style.zIndex = String(100 - Math.round(distance * 10));
-                card.style.opacity = '1';
+                card.style.opacity = distance < 0.02 ? '1' : String(storyPosterInactiveOpacity);
                 card.style.filter = 'none';
                 card.style.setProperty('--poster-dim', distance < 0.02 ? '0' : '0.42');
                 card.style.transform = `translate3d(calc(-50% + ${x}px), -50%, ${z}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
@@ -10018,6 +10375,38 @@
             }, 260);
         }
 
+        function launchProposalFireworks() {
+            const layer = document.getElementById('proposalFireworkLayer');
+            if (!layer || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            layer.replaceChildren();
+            const colors = ['#fff8ea', '#d6b56d', '#f4c2c2', '#f08a9b', '#b8d8ff'];
+            const bursts = [
+                { x: 18, y: 28, delay: 0 },
+                { x: 78, y: 22, delay: 0.16 },
+                { x: 48, y: 16, delay: 0.34 },
+                { x: 30, y: 46, delay: 0.52 },
+                { x: 70, y: 48, delay: 0.68 }
+            ];
+            const fragment = document.createDocumentFragment();
+            bursts.forEach((burst, burstIndex) => {
+                for (let index = 0; index < 18; index += 1) {
+                    const angle = (Math.PI * 2 * index) / 18 + Math.random() * 0.14;
+                    const distance = 42 + Math.random() * 72;
+                    const spark = document.createElement('i');
+                    spark.className = 'proposal-firework-spark';
+                    spark.style.setProperty('--firework-x', `${burst.x}%`);
+                    spark.style.setProperty('--firework-y', `${burst.y}%`);
+                    spark.style.setProperty('--firework-dx', `${Math.cos(angle) * distance}px`);
+                    spark.style.setProperty('--firework-dy', `${Math.sin(angle) * distance}px`);
+                    spark.style.setProperty('--firework-color', colors[(burstIndex + index) % colors.length]);
+                    spark.style.setProperty('--firework-delay', `${burst.delay + Math.random() * 0.1}s`);
+                    fragment.appendChild(spark);
+                }
+            });
+            layer.appendChild(fragment);
+            window.setTimeout(() => layer.replaceChildren(), 3200);
+        }
+
         function initProposalThreshold() {
             const section = document.getElementById('proposalThreshold');
             const revealBtn = document.getElementById('proposalRevealBtn');
@@ -10062,7 +10451,32 @@
             const section = document.getElementById('proposalFinale');
             const answerBtn = document.getElementById('proposalAnswerBtn');
             const answerState = document.getElementById('proposalAnswerState');
+            const photoUploadBtn = document.getElementById('proposalPhotoUploadBtn');
+            const photoUploadInput = document.getElementById('proposalPhotoUploadInput');
             if (!section || !answerBtn || !answerState) return;
+
+            if (photoUploadBtn && photoUploadInput) {
+                photoUploadBtn.addEventListener('click', () => {
+                    if (!isEditMode) return;
+                    photoUploadInput.click();
+                });
+                photoUploadInput.addEventListener('change', async () => {
+                    const file = photoUploadInput.files && photoUploadInput.files[0];
+                    if (!file) return;
+                    photoUploadBtn.disabled = true;
+                    photoUploadBtn.textContent = '正在上传…';
+                    try {
+                        await uploadProposalRevealPhoto(file);
+                        showToast('结尾照片已上传；点击“爱你”即可慢慢展开', 2200);
+                    } catch (error) {
+                        showToast('结尾照片上传失败，请检查管理员口令后重试', 2400);
+                    } finally {
+                        photoUploadInput.value = '';
+                        photoUploadBtn.disabled = false;
+                        photoUploadBtn.textContent = '上传结尾照片';
+                    }
+                });
+            }
 
             if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                 gsap.fromTo(
@@ -10095,6 +10509,7 @@
                 setCeremonyMusicScene('celebration');
                 launchProposalPetals();
                 fireProposalCelebration();
+                window.setTimeout(launchProposalFireworks, 900);
                 window.setTimeout(() => answerState.focus({ preventScroll: true }), 520);
             });
         }
