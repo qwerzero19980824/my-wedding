@@ -2114,7 +2114,7 @@
             overflow: hidden;
             border: 0;
             border-radius: 12.5%;
-            background: #1a1a1a;
+            background: #fffdf8;
             box-shadow: 0 18px 42px rgba(54,38,34,0.18);
             transition: box-shadow var(--duration-slow) var(--ease-premium);
         }
@@ -2128,15 +2128,15 @@
             height: 100%;
             object-fit: contain;
             object-position: center;
-            background: #fff;
+            background: #fffdf8;
         }
         .story-poster-card-inner::after {
             content: '';
             position: absolute;
             inset: 0;
             z-index: 2;
-            background: #000;
-            opacity: var(--poster-dim, 0.42);
+            background: rgba(62, 46, 42, var(--poster-dim, 0.42));
+            opacity: 1;
             pointer-events: none;
             transition: opacity var(--duration-slow) var(--ease-premium);
         }
@@ -7796,7 +7796,7 @@
                 return;
             }
             try {
-                const response = await storyPosterCloudRequest('/api/posters');
+                const response = await storyPosterCloudRequest('/api/posters', { cache: 'no-store' });
                 const payload = await response.json();
                 const records = Array.isArray(payload.posters) ? payload.posters : [];
                 storyPosterCloudItems = records.map(record => ({
@@ -8085,6 +8085,10 @@
                 observer.observe(carousel);
             }
             window.addEventListener('resize', () => window.requestAnimationFrame(layoutStoryPosters));
+            window.addEventListener('online', () => loadStoryPosterCloudLibrary());
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && !storyPosterCloudItems.length) loadStoryPosterCloudLibrary();
+            });
             renderStoryPosterCarousel();
             loadStoryPosterLibrary();
             loadStoryPosterCloudLibrary();
@@ -8126,7 +8130,7 @@
                 const hasPhoto = isSafeImageDataUrl(module.photo)
                     || (typeof module.photo === 'string' && module.photo.startsWith('blob:'))
                     || (module.source === 'cloud' && typeof module.photo === 'string' && module.photo.startsWith('https://'));
-                const image = hasPhoto ? `<img data-poster-src="${module.photo}" alt="${escapeStoryPosterText(module.title || '故事海报')}" loading="lazy" decoding="async">` : '';
+                const image = hasPhoto ? `<img data-poster-src="${module.photo}" alt="${escapeStoryPosterText(module.title || '故事海报')}" decoding="async">` : '';
                 return `<article class="story-poster-card" data-poster-index="${index}" data-poster-id="${escapeStoryPosterText(module.id || '')}" aria-hidden="true"><div class="story-poster-card-inner">${image}<div class="story-poster-copy"><small>${escapeStoryPosterText(module.meta || 'OUR CHAPTER')}</small><strong>${escapeStoryPosterText(module.title || '未命名章节')}</strong></div></div></article>`;
             };
             const renderedIndexes = [];
