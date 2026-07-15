@@ -7965,7 +7965,7 @@
             return node.innerHTML;
         }
 
-        function renderStoryPosterCarousel() {
+        function renderStoryPosterCarousel(options = {}) {
             const track = document.getElementById('storyPosterTrack');
             const status = document.getElementById('storyPosterStatus');
             if (!track) return;
@@ -7975,8 +7975,11 @@
                 if (status) status.textContent = '01 / 01';
                 return;
             }
+            const preservePosition = Boolean(options.preservePosition);
             storyPosterIndex = ((storyPosterIndex % items.length) + items.length) % items.length;
-            storyPosterPosition = storyPosterIndex;
+            if (!preservePosition) storyPosterPosition = storyPosterIndex;
+            const renderRadius = Math.min(6, Math.max(0, Math.floor(items.length / 2)));
+            const centerIndex = ((Math.round(storyPosterPosition) % items.length) + items.length) % items.length;
             const posterMarkup = (module, index) => {
                 const hasPhoto = isSafeImageDataUrl(module.photo)
                     || (typeof module.photo === 'string' && module.photo.startsWith('blob:'))
@@ -7984,7 +7987,12 @@
                 const image = hasPhoto ? `<img data-poster-src="${module.photo}" alt="${escapeStoryPosterText(module.title || '故事海报')}" loading="lazy" decoding="async">` : '';
                 return `<article class="story-poster-card" data-poster-index="${index}" data-poster-id="${escapeStoryPosterText(module.id || '')}" aria-hidden="true"><div class="story-poster-card-inner">${image}<div class="story-poster-copy"><small>${escapeStoryPosterText(module.meta || 'OUR CHAPTER')}</small><strong>${escapeStoryPosterText(module.title || '未命名章节')}</strong></div></div></article>`;
             };
-            track.innerHTML = items.map(posterMarkup).join('');
+            const renderedIndexes = [];
+            for (let offset = -renderRadius; offset <= renderRadius; offset += 1) {
+                const index = ((centerIndex + offset) % items.length + items.length) % items.length;
+                if (!renderedIndexes.includes(index)) renderedIndexes.push(index);
+            }
+            track.innerHTML = renderedIndexes.map(index => posterMarkup(items[index], index)).join('');
             layoutStoryPosters();
             updateStoryPosterStatus(items.length);
         }
@@ -8021,7 +8029,8 @@
             const visibleRadius = 3.01;
             let closestIndex = 0;
             let closestDistance = Infinity;
-            track.querySelectorAll('.story-poster-card').forEach((card, index) => {
+            track.querySelectorAll('.story-poster-card').forEach(card => {
+                const index = Number(card.dataset.posterIndex || 0);
                 const offset = wrapStoryPosterOffset(index - storyPosterPosition, items.length);
                 const distance = Math.abs(offset);
                 if (distance < closestDistance) {
@@ -8057,7 +8066,7 @@
                 storyPosterLastTickIndex = closestIndex;
             }
             storyPosterIndex = closestIndex;
-            track.querySelectorAll('.story-poster-card').forEach((card, index) => card.classList.toggle('is-center', index === closestIndex));
+            track.querySelectorAll('.story-poster-card').forEach(card => card.classList.toggle('is-center', Number(card.dataset.posterIndex || 0) === closestIndex));
             updateStoryPosterStatus(items.length);
         }
 
@@ -8241,6 +8250,10 @@
                 storyPosterPosition = storyPosterSettle.from + (storyPosterSettle.to - storyPosterSettle.from) * eased;
                 if (progress >= 1) {
                     storyPosterPosition = storyPosterSettle.to;
+                    // Keep the animation light on phones: after each move, recycle
+                    // the small DOM window around the new center instead of
+                    // retaining every uploaded poster card in the document.
+                    renderStoryPosterCarousel({ preservePosition: true });
                     if (storyPosterPendingFocus) {
                         activateStoryPosterFocus(storyPosterSettle.to);
                     } else {
