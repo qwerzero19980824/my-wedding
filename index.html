@@ -5260,6 +5260,7 @@
         let storyPosterPreviewObjectUrl = null;
         let storyPosterCloudEndpoint = '';
         let storyPosterCloudToken = '';
+        let storyPosterCloudLoadAttempts = 0;
         let lastMemoryTrigger = null;
         const contentDirty = new Map();
         const MAX_UNDO_STEPS = 30;
@@ -7809,11 +7810,16 @@
                     caption: record.caption || record.name || '我们的照片',
                     record
                 }));
+                storyPosterCloudLoadAttempts = 0;
                 renderStoryPosterCarousel();
                 updateStoryPosterLibraryStatus();
             } catch (error) {
                 storyPosterCloudItems = [];
                 updateStoryPosterLibraryStatus('云端图库暂时无法连接，本机图库仍可使用');
+                if (storyPosterCloudLoadAttempts < 3) {
+                    storyPosterCloudLoadAttempts += 1;
+                    window.setTimeout(() => loadStoryPosterCloudLibrary(), 1800 * storyPosterCloudLoadAttempts);
+                }
             }
         }
 
@@ -7919,10 +7925,8 @@
                 const savedRaw = localStorage.getItem(STORY_POSTER_CONFIG_STORAGE_KEY);
                 const saved = JSON.parse(savedRaw || '{}');
                 storyPosterCaptionSize = clamp(Number(saved.captionSize || 20), 14, 38);
-                const configuredEndpoint = Object.prototype.hasOwnProperty.call(saved, 'cloudEndpoint')
-                    ? saved.cloudEndpoint
-                    : DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
-                storyPosterCloudEndpoint = normalizeStoryPosterCloudEndpoint(configuredEndpoint);
+                const configuredEndpoint = saved.cloudEndpoint || DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
+                storyPosterCloudEndpoint = normalizeStoryPosterCloudEndpoint(configuredEndpoint) || DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
             } catch (error) {
                 storyPosterCaptionSize = 20;
                 storyPosterCloudEndpoint = DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
@@ -8162,9 +8166,9 @@
             if (!track || !viewport || !items.length) return;
             const mobile = viewport.clientWidth <= 768;
             const coverflowGap = mobile
-                ? Math.min(88, viewport.clientWidth * 0.16)
+                ? Math.min(112, viewport.clientWidth * 0.22)
                 : Math.min(180, viewport.clientWidth * 0.13);
-            const visibleRadius = 3.01;
+            const visibleRadius = mobile ? 2.01 : 3.01;
             let closestIndex = 0;
             let closestDistance = Infinity;
             track.querySelectorAll('.story-poster-card').forEach(card => {
