@@ -16,8 +16,12 @@
 `git config --global https.proxy http://127.0.0.1:7897`
 
 ## Step 2: 暂存与本地提交
-执行常规的代码暂存与提交：
-`git add .`
+先用 `git status --short` 确认范围。**不要直接执行 `git add .`**，以免把本地 UI/UX 参考库、编辑器设置、测试缓存或其他无关文件提交到公开仓库。
+
+只显式暂存本轮已经核对的项目文件，例如：
+`git add -- index.html README.md CHANGELOG.md CHECKPOINT.md "My Wedding Master Skill.md" "Responsive Desktop & Mobile Adaptation Skill.md" PHOTO_STORAGE.md ".gitignore" "Coverflow Gallery.md"`
+
+再用 `git diff --cached --check` 与 `git diff --cached --stat` 复核暂存区，确认没有无关文件后提交：
 `git commit -m "feat/update: [请根据最近更改自动生成简短的中文描述]"`
 
 ## Step 3: 拉取与 CNAME 冲突解决 (关键)

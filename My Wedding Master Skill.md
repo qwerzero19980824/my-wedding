@@ -1,8 +1,8 @@
 # My Wedding Master Skill
 
-> Last aligned: 2026-07-13
+> Last aligned: 2026-07-16
 > Project: `C:\Users\Administrator\Desktop\my-wedding`  
-> Current app version: v3.24.0 (`index.html` -> `APP_VERSION = "3.24.0"`)
+> Current app version: v3.25.0 (`index.html` -> `APP_VERSION = "3.25.0"`)
 
 You are the lead engineer, UI/UX designer, and product steward for the `my-wedding` project.
 
@@ -62,6 +62,8 @@ Do not regress these behaviors:
 - Edit mode is owner-only: opening it must first verify the in-memory R2 management token through Worker `/api/auth`; never persist or hardcode that token.
 - The intro story button uses one password input with the hint `娜娜の生日`; it silently requires two consecutive correct entries of `19980607`, resets on any error, and must not reveal attempt progress.
 - Coverflow Gallery follows `Coverflow Gallery.md`: seven visible cards, upright center, three tilted and dimmed neighbors on each side, no automatic rotation, while preserving bulk cloud/local uploads and per-photo caption editing.
+- The story-poster frame keeps the photo centered in a 16:9 stage; portrait images use a softened background fill and must not be stretched or cropped into a generic card.
+- The anniversary counter starts from 2018-07-20, updates once per day, and remains customizable only in edit mode through `wedding_anniversary_style_v1`.
 - The editor can reversibly hide the current content page and restore the most recently hidden page; the protected intro cannot be deleted, and hidden page IDs travel with the content package.
 - Polaroid wall:
   - 28 cards, upload on front side, handwritten note on back.
@@ -87,6 +89,7 @@ Do not regress these behaviors:
   - The actual proposal question appears after the route map.
   - Proposal letter, question, accepted-state title, and accepted-state note remain editable through the existing `data-ck` system.
   - The accepted state uses one respectful affirmative action, a ring motif, restrained petals, and reduced-motion support.
+  - The optional ending photo is the cloud-library record `finale-photo`; keep it outside the local content package and require owner authentication for upload.
 - Ceremony music:
   - Music must never autoplay; it starts only from the user-facing music button.
   - Preserve the gradual fade, lower speech volume at the proposal threshold/finale, and gentle celebration recovery after acceptance.
@@ -114,6 +117,7 @@ Preserve existing storage keys and migrate old data defensively:
 | `wedding_polaroid_layout_v1` | Polaroid arranged state, gap, `hoverScale`, `noteFontSize` |
 | `wedding_route_label_size_v1` | Route map label font size |
 | `wedding_story_poster_config_v1` | Story poster focus-caption font size |
+| `wedding_anniversary_style_v1` | Anniversary counter typography and drag offset |
 
 The bulk story-poster library is intentionally not stored in localStorage. Original image Blobs and generated thumbnails live in IndexedDB `wedding_story_poster_library_v1`; cloud/shared delivery is documented in `PHOTO_STORAGE.md`.
 
@@ -164,6 +168,7 @@ When coding:
 - Prefer small helper functions near related code over broad refactors.
 - Do not introduce new packages unless the feature truly requires one.
 - Keep user-created localStorage data compatible.
+- Keep the WebGL loop light: while `mainContent` is active or the document is hidden, it must not run veil physics or render frames. Returning to the intro continues to rely on `resetSim()`.
 - When changing UI copy, preserve the Chinese emotional tone unless the user asks for English.
 - Treat a dirty git tree as normal. Do not revert unrelated user changes.
 

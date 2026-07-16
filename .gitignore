@@ -3,3 +3,5 @@ video/
 node_modules/
 .wrangler/
 cloudflare-r2-worker/.upload-token.local.txt
+.vscode/
+ui-ux-pro-max-skill-main/

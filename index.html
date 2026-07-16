@@ -5116,7 +5116,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.24.0";
+        const APP_VERSION = "3.25.0";
         const BUILD_DATE = "2026-07-14";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -10112,6 +10112,13 @@
         let frameCount = 0;
         function animate() {
             requestAnimationFrame(animate);
+
+            // The veil is not visible once the narrative is open. Avoid keeping
+            // its physics and WebGL renderer busy while the page is hidden or the
+            // visitor is reading the story; resetSim() prepares a fresh scene when
+            // they return to the intro.
+            if (document.hidden || mainContent.classList.contains('active')) return;
+
             frameCount++;
 
             for (const p of particles) p.update();

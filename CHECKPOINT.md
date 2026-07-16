@@ -1,7 +1,7 @@
 # 项目断点保存 — 平行宇宙的相遇
 
-> **最后更新**：2026-07-14
-> **当前版本**：v3.24.0（`index.html` 内 `APP_VERSION` 已同步为 "3.24.0"）
+> **最后更新**：2026-07-16
+> **当前版本**：v3.25.0（`index.html` 内 `APP_VERSION` 已同步为 "3.25.0"）
 > **工作目录**：`C:\Users\Administrator\Desktop\my-wedding`  
 > **启动方式**：`python -m http.server 8080` → `http://localhost:8080`
 
@@ -28,6 +28,8 @@
 | **相遇粒子** | canvas-confetti 四次爆发 + 文字淡入 + 点击重新触发 | `index.html` |
 | **合并记忆卡片** | 三张卡片 ScrollTrigger 逐个淡入 | `index.html` |
 | **Coverflow Gallery** | 中心直立、左右各三张，共 7 张可见；侧卡统一轻微变暗，支持点按、拖动、按钮、方向键和 50 张以上照片队列，不自动轮转 | `index.html` / `Coverflow Gallery.md` |
+| **恋爱天数计数器** | 以 2018-07-20 为起始日自动显示相恋天数；编辑态可调整字号、字重、颜色和拖动位置，保存到 `wedding_anniversary_style_v1` | `index.html` |
+| **结尾照片揭示** | 最终求婚章节可由管理员上传一张结尾照片；固定使用 R2 图库记录 `finale-photo`，不进入内容包 | `index.html` / `cloudflare-r2-worker/` |
 | **海报点按与大容量图库** | 海报背景无可见边框；仅点按时放大并显示可编辑白色字幕；字号可调；滚动刻度音与兼容设备震动；可批量选择 80 张以上 4K 原图，IndexedDB 保存原图、轮换读取缩略图 | `index.html` / `PHOTO_STORAGE.md` |
 | **R2 跨设备云端图库** | 已部署正式 Worker；新设备默认连接 R2，使用 Bearer 管理口令分层上传原图/缩略图，并支持公开读取和字幕更新 | `index.html` / `cloudflare-r2-worker/` |
 | **主人编辑认证** | 公开铅笔入口必须先用 R2 管理口令调用 Worker `/api/auth` 验证；成功后当前标签页才显示上传/编辑工具，口令不持久化 | `index.html` / `cloudflare-r2-worker/` |
@@ -67,7 +69,7 @@
 | **真实故事内容** | 文字、故事模块、自由文本框均可在编辑模式中替换，仍需填入真实内容 |
 | **现场浏览器有声确认** | 音乐已集成；自动化浏览器无音频输出，正式展示前仍需在现场 Chrome/Safari 试听一次 |
 | **移动端完整测试** | CSS 有响应式断点但未在真机全面测试 |
-| **旧文件清理** | `css/` `js/` `assets/` `music/` `CONTENT_TEMPLATE.md` `PROMPT_GUIDE.md` `想要实现的效果.txt` 均为 v1.x 遗留，未被当前 `index.html` 引用 |
+| **旧文件清理** | `css/` `js/` `assets/`、`CONTENT_TEMPLATE.md`、`PROMPT_GUIDE.md` 与 `想要实现的效果.txt` 为 v1.x 遗留；`music/` 已被当前页面的现场音乐控件使用，不能删除 |
 
 ---
 
@@ -75,7 +77,7 @@
 
 ```
 my-wedding/
-├── index.html              ← ★ 核心文件 (约155KB)，所有 CSS/JS 内联，唯一入口
+├── index.html              ← ★ 核心文件 (约465KB)，所有 CSS/JS 内联，唯一入口
 ├── code.html               ← 参考实现 (25KB)，独立版布料模拟+流体背景
 ├── video/
 │   └── 1.mp4              ← Layer 1 背景视频 (7.5MB)
@@ -91,7 +93,7 @@ my-wedding/
 ├── css/    (7 文件) ← v1.x 遗留，未被 index.html 引用
 ├── js/     (8 文件) ← v1.x 遗留，未被 index.html 引用
 ├── assets/           ← 旧素材目录 (空)
-├── music/            ← Ed Sheeran - Perfect.mp3 (10MB，未集成)
+├── music/            ← Ed Sheeran - Perfect.mp3 (10MB，现场音乐控件已集成)
 ├── PROMPT_GUIDE.md   ← 旧设计规格 (已由 README + wedding_architecture 覆盖)
 ├── CONTENT_TEMPLATE.md ← v1.x 内容模板
 └── 想要实现的效果.txt    ← 早期笔记
@@ -352,6 +354,13 @@ cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js
 ---
 
 ## 七、下一步可做的工作
+
+### v3.25.0 发布前验证记录
+- 已同步 2026-07-15 至 2026-07-16 的海报画框、恋爱天数、结尾照片与视觉优化；版本号更新为 `3.25.0`。
+- 正文打开/后台标签页时，WebGL 布料循环跳过物理计算和渲染；回到首屏仍执行原有 `resetSim()`。
+- `node --test test/worker.test.mjs` 通过：R2 图库生命周期、鉴权、CORS 与体积限制全部通过。
+- In-app Browser 桌面与 `390×844` 验证通过：首屏加载、恋爱天数 `2918`、版本标识 `v3.25.0` 正确；手机端 `scrollWidth <= innerWidth`，无横向溢出，也未发现页面脚本错误。
+- 浏览器仅保留 Three.js r160 全局构建方式的弃用警告；当前 CDN 正常加载，后续模块化时再迁移到 ES Modules。
 
 ### v3.24.0 验证记录
 - `index.html` 内联脚本、Worker Mock R2 测试与 `git diff --check` 通过；测试覆盖 `localhost:8080` 的管理员认证 CORS。

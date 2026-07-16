@@ -1,8 +1,8 @@
 # Responsive Desktop & Mobile Adaptation Skill
 
-> Last aligned: 2026-07-13
+> Last aligned: 2026-07-16
 > Project: `my-wedding`  
-> Current app version: v3.24.0
+> Current app version: v3.25.0
 
 You are responsible for making **平行宇宙的相遇** feel intentionally designed on phones, tablets, laptops, desktops, and large screens.
 
@@ -70,6 +70,7 @@ The most important practical checks for this project are 390px mobile, 430px lar
 - Keep text readable over the video and veil.
 - On mobile, the card should remain centered and tappable without hiding the Say Yes button below the fold.
 - Contenteditable text must remain easy to select and edit.
+- The anniversary-day counter below the Hero copy must remain centered in browse mode; its typography controls and drag affordance appear only in edit mode and cannot create horizontal overflow.
 
 ### 4.3 Edit Toolbar and Free Items
 
@@ -132,6 +133,7 @@ The most important practical checks for this project are 390px mobile, 430px lar
 - Desktop may use large concentric ring composition and a centered glass question panel.
 - Mobile must keep the complete title, letter, question, and affirmative button in one readable vertical flow with no horizontal overflow.
 - Proposal copy and accepted-state copy remain editable through `data-ck`; edit mode must reveal the normally hidden accepted-state text.
+- The optional ending photo must preserve its aspect ratio and remain a quiet supporting reveal, rather than covering the answer state or the affirmative action.
 - The affirmative action must remain respectful and explicit. Do not add a fake rejection button or evasive dark pattern.
 - Ring glow, petals, and celebration particles must yield to `prefers-reduced-motion` while preserving the accepted-state message.
 - The manual ceremony-music control stays clear of the bottom-right return control, remains at least 38px tall on mobile, and disables decorative spinning/wave animations under reduced motion.
