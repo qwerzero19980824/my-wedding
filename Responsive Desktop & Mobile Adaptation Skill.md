@@ -2,7 +2,7 @@
 
 > Last aligned: 2026-07-16
 > Project: `my-wedding`  
-> Current app version: v3.25.1
+> Current app version: v3.26.0
 
 You are responsible for making **平行宇宙的相遇** feel intentionally designed on phones, tablets, laptops, desktops, and large screens.
 
@@ -70,6 +70,7 @@ The most important practical checks for this project are 390px mobile, 430px lar
 - Keep text readable over the video and veil.
 - On mobile, the card should remain centered and tappable without hiding the Say Yes button below the fold.
 - Contenteditable text must remain easy to select and edit.
+- The parallel-world section has 20 text slots across both tracks. On small screens, blank slots and their delete controls appear only in edit mode; controls must remain inside the corresponding half-track.
 - The anniversary-day counter below the Hero copy must remain centered in browse mode; its typography controls and drag affordance appear only in edit mode and cannot create horizontal overflow.
 
 ### 4.3 Edit Toolbar and Free Items

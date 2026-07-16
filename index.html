@@ -865,7 +865,7 @@
         .dual-track-wrapper {
             position: relative;
             width: 100%;
-            height: 300vh;
+            height: 800vh;
         }
         .dual-track-stage {
             position: sticky;
@@ -887,11 +887,12 @@
         .track-inner {
             position: absolute;
             top: 0; left: 0;
-            width: 100%; height: 100%;
+            width: 100%; height: 420%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            padding: 0 3rem;
+            justify-content: flex-start;
+            padding-top: clamp(4.5rem, 12vh, 9rem);
+            padding-bottom: clamp(4rem, 10vh, 8rem);
         }
         .track-left .track-inner {
             align-items: flex-end;
@@ -924,8 +925,51 @@
             color: var(--text-muted);
             line-height: 2.2;
             max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(3.4rem, 10vh, 8rem);
+            padding-bottom: 26vh;
         }
-        .track-story span { display: block; margin-bottom: 0.8rem; }
+        .track-story-item {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            min-height: 2.2em;
+        }
+        .track-left .track-story-item { justify-content: flex-end; }
+        .track-story-copy { display: block; }
+        .track-story-item.is-track-story-empty { display: none; }
+        .track-story-delete {
+            position: absolute;
+            top: 50%;
+            display: none;
+            place-items: center;
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            border: 1px solid rgba(244, 194, 194, 0.42);
+            border-radius: 50%;
+            background: rgba(18, 20, 22, 0.82);
+            color: rgba(255,255,255,0.88);
+            font: inherit;
+            line-height: 1;
+            cursor: pointer;
+            transform: translateY(-50%);
+        }
+        .track-right .track-story-delete { right: -2.1rem; }
+        .track-left .track-story-delete { left: -2.1rem; }
+        .track-story-delete:hover,
+        .track-story-delete:focus-visible {
+            background: #a92929;
+            border-color: #a92929;
+        }
+        body.edit-mode .track-story-item,
+        body.edit-mode .track-story-item.is-track-story-empty { display: flex; }
+        body.edit-mode .track-story-item.is-track-story-empty .track-story-copy::before {
+            content: '点击写下这一段故事';
+            color: rgba(247, 242, 234, 0.42);
+        }
+        body.edit-mode .track-story-delete { display: grid; }
         .track-photo-placeholder {
             position: relative;
             overflow: hidden;
@@ -4214,6 +4258,21 @@
             .track-right .track-inner {
                 padding-left: 1.5rem; padding-right: 1.5rem;
             }
+            .track-inner {
+                height: 430%;
+                padding-top: 9vh;
+            }
+            .track-story {
+                gap: 11vh;
+                max-width: 100%;
+                font-size: 0.9rem;
+            }
+            .track-story-delete {
+                width: 28px;
+                height: 28px;
+            }
+            .track-right .track-story-delete { right: -0.4rem; }
+            .track-left .track-story-delete { left: -0.4rem; }
             .track-photo-placeholder {
                 width: min(150px, 42vw);
                 height: min(216px, 60vw);
@@ -4785,9 +4844,16 @@
                             <span class="fixed-photo-edit-badge">上传照片</span>
                         </button>
                         <div class="track-story">
-                            <span data-ck="track-left-story-1">城市的另一头，他过着日复一日的生活。</span>
-                            <span data-ck="track-left-story-2">偶尔抬头看天，总觉得缺了点什么。</span>
-                            <span data-ck="track-left-story-3">世界很大，也很安静。</span>
+                            <div class="track-story-item"><span class="track-story-copy" data-ck="track-left-story-1">城市的另一头，他过着日复一日的生活。</span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 1 段故事">×</button></div>
+                            <div class="track-story-item"><span class="track-story-copy" data-ck="track-left-story-2">偶尔抬头看天，总觉得缺了点什么。</span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 2 段故事">×</button></div>
+                            <div class="track-story-item"><span class="track-story-copy" data-ck="track-left-story-3">世界很大，也很安静。</span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 3 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-left-story-4"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 4 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-left-story-5"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 5 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-left-story-6"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 6 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-left-story-7"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 7 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-left-story-8"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 8 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-left-story-9"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 9 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-left-story-10"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除他的第 10 段故事">×</button></div>
                         </div>
                     </div>
                 </div>
@@ -4801,9 +4867,16 @@
                             <span class="fixed-photo-edit-badge">上传照片</span>
                         </button>
                         <div class="track-story">
-                            <span data-ck="track-right-story-1">她在自己的轨道上奔跑，忙碌而充实。</span>
-                            <span data-ck="track-right-story-2">深夜的灯下，偶尔也会感到孤单。</span>
-                            <span data-ck="track-right-story-3">但明天总会如约而至。</span>
+                            <div class="track-story-item"><span class="track-story-copy" data-ck="track-right-story-1">她在自己的轨道上奔跑，忙碌而充实。</span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 1 段故事">×</button></div>
+                            <div class="track-story-item"><span class="track-story-copy" data-ck="track-right-story-2">深夜的灯下，偶尔也会感到孤单。</span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 2 段故事">×</button></div>
+                            <div class="track-story-item"><span class="track-story-copy" data-ck="track-right-story-3">但明天总会如约而至。</span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 3 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-right-story-4"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 4 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-right-story-5"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 5 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-right-story-6"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 6 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-right-story-7"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 7 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-right-story-8"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 8 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-right-story-9"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 9 段故事">×</button></div>
+                            <div class="track-story-item is-track-story-empty"><span class="track-story-copy" data-ck="track-right-story-10"></span><button type="button" class="track-story-delete" data-track-story-delete aria-label="删除她的第 10 段故事">×</button></div>
                         </div>
                     </div>
                 </div>
@@ -5116,7 +5189,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.25.1";
+        const APP_VERSION = "3.26.0";
         const BUILD_DATE = "2026-07-14";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -5971,11 +6044,22 @@
 
         async function verifyAdminUploadToken(token) {
             const endpoint = storyPosterCloudEndpoint || DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
-            const response = await fetch(`${endpoint}/api/auth`, {
-                method: 'GET',
-                headers: { Authorization: `Bearer ${token}` },
-                cache: 'no-store'
-            });
+            const controller = new AbortController();
+            const timeout = window.setTimeout(() => controller.abort(), 12000);
+            let response;
+            try {
+                response = await fetch(`${endpoint}/api/auth`, {
+                    method: 'GET',
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+            } catch (error) {
+                if (error && error.name === 'AbortError') throw new Error('admin-auth-timeout');
+                throw new Error('admin-auth-unavailable');
+            } finally {
+                window.clearTimeout(timeout);
+            }
             if (!response.ok) {
                 if (response.status === 401) throw new Error('invalid-admin-token');
                 if (response.status === 403) throw new Error('admin-origin-not-allowed');
@@ -6011,6 +6095,8 @@
                     ? '管理员口令不正确，请重新输入。'
                     : errorCode === 'admin-origin-not-allowed'
                         ? '当前网址未获编辑权限，请从正式网站或 localhost:8080 打开。'
+                        : errorCode === 'admin-auth-timeout'
+                            ? '验证服务连接超时，请检查网络；无需代理时可直接重试。'
                         : '暂时无法连接验证服务，请检查网络后重试。';
                 setAdminAuthError(message);
                 adminAuthTokenInput.select();
@@ -6235,6 +6321,7 @@
             document.addEventListener('focusout', onEditorFocusOut, true);
             document.addEventListener('keydown', onEditorShortcut, true);
             initStoryModules();
+            initParallelStoryItems();
             updateUndoButton();
             updateEditorStorageMeter();
         }
@@ -6312,6 +6399,34 @@
                 if (contentMap[key] !== undefined) {
                     el.innerHTML = contentMap[key];
                 }
+            });
+            updateParallelStoryItemState();
+        }
+
+        function updateParallelStoryItemState() {
+            document.querySelectorAll('.track-story-copy').forEach(field => {
+                const item = field.closest('.track-story-item');
+                const copy = field.cloneNode(true);
+                copy.querySelectorAll('.ck-drag-handle').forEach(handle => handle.remove());
+                if (item) item.classList.toggle('is-track-story-empty', !copy.textContent.trim());
+            });
+        }
+
+        function initParallelStoryItems() {
+            updateParallelStoryItemState();
+            document.addEventListener('click', event => {
+                const removeButton = event.target.closest('[data-track-story-delete]');
+                if (!removeButton || !isEditMode) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const item = removeButton.closest('.track-story-item');
+                const field = item && item.querySelector('.track-story-copy');
+                if (!item || !field) return;
+                captureUndoSnapshot('delete-parallel-story');
+                field.innerHTML = '';
+                item.classList.add('is-track-story-empty');
+                saveContent();
+                showToast('已删除这段故事；可随时用恢复文字找回默认内容', 1800);
             });
         }
 
@@ -6527,6 +6642,7 @@
             const el = e.currentTarget;
             if (!el || !el.dataset.ck) return;
             contentDirty.set(el.dataset.ck, el);
+            if (el.classList.contains('track-story-copy')) updateParallelStoryItemState();
             scheduleContentSave();
         }
 
@@ -6534,6 +6650,7 @@
             const el = e.currentTarget;
             if (el && el.dataset.ck) {
                 contentDirty.set(el.dataset.ck, el);
+                if (el.classList.contains('track-story-copy')) updateParallelStoryItemState();
             }
             flushContentDirty();
         }
@@ -10261,7 +10378,7 @@
                 )
                 .fromTo('.track-right .track-inner',
                     { yPercent: 0 },
-                    { yPercent: -70, ease: 'none' },
+                    { yPercent: -45, ease: 'none' },
                     0
                 )
                 .to('.divider-line', {

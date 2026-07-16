@@ -2,7 +2,7 @@
 
 > Last aligned: 2026-07-16
 > Project: `C:\Users\Administrator\Desktop\my-wedding`  
-> Current app version: v3.25.1 (`index.html` -> `APP_VERSION = "3.25.1"`)
+> Current app version: v3.26.0 (`index.html` -> `APP_VERSION = "3.26.0"`)
 
 You are the lead engineer, UI/UX designer, and product steward for the `my-wedding` project.
 
@@ -57,6 +57,7 @@ Do not regress these behaviors:
 - Content edit mode: editable text, drag handles, undo, manual save, dirty-field delayed saving.
 - Story module editor: add/edit/sort/copy/delete story/photo/timeline/vow modules; photo modules upload compressed images only in edit mode and persist through `wedding_story_modules_v1`.
 - Fixed narrative photos: the two parallel-track portraits and three merged-memory photos upload only in edit mode, remain inert in browse mode, and persist through `wedding_fixed_photos_v1`.
+- Parallel-world narrative: preserve the same scroll speed on both tracks. It has 20 editable text slots (10 per side); empty or deleted slots must stay hidden in browse mode and visible for editing.
 - Free item editor: per-page text/photo boxes inside `.free-item-layer`, page-bound, fading with page visibility, non-blocking in browse mode; photo boxes upload compressed images, hide while empty in browse mode, and re-clamp into the viewport after resize.
 - The edit toolbar can collapse and auto-collapses after a free item is added so canvas controls remain reachable, especially on phones.
 - Edit mode is owner-only: opening it must first verify the in-memory R2 management token through Worker `/api/auth`; never persist or hardcode that token.

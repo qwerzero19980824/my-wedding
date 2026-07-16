@@ -1,7 +1,7 @@
 # 项目断点保存 — 平行宇宙的相遇
 
 > **最后更新**：2026-07-16
-> **当前版本**：v3.25.1（`index.html` 内 `APP_VERSION` 已同步为 "3.25.1"）
+> **当前版本**：v3.26.0（`index.html` 内 `APP_VERSION` 已同步为 "3.26.0"）
 > **工作目录**：`C:\Users\Administrator\Desktop\my-wedding`  
 > **启动方式**：`python -m http.server 8080` → `http://localhost:8080`
 
@@ -24,7 +24,8 @@
 | **掀开粒子特效** | Canvas Sparkle 钻石粒子 + canvas-confetti 双重爆发 + DOM 白光闪过 | `index.html` |
 | **Hero Card** | contenteditable 情话编辑 + Say Yes 呼吸光晕按钮 | `index.html` |
 | **Say Yes → 滚动内容** | GSAP 白色闪光过渡，隐藏固定图层，激活下方滚动叙事 | `index.html` |
-| **双轨视差** | GSAP ScrollTrigger 异步视差 (左轨 -45%, 右轨 -70%)，分界线消散 | `index.html` |
+| **双轨视差** | GSAP ScrollTrigger 同速视差（左右轨均为 -45%），延长为完整的双线叙事滚动 | `index.html` |
+| **平行世界 20 段文本** | 左右各 10 个文本位；编辑模式可填写或逐段删除，空位在正式浏览隐藏 | `index.html` |
 | **相遇粒子** | canvas-confetti 四次爆发 + 文字淡入 + 点击重新触发 | `index.html` |
 | **合并记忆卡片** | 三张卡片 ScrollTrigger 逐个淡入 | `index.html` |
 | **Coverflow Gallery** | 中心直立、左右各三张，共 7 张可见；侧卡统一轻微变暗，支持点按、拖动、按钮、方向键和 50 张以上照片队列，不自动轮转 | `index.html` / `Coverflow Gallery.md` |
@@ -354,6 +355,13 @@ cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js
 ---
 
 ## 七、下一步可做的工作
+
+### v3.26.0 验证记录
+- 平行世界左右轨道统一为相同 `yPercent: -45`；滚动容器延长为 `800vh`，两侧各自拥有 10 个叙事文本位。
+- 20 个文本位沿用现有 `wedding_content_v1` 内容包和本地保存机制；现有前 6 段保持不变，其余 14 段在编辑模式显示为待填写项。逐段删除会清空并在正式浏览隐藏该段。
+- 管理员验证请求设为 12 秒超时，网络不可达时会明确提示；无口令的线上探测确认 Worker 直连可达、正式域名和裸域名的 CORS 预检均返回 `204`。
+- `node --test test/worker.test.mjs`、`index.html` 内联脚本解析和 `git diff --check` 均通过；静态断言确认 20 个文本位与两侧一致的滚动参数。
+- 本地页面 `http://127.0.0.1:8090/index.html` 返回 `200`；手机样式在 `max-width:768px` 下为文本位和删除按钮保留了专用尺寸与边界。
 
 ### v3.25.1 验证记录
 - 修复结尾照片原保留 ID `finale-photo` 不符合 Worker `/^poster-[a-zA-Z0-9-]{8,90}$/` 校验、实际返回 `400 invalid-id` 却被前端错误提示为管理员口令错误的问题。
