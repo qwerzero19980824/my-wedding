@@ -361,6 +361,7 @@ cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js
 - `node --test test/worker.test.mjs` 通过：R2 图库生命周期、鉴权、CORS 与体积限制全部通过。
 - In-app Browser 桌面与 `390×844` 验证通过：首屏加载、恋爱天数 `2918`、版本标识 `v3.25.0` 正确；手机端 `scrollWidth <= innerWidth`，无横向溢出，也未发现页面脚本错误。
 - 浏览器仅保留 Three.js r160 全局构建方式的弃用警告；当前 CDN 正常加载，后续模块化时再迁移到 ES Modules。
+- 已提交并推送到 GitHub `main`：`ca44bf4 feat: 完成 v3.25 发布收口`；推送前已再次同步 `origin/main`，无 CNAME 或其他合并冲突。
 
 ### v3.24.0 验证记录
 - `index.html` 内联脚本、Worker Mock R2 测试与 `git diff --check` 通过；测试覆盖 `localhost:8080` 的管理员认证 CORS。
