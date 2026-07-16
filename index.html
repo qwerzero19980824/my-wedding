@@ -5116,7 +5116,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.25.0";
+        const APP_VERSION = "3.25.1";
         const BUILD_DATE = "2026-07-14";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -5408,7 +5408,9 @@
         const DEFAULT_STORY_POSTER_CLOUD_ENDPOINT = 'https://my-wedding-poster-library.yuyanp52.workers.dev';
         const STORY_POSTER_DB_NAME = 'wedding_story_poster_library_v1';
         const STORY_POSTER_DB_STORE = 'posters';
-        const PROPOSAL_PHOTO_ID = 'finale-photo';
+        // Cloudflare Worker only accepts poster-* IDs. Keep this reserved ID out
+        // of the carousel, but use the same validated storage contract as posters.
+        const PROPOSAL_PHOTO_ID = 'poster-finale-photo';
         const CONTENT_PACKAGE_FORMAT = 'my-wedding-content';
         const CONTENT_PACKAGE_VERSION = 1;
         const LOCAL_STORAGE_SOFT_LIMIT = 4.5 * 1024 * 1024;
@@ -8237,6 +8239,23 @@
             await loadStoryPosterCloudLibrary();
         }
 
+        function getProposalPhotoUploadErrorMessage(error) {
+            const code = String(error && error.message || '');
+            if (code === 'cloud-token-required' || code === 'cloud-auth-failed') {
+                return '管理员口令无效或已失效，请重新验证后再上传';
+            }
+            if (code === 'cloud-request-failed:413') {
+                return '照片文件过大，请选择小于 80MB 的图片后重试';
+            }
+            if (code === 'cloud-request-failed:400') {
+                return '照片请求格式无效，请刷新页面后重新选择图片';
+            }
+            if (code === 'cloud-not-configured') {
+                return '云端图库尚未配置，暂时无法上传结尾照片';
+            }
+            return '结尾照片上传失败，请检查网络和云端图库设置后重试';
+        }
+
         async function updateStoryPosterLibraryStatus(prefix = '') {
             const status = document.getElementById('storyPosterLibraryStatus');
             if (!status) return;
@@ -10487,7 +10506,7 @@
                         await uploadProposalRevealPhoto(file);
                         showToast('结尾照片已上传；点击“爱你”即可慢慢展开', 2200);
                     } catch (error) {
-                        showToast('结尾照片上传失败，请检查管理员口令后重试', 2400);
+                        showToast(getProposalPhotoUploadErrorMessage(error), 2800);
                     } finally {
                         photoUploadInput.value = '';
                         photoUploadBtn.disabled = false;

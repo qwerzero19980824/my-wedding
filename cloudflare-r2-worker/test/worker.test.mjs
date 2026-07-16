@@ -77,7 +77,7 @@ function authorized(path, options = {}) {
 
 test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   const env = makeEnv();
-  const id = 'poster-12345678';
+  const id = 'poster-finale-photo';
 
   const health = await worker.fetch(request('/'), env);
   assert.equal(health.status, 200);
@@ -99,6 +99,12 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   const ownerAuth = await worker.fetch(authorized('/api/auth'), env);
   assert.equal(ownerAuth.status, 200);
   assert.deepEqual(await ownerAuth.json(), { ok: true, role: 'owner' });
+
+  const invalidFinaleId = await worker.fetch(authorized('/api/posters/finale-photo/original', {
+    method: 'PUT',
+    body: new Uint8Array([1])
+  }), env);
+  assert.equal(invalidFinaleId.status, 400);
 
   const localOwnerAuth = await worker.fetch(authorized('/api/auth', {
     headers: { Origin: 'http://localhost:8080' }

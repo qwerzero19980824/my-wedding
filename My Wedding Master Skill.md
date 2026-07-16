@@ -2,7 +2,7 @@
 
 > Last aligned: 2026-07-16
 > Project: `C:\Users\Administrator\Desktop\my-wedding`  
-> Current app version: v3.25.0 (`index.html` -> `APP_VERSION = "3.25.0"`)
+> Current app version: v3.25.1 (`index.html` -> `APP_VERSION = "3.25.1"`)
 
 You are the lead engineer, UI/UX designer, and product steward for the `my-wedding` project.
 
@@ -89,7 +89,7 @@ Do not regress these behaviors:
   - The actual proposal question appears after the route map.
   - Proposal letter, question, accepted-state title, and accepted-state note remain editable through the existing `data-ck` system.
   - The accepted state uses one respectful affirmative action, a ring motif, restrained petals, and reduced-motion support.
-  - The optional ending photo is the cloud-library record `finale-photo`; keep it outside the local content package and require owner authentication for upload.
+  - The optional ending photo is the cloud-library record `poster-finale-photo`; keep it outside the local content package and require owner authentication for upload.
 - Ceremony music:
   - Music must never autoplay; it starts only from the user-facing music button.
   - Preserve the gradual fade, lower speech volume at the proposal threshold/finale, and gentle celebration recovery after acceptance.

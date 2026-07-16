@@ -1,7 +1,7 @@
 # 项目断点保存 — 平行宇宙的相遇
 
 > **最后更新**：2026-07-16
-> **当前版本**：v3.25.0（`index.html` 内 `APP_VERSION` 已同步为 "3.25.0"）
+> **当前版本**：v3.25.1（`index.html` 内 `APP_VERSION` 已同步为 "3.25.1"）
 > **工作目录**：`C:\Users\Administrator\Desktop\my-wedding`  
 > **启动方式**：`python -m http.server 8080` → `http://localhost:8080`
 
@@ -29,7 +29,7 @@
 | **合并记忆卡片** | 三张卡片 ScrollTrigger 逐个淡入 | `index.html` |
 | **Coverflow Gallery** | 中心直立、左右各三张，共 7 张可见；侧卡统一轻微变暗，支持点按、拖动、按钮、方向键和 50 张以上照片队列，不自动轮转 | `index.html` / `Coverflow Gallery.md` |
 | **恋爱天数计数器** | 以 2018-07-20 为起始日自动显示相恋天数；编辑态可调整字号、字重、颜色和拖动位置，保存到 `wedding_anniversary_style_v1` | `index.html` |
-| **结尾照片揭示** | 最终求婚章节可由管理员上传一张结尾照片；固定使用 R2 图库记录 `finale-photo`，不进入内容包 | `index.html` / `cloudflare-r2-worker/` |
+| **结尾照片揭示** | 最终求婚章节可由管理员上传一张结尾照片；固定使用符合 Worker 校验的 R2 保留记录 `poster-finale-photo`，不进入内容包 | `index.html` / `cloudflare-r2-worker/` |
 | **海报点按与大容量图库** | 海报背景无可见边框；仅点按时放大并显示可编辑白色字幕；字号可调；滚动刻度音与兼容设备震动；可批量选择 80 张以上 4K 原图，IndexedDB 保存原图、轮换读取缩略图 | `index.html` / `PHOTO_STORAGE.md` |
 | **R2 跨设备云端图库** | 已部署正式 Worker；新设备默认连接 R2，使用 Bearer 管理口令分层上传原图/缩略图，并支持公开读取和字幕更新 | `index.html` / `cloudflare-r2-worker/` |
 | **主人编辑认证** | 公开铅笔入口必须先用 R2 管理口令调用 Worker `/api/auth` 验证；成功后当前标签页才显示上传/编辑工具，口令不持久化 | `index.html` / `cloudflare-r2-worker/` |
@@ -354,6 +354,13 @@ cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js
 ---
 
 ## 七、下一步可做的工作
+
+### v3.25.1 验证记录
+- 修复结尾照片原保留 ID `finale-photo` 不符合 Worker `/^poster-[a-zA-Z0-9-]{8,90}$/` 校验、实际返回 `400 invalid-id` 却被前端错误提示为管理员口令错误的问题。
+- 页面统一改用 `poster-finale-photo`；它仍会从海报轮换列表排除，并且不进入本地内容包。
+- 上传提示根据实际异常细分为口令、80MB 文件上限、请求格式、云端配置或网络/服务问题。
+- `node --test test/worker.test.mjs` 通过；测试覆盖 `poster-finale-photo` 的上传、目录、读取与删除完整生命周期，并确认旧 `finale-photo` 返回 `400`。
+- `index.html` 内联脚本语法解析通过，`git diff --check` 通过。
 
 ### v3.25.0 发布前验证记录
 - 已同步 2026-07-15 至 2026-07-16 的海报画框、恋爱天数、结尾照片与视觉优化；版本号更新为 `3.25.0`。

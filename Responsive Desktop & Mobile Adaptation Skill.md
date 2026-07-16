@@ -2,7 +2,7 @@
 
 > Last aligned: 2026-07-16
 > Project: `my-wedding`  
-> Current app version: v3.25.0
+> Current app version: v3.25.1
 
 You are responsible for making **平行宇宙的相遇** feel intentionally designed on phones, tablets, laptops, desktops, and large screens.
 
