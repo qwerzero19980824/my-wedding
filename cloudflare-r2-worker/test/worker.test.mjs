@@ -100,6 +100,65 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   assert.equal(ownerAuth.status, 200);
   assert.deepEqual(await ownerAuth.json(), { ok: true, role: 'owner' });
 
+  const emptySiteState = await worker.fetch(request('/api/site-state'), env);
+  assert.equal(emptySiteState.status, 200);
+  assert.deepEqual(await emptySiteState.json(), { state: null });
+
+  const deniedSiteStateWrite = await worker.fetch(request('/api/site-state', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format: 'my-wedding-content', packageVersion: 1, storage: {} })
+  }), env);
+  assert.equal(deniedSiteStateWrite.status, 401);
+
+  const siteStateWrite = await worker.fetch(authorized('/api/site-state', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      format: 'my-wedding-content',
+      packageVersion: 1,
+      appVersion: '3.27.0',
+      storage: {
+        wedding_content_v1: JSON.stringify({ 'track-left-story-1': '手机端的新故事' }),
+        unexpected: '不会进入云端'
+      }
+    })
+  }), env);
+  assert.equal(siteStateWrite.status, 200);
+  const siteStateRecord = (await siteStateWrite.json()).state;
+  assert.equal(JSON.parse(siteStateRecord.storage.wedding_content_v1)['track-left-story-1'], '手机端的新故事');
+  assert.equal('unexpected' in siteStateRecord.storage, false);
+  assert.equal(Object.keys(siteStateRecord.storage).length, 12);
+
+  const siteStateRead = await worker.fetch(request('/api/site-state'), env);
+  assert.equal(siteStateRead.status, 200);
+  const syncedSiteState = (await siteStateRead.json()).state;
+  assert.equal(syncedSiteState.updatedAt, siteStateRecord.updatedAt);
+  assert.equal(JSON.parse(syncedSiteState.storage.wedding_content_v1)['track-left-story-1'], '手机端的新故事');
+
+  const invalidSiteState = await worker.fetch(authorized('/api/site-state', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format: 'wrong-format', packageVersion: 1, storage: {} })
+  }), env);
+  assert.equal(invalidSiteState.status, 400);
+
+  const assetId = 'asset-fixed-track-left-12345678';
+  const assetUpload = await worker.fetch(authorized(`/api/assets/${assetId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'image/jpeg' },
+    body: new Uint8Array([7, 8, 9])
+  }), env);
+  assert.equal(assetUpload.status, 200);
+  const assetRead = await worker.fetch(request(`/media/assets/${assetId}`), env);
+  assert.equal(assetRead.status, 200);
+  assert.equal(assetRead.headers.get('Content-Type'), 'image/jpeg');
+  assert.match(assetRead.headers.get('Cache-Control'), /immutable/);
+  assert.deepEqual(new Uint8Array(await assetRead.arrayBuffer()), new Uint8Array([7, 8, 9]));
+  const assetDelete = await worker.fetch(authorized(`/api/assets/${assetId}`, { method: 'DELETE' }), env);
+  assert.equal(assetDelete.status, 200);
+  assert.equal((await worker.fetch(request(`/media/assets/${assetId}`), env)).status, 404);
+
   const invalidFinaleId = await worker.fetch(authorized('/api/posters/finale-photo/original', {
     method: 'PUT',
     body: new Uint8Array([1])

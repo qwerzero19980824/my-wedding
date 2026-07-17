@@ -2250,7 +2250,7 @@
         .story-poster-card.is-visible { cursor: pointer; }
         .story-poster-card.is-center .story-poster-card-inner { box-shadow: 0 24px 55px rgba(54,38,34,0.23); }
 .story-poster-carousel.is-poster-focused .story-poster-card:not(.is-center) {
-  opacity: var(--story-poster-inactive-opacity, .5) !important;
+  opacity: var(--story-poster-inactive-opacity, .45) !important;
 }
         .story-poster-carousel.is-poster-focused .story-poster-card.is-center {
             filter: none !important;
@@ -4952,8 +4952,8 @@
                         <span id="storyPosterGapValue">130%</span>
                     </label>
                     <label>非活动透明
-                        <input type="range" id="storyPosterInactiveOpacityInput" min="20" max="80" step="5" value="50">
-                        <span id="storyPosterInactiveOpacityValue">50%</span>
+                        <input type="range" id="storyPosterInactiveOpacityInput" min="20" max="80" step="5" value="45">
+                        <span id="storyPosterInactiveOpacityValue">45%</span>
                     </label>
                     <span class="story-poster-library-status" id="storyPosterLibraryStatus">本机海报库 0 张</span>
                 </div>
@@ -5189,8 +5189,8 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.26.0";
-        const BUILD_DATE = "2026-07-14";
+        const APP_VERSION = "3.28.0";
+        const BUILD_DATE = "2026-07-17";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
         const DEFAULTS = {
@@ -5248,6 +5248,7 @@
                     toSave[k] = config[k];
                 }
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+                scheduleCloudSiteStateSave();
                 return true;
             } catch (e) {
                 return false;
@@ -5484,6 +5485,7 @@
         // Cloudflare Worker only accepts poster-* IDs. Keep this reserved ID out
         // of the carousel, but use the same validated storage contract as posters.
         const PROPOSAL_PHOTO_ID = 'poster-finale-photo';
+        const CLOUD_SITE_STATE_MARKER_KEY = 'wedding_cloud_site_state_updated_at_v1';
         const CONTENT_PACKAGE_FORMAT = 'my-wedding-content';
         const CONTENT_PACKAGE_VERSION = 1;
         const LOCAL_STORAGE_SOFT_LIMIT = 4.5 * 1024 * 1024;
@@ -5613,7 +5615,7 @@
         let storyPosterCaptionSize = 20;
         let storyPosterSidewaysTilt = 12;
         let storyPosterGapScale = 1.3;
-        let storyPosterInactiveOpacity = 0.5;
+        let storyPosterInactiveOpacity = 0.45;
         let storyPosterAudioContext = null;
         let storyPosterLastTickIndex = null;
         let storyPosterTickEnabled = false;
@@ -5622,6 +5624,11 @@
         let storyPosterCloudEndpoint = '';
         let storyPosterCloudToken = '';
         let storyPosterCloudLoadAttempts = 0;
+        let cloudSiteStateSaveTimer = null;
+        let cloudSiteStateSaving = false;
+        let cloudSiteStateSavePending = false;
+        let cloudSiteStateApplying = false;
+        let cloudSiteStateErrorShownAt = 0;
         let lastMemoryTrigger = null;
         const contentDirty = new Map();
         const MAX_UNDO_STEPS = 30;
@@ -5762,13 +5769,30 @@
             return typeof value === 'string' && /^data:image\/(?:jpeg|jpg|png|webp);base64,[a-z0-9+/=\r\n]+$/i.test(value);
         }
 
+        function isSafeCloudImageUrl(value) {
+            if (typeof value !== 'string') return false;
+            try {
+                const source = new URL(value);
+                const endpoint = new URL(DEFAULT_STORY_POSTER_CLOUD_ENDPOINT);
+                return source.href === value
+                    && source.origin === endpoint.origin
+                    && /^\/media\/assets\/asset-[a-zA-Z0-9-]{8,110}$/.test(source.pathname);
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function isSafeImageSource(value) {
+            return isSafeImageDataUrl(value) || isSafeCloudImageUrl(value);
+        }
+
         function sanitizeImportedValue(value) {
             if (Array.isArray(value)) return value.map(sanitizeImportedValue);
             if (value && typeof value === 'object') {
                 return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitizeImportedValue(item)]));
             }
             if (typeof value === 'string') {
-                if (isSafeImageDataUrl(value)) return value;
+                if (isSafeImageSource(value)) return value;
                 return sanitizeImportedHTML(value);
             }
             return value;
@@ -5786,7 +5810,7 @@
                     captionSize: clamp(Number(parsed && parsed.captionSize || 20), 14, 38),
                     sidewaysTilt: clamp(Number.isFinite(Number(parsed && parsed.sidewaysTilt)) ? Number(parsed.sidewaysTilt) : 12, 0, 18),
                     gapScale: clamp(Number.isFinite(Number(parsed && parsed.gapScale)) ? Number(parsed.gapScale) : 1.3, 1, 1.8),
-                    inactiveOpacity: clamp(Number.isFinite(Number(parsed && parsed.inactiveOpacity)) ? Number(parsed.inactiveOpacity) : 0.5, 0.2, 0.8),
+                    inactiveOpacity: clamp(Number.isFinite(Number(parsed && parsed.inactiveOpacity)) ? Number(parsed.inactiveOpacity) : 0.45, 0.2, 0.8),
                     cloudEndpoint: normalizeStoryPosterCloudEndpoint(parsed && parsed.cloudEndpoint || '')
                 });
             }
@@ -5801,7 +5825,7 @@
                 const safePhotos = {};
                 if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
                     FIXED_PHOTO_IDS.forEach(id => {
-                        if (isSafeImageDataUrl(parsed[id])) safePhotos[id] = parsed[id];
+                        if (isSafeImageSource(parsed[id])) safePhotos[id] = parsed[id];
                     });
                 }
                 return JSON.stringify(safePhotos);
@@ -5810,19 +5834,19 @@
             if (key === FREE_ITEM_STORAGE_KEY && Array.isArray(cleaned)) {
                 cleaned.forEach(item => {
                     if (!item || typeof item !== 'object' || item.type !== 'photo') return;
-                    item.image = isSafeImageDataUrl(item.image) ? item.image : '';
+                    item.image = isSafeImageSource(item.image) ? item.image : '';
                 });
             }
             if (key === MODULE_STORAGE_KEY && Array.isArray(cleaned)) {
                 cleaned.forEach(item => {
                     if (!item || typeof item !== 'object' || item.type !== 'photo') return;
-                    item.photo = isSafeImageDataUrl(item.photo) ? item.photo : '';
+                    item.photo = isSafeImageSource(item.photo) ? item.photo : '';
                 });
             }
             if (key === POLAROID_STORAGE_KEY && Array.isArray(cleaned)) {
                 cleaned.forEach(item => {
                     if (!item || typeof item !== 'object') return;
-                    item.front = isSafeImageDataUrl(item.front) ? item.front : '';
+                    item.front = isSafeImageSource(item.front) ? item.front : '';
                 });
             }
             return JSON.stringify(cleaned);
@@ -5894,6 +5918,7 @@
                 restoreContentStorageSnapshot(previous);
                 throw error;
             }
+            await saveCloudSiteState();
             return true;
         }
 
@@ -5903,7 +5928,7 @@
                 const parsed = raw ? JSON.parse(raw) : {};
                 if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
                 return FIXED_PHOTO_IDS.reduce((result, id) => {
-                    if (isSafeImageDataUrl(parsed[id])) result[id] = parsed[id];
+                    if (isSafeImageSource(parsed[id])) result[id] = parsed[id];
                     return result;
                 }, {});
             } catch (error) {
@@ -5914,6 +5939,7 @@
         function persistFixedPhotos() {
             try {
                 localStorage.setItem(FIXED_PHOTO_STORAGE_KEY, JSON.stringify(fixedPhotos));
+                scheduleCloudSiteStateSave();
                 updateEditorStorageMeter();
                 return true;
             } catch (error) {
@@ -5972,16 +5998,7 @@
 
                 const previous = fixedPhotos[id] || '';
                 try {
-                    const dataUrl = await resizePolaroidImage(file);
-                    fixedPhotos[id] = dataUrl;
-                    const projected = getContentStorageSnapshot();
-                    projected[FIXED_PHOTO_STORAGE_KEY] = JSON.stringify(fixedPhotos);
-                    const projectedBytes = estimateStorageBytes(projected);
-                    if (projectedBytes > LOCAL_STORAGE_SOFT_LIMIT) {
-                        fixedPhotos[id] = previous;
-                        showToast(`加入后约 ${formatStorageSize(projectedBytes)}，超过建议容量；请先精简照片`, 2800);
-                        return;
-                    }
+                    fixedPhotos[id] = await uploadEditableSiteImage(file, `fixed-${id}`);
                     if (!persistFixedPhotos()) {
                         fixedPhotos[id] = previous;
                         return;
@@ -6160,6 +6177,7 @@
             updateAnniversaryDays();
             const persistStyle = () => {
                 localStorage.setItem(ANNIVERSARY_STYLE_STORAGE_KEY, JSON.stringify(anniversaryStyle));
+                scheduleCloudSiteStateSave();
                 updateEditorStorageMeter();
             };
             const saveStyle = () => {
@@ -6358,6 +6376,7 @@
             contentDirty.clear();
             try {
                 localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify(content));
+                scheduleCloudSiteStateSave();
             } catch (e) { /* ignore */ }
         }
 
@@ -6390,6 +6409,7 @@
 
             try {
                 localStorage.setItem(CONTENT_STORAGE_KEY, JSON.stringify(content));
+                scheduleCloudSiteStateSave();
             } catch (e) { /* ignore */ }
         }
 
@@ -6428,6 +6448,88 @@
                 saveContent();
                 showToast('已删除这段故事；可随时用恢复文字找回默认内容', 1800);
             });
+        }
+
+        async function loadCloudSiteState() {
+            if (!storyPosterCloudEndpoint || cloudSiteStateApplying) return;
+            try {
+                const response = await storyPosterCloudRequest('/api/site-state', { cache: 'no-store' });
+                const payload = await response.json();
+                const state = payload && payload.state;
+                const remoteUpdatedAt = Number(state && state.updatedAt || 0);
+                const localUpdatedAt = Number(localStorage.getItem(CLOUD_SITE_STATE_MARKER_KEY) || 0);
+                if (!state || !remoteUpdatedAt || remoteUpdatedAt <= localUpdatedAt) return;
+                const nextStorage = validateContentPackage(state);
+                if (estimateStorageBytes(nextStorage) > LOCAL_STORAGE_SOFT_LIMIT * 1.35) {
+                    throw new Error('cloud-state-exceeds-storage-budget');
+                }
+                cloudSiteStateApplying = true;
+                restoreContentStorageSnapshot(nextStorage);
+                localStorage.setItem(CLOUD_SITE_STATE_MARKER_KEY, String(remoteUpdatedAt));
+                window.location.reload();
+            } catch (error) {
+                cloudSiteStateApplying = false;
+            }
+        }
+
+        async function saveCloudSiteState() {
+            if (!storyPosterCloudEndpoint || !storyPosterCloudToken || cloudSiteStateApplying) return false;
+            if (cloudSiteStateSaving) {
+                cloudSiteStateSavePending = true;
+                return false;
+            }
+            cloudSiteStateSaving = true;
+            try {
+                const response = await storyPosterCloudRequest('/api/site-state', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        format: CONTENT_PACKAGE_FORMAT,
+                        packageVersion: CONTENT_PACKAGE_VERSION,
+                        appVersion: APP_VERSION,
+                        storage: getCloudSiteStateStorageSnapshot()
+                    })
+                }, true);
+                const payload = await response.json();
+                const updatedAt = Number(payload && payload.state && payload.state.updatedAt || Date.now());
+                localStorage.setItem(CLOUD_SITE_STATE_MARKER_KEY, String(updatedAt));
+                return true;
+            } catch (error) {
+                if (Date.now() - cloudSiteStateErrorShownAt > 8000) {
+                    cloudSiteStateErrorShownAt = Date.now();
+                    showToast('内容已保存在本机，但云端同步失败；请检查网络后再点保存', 3000);
+                }
+                return false;
+            } finally {
+                cloudSiteStateSaving = false;
+                if (cloudSiteStateSavePending) {
+                    cloudSiteStateSavePending = false;
+                    scheduleCloudSiteStateSave(0);
+                }
+            }
+        }
+
+        function scheduleCloudSiteStateSave(delay = 700) {
+            if (!storyPosterCloudToken || cloudSiteStateApplying) return;
+            if (cloudSiteStateSaveTimer) window.clearTimeout(cloudSiteStateSaveTimer);
+            cloudSiteStateSaveTimer = window.setTimeout(() => {
+                cloudSiteStateSaveTimer = null;
+                saveCloudSiteState();
+            }, delay);
+        }
+
+        function getCloudSiteStateStorageSnapshot() {
+            const storage = getContentStorageSnapshot();
+            try {
+                const posterConfig = JSON.parse(storage[STORY_POSTER_CONFIG_STORAGE_KEY] || '{}');
+                storage[STORY_POSTER_CONFIG_STORAGE_KEY] = JSON.stringify({
+                    ...posterConfig,
+                    cloudEndpoint: DEFAULT_STORY_POSTER_CLOUD_ENDPOINT
+                });
+            } catch (error) {
+                storage[STORY_POSTER_CONFIG_STORAGE_KEY] = null;
+            }
+            return storage;
         }
 
         function getCleanHTML(el) {
@@ -6507,6 +6609,7 @@
             saveFreeItems();
             persistFixedPhotos();
             persistHiddenPages();
+            scheduleCloudSiteStateSave(0);
             updateEditorStorageMeter();
             if (showNotice) {
                 showToast('💾 已保存，下次打开会自动读取', 1800);
@@ -6563,6 +6666,7 @@
             const layout = collectLayoutMap();
             try {
                 localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+                scheduleCloudSiteStateSave();
             } catch (e) { /* ignore */ }
         }
 
@@ -6767,6 +6871,7 @@
         function persistHiddenPages() {
             try {
                 localStorage.setItem(HIDDEN_PAGES_STORAGE_KEY, JSON.stringify(hiddenPages));
+                scheduleCloudSiteStateSave();
             } catch (error) { /* ignore */ }
             updateDeletedPageControls();
         }
@@ -6866,6 +6971,7 @@
         function persistFreeItems() {
             try {
                 localStorage.setItem(FREE_ITEM_STORAGE_KEY, JSON.stringify(freeItems));
+                scheduleCloudSiteStateSave();
                 updateEditorStorageMeter();
                 return true;
             } catch (e) {
@@ -7029,10 +7135,10 @@
             `;
 
             if (item.type === 'photo') {
-                const hasPhoto = isSafeImageDataUrl(item.image);
+                const hasPhoto = isSafeImageSource(item.image);
                 el.innerHTML = `${controls}
                     <button type="button" class="free-photo-frame${hasPhoto ? ' has-photo' : ''}" data-free-photo-upload aria-label="${hasPhoto ? '更换' : '上传'}自由照片框图片" aria-disabled="${String(!isEditMode)}" tabindex="${isEditMode ? '0' : '-1'}">
-                        <img alt="自由照片框图片"${hasPhoto ? ` src="${item.image}"` : ''}>
+                        <img alt="自由照片框图片" loading="lazy" decoding="async"${hasPhoto ? ` src="${item.image}"` : ''}>
                         <span class="free-photo-placeholder">${item.content || '[ 点击上传照片 ]'}</span>
                         <span class="free-photo-edit-badge">${hasPhoto ? '更换照片' : '上传照片'}</span>
                     </button>
@@ -7187,15 +7293,7 @@
             const previous = item.image || '';
             try {
                 captureUndoSnapshot('free-photo');
-                item.image = await resizePolaroidImage(file);
-                const projected = getContentStorageSnapshot();
-                projected[FREE_ITEM_STORAGE_KEY] = JSON.stringify(freeItems);
-                const projectedBytes = estimateStorageBytes(projected);
-                if (projectedBytes > LOCAL_STORAGE_SOFT_LIMIT) {
-                    item.image = previous;
-                    showToast(`加入后约 ${formatStorageSize(projectedBytes)}，超过建议容量；请先精简照片`, 2800);
-                    return;
-                }
+                item.image = await uploadEditableSiteImage(file, `free-${item.id}`);
                 if (!persistFreeItems()) {
                     item.image = previous;
                     showToast('照片保存空间不足，请先导出内容包并精简照片', 2600);
@@ -7286,7 +7384,7 @@
                 });
                 showToast('⧉ 已复制这个框', 1200);
             } else if (action === 'delete') {
-                const isEmptyPhoto = freeItems[index].type === 'photo' && !isSafeImageDataUrl(freeItems[index].image);
+                const isEmptyPhoto = freeItems[index].type === 'photo' && !isSafeImageSource(freeItems[index].image);
                 if (!isEmptyPhoto && !window.confirm('删除这个文本/照片框吗？')) return;
                 freeItems.splice(index, 1);
                 showToast('× 已删除这个框', 1200);
@@ -7505,6 +7603,7 @@
         function persistPolaroidItems() {
             try {
                 localStorage.setItem(POLAROID_STORAGE_KEY, JSON.stringify(polaroidItems));
+                scheduleCloudSiteStateSave();
                 updateEditorStorageMeter();
                 return true;
             } catch (e) {
@@ -7559,6 +7658,7 @@
                     buttonFontSize: clamp(Number(polaroidLayout.buttonFontSize || DEFAULT_POLAROID_BUTTON_SIZE), 8, 16),
                     scatter: sanitizePolaroidScatter(polaroidLayout.scatter)
                 }));
+                scheduleCloudSiteStateSave();
             } catch (e) { /* ignore */ }
         }
 
@@ -7600,7 +7700,7 @@
             const note = item.note || DEFAULT_POLAROID_NOTE;
             const tapeRot = scatter.r > 0 ? -4 : 5;
             const imageMarkup = item.front
-                ? `<img alt="拍立得 ${number}" src="${item.front}">`
+                ? `<img alt="拍立得 ${number}" src="${item.front}" loading="lazy" decoding="async">`
                 : `<img alt="拍立得 ${number}">`;
 
             return `
@@ -7771,7 +7871,7 @@
             const flippedClass = isMemoryStoryVisible ? ' is-flipped' : '';
             const note = item.note || DEFAULT_POLAROID_NOTE;
             const imageMarkup = item.front
-                ? `<img alt="拍立得 ${number}" src="${item.front}">`
+                ? `<img alt="拍立得 ${number}" src="${item.front}" loading="lazy" decoding="async">`
                 : `<img alt="拍立得 ${number}">`;
 
             shell.innerHTML = `
@@ -7980,7 +8080,7 @@
             schedulePolaroidSave();
         }
 
-        function onPolaroidFileChange(e) {
+        async function onPolaroidFileChange(e) {
             const input = e.target.closest('.polaroid-file-input');
             if (!input || !input.files || !input.files[0]) return;
             const item = getPolaroidItem(input);
@@ -7990,36 +8090,82 @@
                 return;
             }
 
-            resizePolaroidImage(input.files[0])
-                .then(dataUrl => {
-                    const previousFront = item.front;
-                    const previousFlipped = item.flipped;
-                    item.front = dataUrl;
-                    item.flipped = false;
-                    const projected = getContentStorageSnapshot();
-                    projected[POLAROID_STORAGE_KEY] = JSON.stringify(polaroidItems);
-                    const projectedBytes = estimateStorageBytes(projected);
-                    if (!persistPolaroidItems()) {
-                        item.front = previousFront;
-                        item.flipped = previousFlipped;
-                        return;
-                    }
-                    renderPolaroidWall();
-                    applyPolaroidLayout();
-                    const suffix = projectedBytes >= LOCAL_STORAGE_WARNING_LIMIT
-                        ? ` · 本地内容已用 ${formatStorageSize(projectedBytes)}`
-                        : '';
-                    showToast(`第 ${item.number} 张照片已添加${suffix}`, 1900);
-                })
-                .catch(() => showToast('这张图片没有读取成功', 1800))
-                .finally(() => {
-                    input.value = '';
-                });
+            const previousFront = item.front;
+            const previousFlipped = item.flipped;
+            try {
+                item.front = await uploadEditableSiteImage(input.files[0], `polaroid-${item.number}`);
+                item.flipped = false;
+                if (!persistPolaroidItems()) {
+                    item.front = previousFront;
+                    item.flipped = previousFlipped;
+                    return;
+                }
+                renderPolaroidWall();
+                applyPolaroidLayout();
+                showToast(`第 ${item.number} 张照片已上传云端`, 1900);
+            } catch (error) {
+                item.front = previousFront;
+                item.flipped = previousFlipped;
+                showToast('照片云端上传失败，请检查网络后重试', 2200);
+            } finally {
+                input.value = '';
+            }
+        }
+
+        function isLikelyImageFile(file) {
+            return Boolean(file && (
+                (file.type && file.type.startsWith('image/'))
+                || /\.(?:jpe?g|png|webp|gif|heic|heif)$/i.test(String(file.name || ''))
+            ));
+        }
+
+        function createEditableSiteImageBlob(file, maxEdge = 1800) {
+            return new Promise((resolve, reject) => {
+                if (!isLikelyImageFile(file)) {
+                    reject(new Error('not-image'));
+                    return;
+                }
+                const sourceUrl = URL.createObjectURL(file);
+                const image = new Image();
+                image.onerror = () => {
+                    URL.revokeObjectURL(sourceUrl);
+                    reject(new Error('image-decode-failed'));
+                };
+                image.onload = () => {
+                    const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+                    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+                    const context = canvas.getContext('2d');
+                    context.imageSmoothingEnabled = true;
+                    context.imageSmoothingQuality = 'high';
+                    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(sourceUrl);
+                    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('image-encode-failed')), 'image/jpeg', 0.88);
+                };
+                image.src = sourceUrl;
+            });
+        }
+
+        async function uploadEditableSiteImage(file, category = 'memory') {
+            if (!storyPosterCloudEndpoint) throw new Error('cloud-not-configured');
+            const safeCategory = String(category || 'memory').replace(/[^a-zA-Z0-9-]/g, '-').slice(0, 48);
+            const suffix = window.crypto && crypto.randomUUID
+                ? crypto.randomUUID()
+                : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+            const id = `asset-${safeCategory}-${suffix}`;
+            const imageBlob = await createEditableSiteImageBlob(file);
+            await storyPosterCloudRequest(`/api/assets/${encodeURIComponent(id)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'image/jpeg' },
+                body: imageBlob
+            }, true);
+            return `${storyPosterCloudEndpoint}/media/assets/${encodeURIComponent(id)}?v=${Date.now()}`;
         }
 
         function resizePolaroidImage(file, options = {}) {
             return new Promise((resolve, reject) => {
-                if (!file || !file.type || !file.type.startsWith('image/')) {
+                if (!isLikelyImageFile(file)) {
                     reject(new Error('not-image'));
                     return;
                 }
@@ -8088,6 +8234,7 @@
                 if (persist) {
                     try {
                         localStorage.setItem(ROUTE_LABEL_SIZE_STORAGE_KEY, String(next));
+                        scheduleCloudSiteStateSave();
                     } catch (e) { /* ignore */ }
                 }
             };
@@ -8176,6 +8323,7 @@
         function persistStoryModules() {
             try {
                 localStorage.setItem(MODULE_STORAGE_KEY, JSON.stringify(storyModules));
+                scheduleCloudSiteStateSave();
                 updateEditorStorageMeter();
                 return true;
             } catch (e) {
@@ -8328,7 +8476,7 @@
         }
 
         async function uploadProposalRevealPhoto(file) {
-            if (!file || !file.type || !file.type.startsWith('image/')) return;
+            if (!isLikelyImageFile(file)) throw new Error('poster-image-decode-failed');
             if (!storyPosterCloudEndpoint) throw new Error('cloud-not-configured');
             const thumbnail = await createStoryPosterThumbnail(file);
             const createdAt = Date.now();
@@ -8360,6 +8508,12 @@
             const code = String(error && error.message || '');
             if (code === 'cloud-token-required' || code === 'cloud-auth-failed') {
                 return '管理员口令无效或已失效，请重新验证后再上传';
+            }
+            if (code === 'cloud-origin-not-allowed') {
+                return '当前网址未获云端上传权限，请从正式网站刷新后重试';
+            }
+            if (code === 'cloud-request-forbidden') {
+                return '云端拒绝了本次上传，请刷新页面并重新验证';
             }
             if (code === 'cloud-request-failed:413') {
                 return '照片文件过大，请选择小于 80MB 的图片后重试';
@@ -8428,9 +8582,20 @@
                 headers.set('Authorization', `Bearer ${storyPosterCloudToken}`);
             }
             const response = await fetch(`${storyPosterCloudEndpoint}${path}`, { ...options, headers });
-            if (response.status === 401 || response.status === 403) {
+            let errorPayload = null;
+            if (!response.ok) {
+                try {
+                    errorPayload = await response.clone().json();
+                } catch (error) { /* Non-JSON errors are handled by status below. */ }
+            }
+            if (response.status === 401) {
                 storyPosterCloudToken = '';
                 throw new Error('cloud-auth-failed');
+            }
+            if (response.status === 403) {
+                throw new Error(errorPayload && errorPayload.error === 'origin-not-allowed'
+                    ? 'cloud-origin-not-allowed'
+                    : 'cloud-request-forbidden');
             }
             if (!response.ok) throw new Error(`cloud-request-failed:${response.status}`);
             return response;
@@ -8519,7 +8684,7 @@
         }
 
         async function uploadStoryPosterFiles(files) {
-            const imageFiles = Array.from(files || []).filter(file => file.type && file.type.startsWith('image/'));
+            const imageFiles = Array.from(files || []).filter(isLikelyImageFile);
             if (!imageFiles.length) return;
             if (storyPosterCloudEndpoint) {
                 await uploadStoryPosterFilesToCloud(imageFiles);
@@ -8579,14 +8744,15 @@
                 storyPosterCaptionSize = clamp(Number(saved.captionSize || 20), 14, 38);
                 storyPosterSidewaysTilt = clamp(Number.isFinite(Number(saved.sidewaysTilt)) ? Number(saved.sidewaysTilt) : 12, 0, 18);
                 storyPosterGapScale = clamp(Number.isFinite(Number(saved.gapScale)) ? Number(saved.gapScale) : 1.3, 1, 1.8);
-                storyPosterInactiveOpacity = clamp(Number.isFinite(Number(saved.inactiveOpacity)) ? Number(saved.inactiveOpacity) : 0.5, 0.2, 0.8);
+                const savedInactiveOpacity = Number.isFinite(Number(saved.inactiveOpacity)) ? Number(saved.inactiveOpacity) : 0.45;
+                storyPosterInactiveOpacity = clamp(savedInactiveOpacity === 0.5 ? 0.45 : savedInactiveOpacity, 0.2, 0.8);
                 const configuredEndpoint = saved.cloudEndpoint || DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
                 storyPosterCloudEndpoint = normalizeStoryPosterCloudEndpoint(configuredEndpoint) || DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
             } catch (error) {
                 storyPosterCaptionSize = 20;
                 storyPosterSidewaysTilt = 12;
                 storyPosterGapScale = 1.3;
-                storyPosterInactiveOpacity = 0.5;
+                storyPosterInactiveOpacity = 0.45;
                 storyPosterCloudEndpoint = DEFAULT_STORY_POSTER_CLOUD_ENDPOINT;
             }
             const carousel = document.getElementById('storyPosterCarousel');
@@ -8620,6 +8786,7 @@
                 inactiveOpacity: storyPosterInactiveOpacity,
                 cloudEndpoint: storyPosterCloudEndpoint
             }));
+            scheduleCloudSiteStateSave();
             updateEditorStorageMeter();
         }
 
@@ -8780,7 +8947,7 @@
             }
             if (inactiveOpacityInput) {
                 inactiveOpacityInput.addEventListener('input', () => {
-                    storyPosterInactiveOpacity = clamp(Number(inactiveOpacityInput.value || 50) / 100, 0.2, 0.8);
+                    storyPosterInactiveOpacity = clamp(Number(inactiveOpacityInput.value || 45) / 100, 0.2, 0.8);
                     const value = document.getElementById('storyPosterInactiveOpacityValue');
                     if (value) value.textContent = `${Math.round(storyPosterInactiveOpacity * 100)}%`;
                     const carousel = document.getElementById('storyPosterCarousel');
@@ -8801,13 +8968,18 @@
                 observer.observe(carousel);
             }
             window.addEventListener('resize', () => window.requestAnimationFrame(layoutStoryPosters));
-            window.addEventListener('online', () => loadStoryPosterCloudLibrary());
+            window.addEventListener('online', () => {
+                loadStoryPosterCloudLibrary();
+                loadCloudSiteState();
+            });
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden && !storyPosterCloudItems.length) loadStoryPosterCloudLibrary();
+                if (!document.hidden) loadCloudSiteState();
             });
             renderStoryPosterCarousel();
             loadStoryPosterLibrary();
             loadStoryPosterCloudLibrary();
+            loadCloudSiteState();
             storyPosterPhaseStarted = performance.now();
             if (!storyPosterAnimationFrame) storyPosterAnimationFrame = requestAnimationFrame(animateStoryPosters);
         }
@@ -8870,7 +9042,7 @@
             const renderRadius = Math.min(6, Math.max(0, Math.floor(items.length / 2)));
             const centerIndex = ((Math.round(storyPosterPosition) % items.length) + items.length) % items.length;
             const posterMarkup = (module, index) => {
-                const hasPhoto = isSafeImageDataUrl(module.photo)
+                const hasPhoto = isSafeImageSource(module.photo)
                     || (typeof module.photo === 'string' && module.photo.startsWith('blob:'))
                     || (module.source === 'cloud' && typeof module.photo === 'string' && module.photo.startsWith('https://'));
                 const image = hasPhoto
@@ -9238,10 +9410,10 @@
 
             let body = '';
             if (module.type === 'photo') {
-                const hasPhoto = isSafeImageDataUrl(module.photo);
+                const hasPhoto = isSafeImageSource(module.photo);
                 body = `
                     <button type="button" class="module-photo-slot${hasPhoto ? ' has-photo' : ''}" data-module-photo-upload aria-label="${hasPhoto ? '更换' : '上传'}这段故事的照片" aria-disabled="${String(!isEditMode)}" tabindex="${isEditMode ? '0' : '-1'}">
-                        <img alt="这段故事的照片"${hasPhoto ? ` src="${module.photo}"` : ''}>
+                        <img alt="这段故事的照片" loading="lazy" decoding="async"${hasPhoto ? ` src="${module.photo}"` : ''}>
                         <span class="module-photo-placeholder">[ 点击上传这段故事的照片 ]</span>
                         <span class="module-photo-edit-badge">${hasPhoto ? '更换照片' : '上传照片'}</span>
                     </button>
@@ -9337,19 +9509,7 @@
             const previous = module.photo || '';
             try {
                 captureUndoSnapshot('module-photo');
-                module.photo = await resizePolaroidImage(file, {
-                    maxEdge: 720,
-                    targetBytes: 34 * 1024,
-                    minimumQuality: 0.32
-                });
-                const projected = getContentStorageSnapshot();
-                projected[MODULE_STORAGE_KEY] = JSON.stringify(storyModules);
-                const projectedBytes = estimateStorageBytes(projected);
-                if (projectedBytes > LOCAL_STORAGE_SOFT_LIMIT) {
-                    module.photo = previous;
-                    showToast(`加入后约 ${formatStorageSize(projectedBytes)}，超过建议容量；请先精简照片`, 2800);
-                    return;
-                }
+                module.photo = await uploadEditableSiteImage(file, `module-${module.id}`);
                 if (!persistStoryModules()) {
                     module.photo = previous;
                     showToast('照片保存空间不足，请先导出内容包并精简照片', 2600);
