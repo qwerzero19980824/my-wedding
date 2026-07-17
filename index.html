@@ -5189,7 +5189,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.28.0";
+        const APP_VERSION = "3.28.1";
         const BUILD_DATE = "2026-07-17";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -6311,7 +6311,7 @@
             if (deleteCurrentPageBtn) deleteCurrentPageBtn.addEventListener('click', deleteCurrentPage);
             if (restoreDeletedPageBtn) restoreDeletedPageBtn.addEventListener('click', restoreLastDeletedPage);
             undoEditBtn.addEventListener('click', undoLastEdit);
-            saveAllBtn.addEventListener('click', () => saveAllEditorState(true));
+            saveAllBtn.addEventListener('click', saveAllEditorStateWithCloud);
             if (exportContentBtn) exportContentBtn.addEventListener('click', exportContentPackage);
             if (importContentBtn && importContentInput) {
                 importContentBtn.addEventListener('click', () => importContentInput.click());
@@ -6616,6 +6616,31 @@
             }
         }
 
+        async function saveAllEditorStateWithCloud() {
+            if (!saveAllBtn || saveAllBtn.disabled) return;
+            const originalText = saveAllBtn.textContent;
+            saveAllBtn.disabled = true;
+            saveAllBtn.textContent = '正在同步…';
+            saveAllEditorState(false);
+            try {
+                const deadline = Date.now() + 15000;
+                while (cloudSiteStateSaving && Date.now() < deadline) {
+                    await new Promise(resolve => window.setTimeout(resolve, 120));
+                }
+                if (cloudSiteStateSaveTimer) {
+                    window.clearTimeout(cloudSiteStateSaveTimer);
+                    cloudSiteStateSaveTimer = null;
+                }
+                const synced = await saveCloudSiteState();
+                showToast(synced
+                    ? '☁️ 已保存并同步到所有设备'
+                    : '💾 已保存在本机，但云端同步未完成，请检查网络后重试', synced ? 2200 : 3200);
+            } finally {
+                saveAllBtn.disabled = false;
+                saveAllBtn.textContent = originalText;
+            }
+        }
+
         function onEditorFocusIn(e) {
             if (!isEditMode) return;
             const target = e.target.closest('[data-ck], [data-module-field], [data-free-field]');
@@ -6638,7 +6663,7 @@
             const key = e.key.toLowerCase();
             if (key === 's') {
                 e.preventDefault();
-                saveAllEditorState(true);
+                saveAllEditorStateWithCloud();
             }
         }
 

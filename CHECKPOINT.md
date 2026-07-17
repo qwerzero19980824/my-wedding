@@ -1,7 +1,7 @@
 # 项目断点保存 — 平行宇宙的相遇
 
 > **最后更新**：2026-07-17
-> **当前版本**：v3.28.0（`index.html` 内 `APP_VERSION` 已同步为 "3.28.0"）
+> **当前版本**：v3.28.1（`index.html` 内 `APP_VERSION` 已同步为 "3.28.1"）
 > **工作目录**：`C:\Users\Administrator\Desktop\my-wedding`  
 > **启动方式**：`python -m http.server 8080` → `http://localhost:8080`
 
@@ -68,6 +68,7 @@
 - 正式 Worker 版本 `3c39c01d-acc8-482d-9d47-36a2f1992bcb`：`UPLOAD_TOKEN` 已恢复为 Secret；正确口令 200、错误口令 401、`https://www.cml-zy.love` CORS 预检 204。
 - 非私人临时图片资产线上上传、读取、删除依次返回 200，删除后读取返回 404；测试对象已清理。未向 `/api/site-state` 写入测试内容，避免覆盖手机端现有资料。
 - GitHub Pages 历史部署因 `Coverflow Gallery.md` 内 React 对象语法被 Jekyll/Liquid 误解析而失败；根目录已加入 `.nojekyll`，静态站点发布不再处理项目 Markdown。
+- v3.28.1 新增显式云端保存结果提示；Mock R2 完成手机→电脑→手机双向内容回归，正式云端当前尚无站点快照，需在内容最完整的设备上首次点击“保存”建立。
 
 ### 未完成 / 待定 ❌
 

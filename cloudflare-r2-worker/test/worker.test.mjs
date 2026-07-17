@@ -136,6 +136,32 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   assert.equal(syncedSiteState.updatedAt, siteStateRecord.updatedAt);
   assert.equal(JSON.parse(syncedSiteState.storage.wedding_content_v1)['track-left-story-1'], '手机端的新故事');
 
+  const desktopStorage = { ...syncedSiteState.storage };
+  desktopStorage.wedding_content_v1 = JSON.stringify({
+    ...JSON.parse(desktopStorage.wedding_content_v1),
+    'track-right-story-1': '电脑端补充的故事'
+  });
+  desktopStorage.wedding_fixed_photos_v1 = JSON.stringify({
+    'track-left': 'https://my-wedding-poster-library.yuyanp52.workers.dev/media/assets/asset-fixed-track-left-12345678'
+  });
+  const desktopWrite = await worker.fetch(authorized('/api/site-state', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      format: 'my-wedding-content',
+      packageVersion: 1,
+      appVersion: '3.28.0',
+      storage: desktopStorage
+    })
+  }), env);
+  assert.equal(desktopWrite.status, 200);
+
+  const mobileReadBack = (await worker.fetch(request('/api/site-state'), env).then(response => response.json())).state;
+  const roundTripContent = JSON.parse(mobileReadBack.storage.wedding_content_v1);
+  assert.equal(roundTripContent['track-left-story-1'], '手机端的新故事');
+  assert.equal(roundTripContent['track-right-story-1'], '电脑端补充的故事');
+  assert.match(JSON.parse(mobileReadBack.storage.wedding_fixed_photos_v1)['track-left'], /\/media\/assets\//);
+
   const invalidSiteState = await worker.fetch(authorized('/api/site-state', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
