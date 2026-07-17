@@ -6,6 +6,14 @@
 
 ## 部署
 
+如需在路线页显示高德中国地图底图，先在高德开放平台申请“Web 服务 API”Key，再执行：
+
+```bash
+npx wrangler secret put AMAP_WEB_SERVICE_KEY
+```
+
+Key 只保存在 Cloudflare Secret 中，前端通过 Worker 代理获取静态地图，不会把 Key 写进 GitHub。
+
 1. 在 Cloudflare 创建 R2 bucket：`wedding-posters`。
 2. 复制 `wrangler.toml.example` 为 `wrangler.toml`，确认 `ALLOWED_ORIGINS` 包含正式域名以及需要使用的本地 8080/8090 调试地址。
 3. 在本目录执行 `npx wrangler secret put UPLOAD_TOKEN`，设置一段只由站点管理员知道的长口令。

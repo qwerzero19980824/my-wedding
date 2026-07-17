@@ -12,6 +12,7 @@ const SITE_STATE_STORAGE_KEYS = [
   'wedding_route_label_size_v1',
   'wedding_story_poster_config_v1',
   'wedding_anniversary_style_v1',
+  'wedding_music_playlist_v1',
   'wedding_hidden_pages_v1'
 ];
 const MAX_SITE_STATE_CHARACTERS = 12 * 1024 * 1024;
@@ -151,6 +152,25 @@ async function serveAsset(env, id) {
   return new Response(object.body, { headers });
 }
 
+async function serveAmapChinaBackground(env) {
+  const key = String(env.AMAP_WEB_SERVICE_KEY || '').trim();
+  if (!key) return json({ error: 'amap-key-not-configured' }, 503);
+  const params = new URLSearchParams({
+    location: '104.195397,35.861660',
+    zoom: '3',
+    size: '1024*760',
+    scale: '2',
+    traffic: '0',
+    key
+  });
+  const upstream = await fetch(`https://restapi.amap.com/v3/staticmap?${params}`);
+  if (!upstream.ok) return json({ error: 'amap-upstream-failed' }, 502);
+  const headers = new Headers();
+  headers.set('Content-Type', upstream.headers.get('Content-Type') || 'image/png');
+  headers.set('Cache-Control', 'public, max-age=604800');
+  return new Response(upstream.body, { headers });
+}
+
 async function handleApi(request, env, url) {
   if (request.method === 'GET' && url.pathname === '/api/posters') {
     const posters = await readCatalog(env);
@@ -269,6 +289,8 @@ export default {
       let response;
       if (request.method === 'OPTIONS') {
         response = new Response(null, { status: 204 });
+      } else if (request.method === 'GET' && url.pathname === '/api/amap-static-map') {
+        response = await serveAmapChinaBackground(env);
       } else {
         const mediaMatch = url.pathname.match(/^\/media\/([^/]+)\/(original|thumbnail)$/);
         const assetMatch = url.pathname.match(/^\/media\/assets\/([^/]+)$/);

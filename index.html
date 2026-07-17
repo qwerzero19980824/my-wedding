@@ -795,6 +795,20 @@
         }
         .ceremony-music-btn.is-playing .ceremony-music-wave i:nth-child(2) { animation-delay: -0.35s; }
         .ceremony-music-btn.is-playing .ceremony-music-wave i:nth-child(3) { animation-delay: -0.7s; }
+        .ceremony-music-next-btn {
+            position: fixed;
+            left: 190px;
+            bottom: 29px;
+            z-index: 202;
+            width: 34px;
+            height: 34px;
+            border: 1px solid rgba(214,181,109,0.3);
+            border-radius: 50%;
+            background: rgba(18,20,20,0.56);
+            color: rgba(255,248,234,0.88);
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+        }
         @keyframes ceremony-disc-spin { to { transform: rotate(360deg); } }
         @keyframes ceremony-wave {
             0%, 100% { transform: scaleY(0.65); opacity: 0.55; }
@@ -1743,6 +1757,11 @@
             cursor: grabbing;
             user-select: none;
             -webkit-user-select: none;
+            will-change: transform;
+            transition: none !important;
+        }
+        body.is-layout-dragging {
+            overscroll-behavior: none;
         }
         body.edit-mode [data-ck].ck-has-layout {
             outline-style: solid !important;
@@ -1767,6 +1786,7 @@
             cursor: grab;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: none;
         }
         body.edit-mode [data-ck] {
             position: relative;
@@ -3704,7 +3724,23 @@
             align-items: center;
             justify-content: center;
         }
+        .route-map-stage::before {
+            content: '';
+            position: absolute;
+            inset: 4% 0;
+            z-index: 0;
+            border-radius: 28px;
+            background:
+                linear-gradient(rgba(247,242,234,0.28), rgba(247,242,234,0.42)),
+                url('https://my-wedding-poster-library.yuyanp52.workers.dev/api/amap-static-map') center / cover no-repeat;
+            opacity: 0.48;
+            filter: grayscale(0.25) saturate(0.72) contrast(0.92);
+            box-shadow: inset 0 0 60px rgba(247,242,234,0.72);
+            pointer-events: none;
+        }
         .china-route-map {
+            position: relative;
+            z-index: 1;
             width: min(1060px, 100%);
             height: auto;
             overflow: visible;
@@ -4102,17 +4138,28 @@
             cursor: pointer;
         }
         body.edit-mode .proposal-photo-upload-btn { display: inline-flex; }
-        .proposal-reveal-photo {
+        .proposal-reveal-photos {
             position: relative;
             z-index: 3;
             width: min(310px, 78vw);
+            min-height: min(388px, 97.5vw);
             margin: 1.6rem auto 0;
+        }
+        .proposal-reveal-photo {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            padding: 0;
+            border: 0;
+            background: transparent;
             opacity: 0;
             visibility: hidden;
             transform: translateY(20px) scale(0.94);
             filter: blur(14px);
             transition: opacity 1.45s ease 0.28s, transform 1.45s cubic-bezier(0.22, 1, 0.36, 1) 0.28s, filter 1.45s ease 0.28s, visibility 0s linear 1.75s;
         }
+        .proposal-reveal-photo:first-child { cursor: pointer; }
+        .proposal-reveal-photo:nth-child(2) { z-index: 2; pointer-events: none; }
         .proposal-reveal-photo img {
             display: block;
             width: 100%;
@@ -4123,14 +4170,41 @@
             box-shadow: 0 18px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(214,181,109,0.45);
             transform: rotate(-1.5deg);
         }
-        .proposal-finale.is-answered .proposal-reveal-photo.has-photo,
-        body.edit-mode .proposal-reveal-photo.has-photo {
+        .proposal-finale.is-answered .proposal-reveal-photo:first-child.has-photo,
+        body.edit-mode .proposal-reveal-photo:first-child.has-photo,
+        .proposal-reveal-photos.is-second-visible .proposal-reveal-photo:nth-child(2).has-photo {
             opacity: 1;
             visibility: visible;
             transform: translateY(0) scale(1);
             filter: blur(0);
             transition-delay: 0.28s;
         }
+        .proposal-reveal-photos.is-second-visible .proposal-reveal-photo:first-child {
+            opacity: 0.18;
+            transform: translate(-18px, 10px) rotate(-3deg) scale(0.96);
+            filter: blur(2px);
+        }
+        .proposal-photo-hint {
+            position: absolute;
+            z-index: 4;
+            left: 50%;
+            bottom: 12px;
+            transform: translateX(-50%);
+            padding: 0.38rem 0.7rem;
+            border-radius: 999px;
+            background: rgba(18,20,20,0.68);
+            color: #fff8ea;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.45s ease;
+        }
+        .proposal-finale.is-answered .proposal-reveal-photo:first-child.has-photo + .proposal-reveal-photo + .proposal-photo-hint {
+            opacity: 1;
+        }
+        .proposal-reveal-photos.is-second-visible .proposal-photo-hint { opacity: 0 !important; }
         .proposal-ring-mark {
             position: relative;
             width: 40px;
@@ -4293,6 +4367,7 @@
                 min-height: 38px;
                 padding: 0.35rem 0.65rem 0.35rem 0.4rem;
             }
+            .ceremony-music-next-btn { left: 158px; bottom: 16px; }
             .ceremony-music-disc {
                 width: 25px;
                 height: 25px;
@@ -4623,6 +4698,7 @@
         <button type="button" id="undoEditBtn">撤销</button>
         <button type="button" id="saveAllBtn" data-action-primary="true">保存</button>
         <button type="button" id="rehearsalOpenBtn">现场预演</button>
+        <button type="button" id="musicUploadBtn">添加背景音乐</button>
         <span class="toolbar-divider" aria-hidden="true"></span>
         <button type="button" id="resetLayoutBtn">复位位置</button>
         <button type="button" id="resetContentBtn">恢复文字</button>
@@ -4635,6 +4711,7 @@
         <input type="file" id="fixedPhotoInput" accept="image/*" hidden>
         <input type="file" id="modulePhotoInput" accept="image/*" hidden>
         <input type="file" id="freePhotoInput" accept="image/*" hidden>
+        <input type="file" id="musicUploadInput" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg" multiple hidden>
         <div class="editor-storage-meter" id="editorStorageMeter" role="status" aria-live="polite">
             <span>本地内容</span>
             <span id="editorStorageValue">计算中</span>
@@ -4820,12 +4897,13 @@
     </button>
 
     <!-- Ceremony music starts only after an explicit user gesture. -->
-    <audio id="ceremonyMusic" src="music/Ed%20Sheeran%20-%20Perfect.mp3" preload="metadata" loop></audio>
+    <audio id="ceremonyMusic" src="music/Ed%20Sheeran%20-%20Perfect.mp3" preload="metadata"></audio>
     <button type="button" class="ceremony-music-btn" id="ceremonyMusicBtn" aria-pressed="false" aria-label="播放仪式背景音乐">
         <span class="ceremony-music-disc" aria-hidden="true"></span>
         <span class="ceremony-music-label">开启音乐</span>
         <span class="ceremony-music-wave" aria-hidden="true"><i></i><i></i><i></i></span>
     </button>
+    <button type="button" class="ceremony-music-next-btn" id="ceremonyMusicNextBtn" aria-label="播放下一首" title="播放下一首">▶</button>
 
     <!-- ==========================================
     Main Content — Dual Track + Meeting + Merged
@@ -5162,11 +5240,17 @@
                         <span class="proposal-ring-mark" aria-hidden="true"></span>
                         <span>爱你</span>
                     </button>
-                    <button type="button" class="proposal-photo-upload-btn" id="proposalPhotoUploadBtn">上传结尾照片</button>
-                    <input type="file" id="proposalPhotoUploadInput" accept="image/*" hidden>
-                    <figure class="proposal-reveal-photo" id="proposalRevealPhoto">
-                        <img id="proposalRevealPhotoImage" alt="我们的照片">
-                    </figure>
+                    <button type="button" class="proposal-photo-upload-btn" id="proposalPhotoUploadBtn">上传两张结尾照片</button>
+                    <input type="file" id="proposalPhotoUploadInput" accept="image/*" multiple hidden>
+                    <div class="proposal-reveal-photos" id="proposalRevealPhotos">
+                        <button type="button" class="proposal-reveal-photo" id="proposalRevealPhoto1" aria-label="查看第二张照片">
+                            <img id="proposalRevealPhotoImage1" alt="我们的第一张照片">
+                        </button>
+                        <div class="proposal-reveal-photo" id="proposalRevealPhoto2">
+                            <img id="proposalRevealPhotoImage2" alt="我们的第二张照片">
+                        </div>
+                        <span class="proposal-photo-hint">轻触照片，看下一张</span>
+                    </div>
                     <div class="proposal-answer-state" id="proposalAnswerState" role="status" aria-live="polite" tabindex="-1">
                         <p class="proposal-answer-title" data-ck="proposal-answer-title">余生，请多指教。</p>
                         <p class="proposal-answer-note" data-ck="proposal-answer-note">从这一刻起，我们继续一起写下所有还没有发生的春夏秋冬。</p>
@@ -5189,7 +5273,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.28.1";
+        const APP_VERSION = "3.29.0";
         const BUILD_DATE = "2026-07-17";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -5278,7 +5362,10 @@
         const CEREMONY_MUSIC_VOLUME = 0.46;
         const CEREMONY_SPEECH_VOLUME = 0.16;
         const CEREMONY_CELEBRATION_VOLUME = 0.36;
+        const DEFAULT_CEREMONY_TRACK = { title: 'Perfect', url: 'music/Ed%20Sheeran%20-%20Perfect.mp3', local: true };
         let ceremonyMusicFadeFrame = null;
+        let ceremonyMusicPlaylist = [];
+        let ceremonyMusicTrackIndex = 0;
 
         /* ---- Toast notification ---- */
         let toastTimer = null;
@@ -5297,7 +5384,47 @@
             ceremonyMusicBtn.classList.toggle('is-playing', isPlaying);
             ceremonyMusicBtn.setAttribute('aria-pressed', String(isPlaying));
             ceremonyMusicBtn.setAttribute('aria-label', isPlaying ? '暂停仪式背景音乐' : '播放仪式背景音乐');
-            ceremonyMusicLabel.textContent = isPlaying ? '音乐播放中' : '开启音乐';
+            const track = ceremonyMusicPlaylist[ceremonyMusicTrackIndex] || DEFAULT_CEREMONY_TRACK;
+            ceremonyMusicLabel.textContent = isPlaying ? track.title : '开启音乐';
+            ceremonyMusicBtn.title = `当前：${track.title}`;
+        }
+
+        function loadCeremonyMusicPlaylist() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(MUSIC_PLAYLIST_STORAGE_KEY) || '[]');
+                ceremonyMusicPlaylist = [DEFAULT_CEREMONY_TRACK, ...(Array.isArray(parsed) ? parsed : [])];
+            } catch (error) {
+                ceremonyMusicPlaylist = [DEFAULT_CEREMONY_TRACK];
+            }
+            if (!ceremonyMusicPlaylist.length) ceremonyMusicPlaylist = [DEFAULT_CEREMONY_TRACK];
+        }
+
+        function selectCeremonyTrack(index, autoplay = false) {
+            if (!ceremonyMusic || !ceremonyMusicPlaylist.length) return;
+            ceremonyMusicTrackIndex = (index + ceremonyMusicPlaylist.length) % ceremonyMusicPlaylist.length;
+            const track = ceremonyMusicPlaylist[ceremonyMusicTrackIndex];
+            const wasPlaying = autoplay || !ceremonyMusic.paused;
+            ceremonyMusic.src = track.url;
+            ceremonyMusic.load();
+            setCeremonyMusicButtonState(false);
+            if (wasPlaying) ceremonyMusic.play().then(() => setCeremonyMusicButtonState(true)).catch(() => setCeremonyMusicButtonState(false));
+        }
+
+        async function uploadCeremonyTrack(file) {
+            if (!file || (!String(file.type || '').startsWith('audio/') && !/\.(?:mp3|m4a|aac|wav|ogg)$/i.test(file.name || ''))) {
+                throw new Error('invalid-audio');
+            }
+            const suffix = window.crypto && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+            const id = `asset-music-${suffix}`;
+            await storyPosterCloudRequest(`/api/assets/${encodeURIComponent(id)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': file.type || 'audio/mpeg' },
+                body: file
+            }, true);
+            return {
+                title: String(file.name || '背景音乐').replace(/\.[^.]+$/, '').slice(0, 80),
+                url: `${storyPosterCloudEndpoint}/media/assets/${encodeURIComponent(id)}?v=${Date.now()}`
+            };
         }
 
         function fadeCeremonyMusicTo(targetVolume, duration = 900, onComplete = null) {
@@ -5332,6 +5459,8 @@
 
         function initCeremonyMusic() {
             if (!ceremonyMusic || !ceremonyMusicBtn) return;
+            loadCeremonyMusicPlaylist();
+            selectCeremonyTrack(0, false);
             ceremonyMusic.volume = 0;
             setCeremonyMusicButtonState(false);
 
@@ -5362,6 +5491,34 @@
 
             ceremonyMusic.addEventListener('error', () => {
                 setCeremonyMusicButtonState(false);
+            });
+            ceremonyMusic.addEventListener('ended', () => selectCeremonyTrack(ceremonyMusicTrackIndex + 1, true));
+            document.getElementById('ceremonyMusicNextBtn')?.addEventListener('click', () => {
+                selectCeremonyTrack(ceremonyMusicTrackIndex + 1, !ceremonyMusic.paused);
+            });
+            const uploadBtn = document.getElementById('musicUploadBtn');
+            const uploadInput = document.getElementById('musicUploadInput');
+            uploadBtn?.addEventListener('click', () => uploadInput?.click());
+            uploadInput?.addEventListener('change', async () => {
+                const files = Array.from(uploadInput.files || []);
+                if (!files.length) return;
+                uploadBtn.disabled = true;
+                uploadBtn.textContent = '音乐上传中…';
+                try {
+                    const uploaded = [];
+                    for (const file of files) uploaded.push(await uploadCeremonyTrack(file));
+                    const existing = ceremonyMusicPlaylist.filter(track => !track.local);
+                    localStorage.setItem(MUSIC_PLAYLIST_STORAGE_KEY, JSON.stringify([...existing, ...uploaded]));
+                    loadCeremonyMusicPlaylist();
+                    scheduleCloudSiteStateSave(0);
+                    showToast(`已添加 ${uploaded.length} 首音乐并同步云端`, 2400);
+                } catch (error) {
+                    showToast('音乐上传失败；请确认格式、文件大小和网络', 2600);
+                } finally {
+                    uploadInput.value = '';
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = '添加背景音乐';
+                }
             });
         }
 
@@ -5479,12 +5636,14 @@
         const STORY_POSTER_CONFIG_STORAGE_KEY = 'wedding_story_poster_config_v1';
         const HIDDEN_PAGES_STORAGE_KEY = 'wedding_hidden_pages_v1';
         const ANNIVERSARY_STYLE_STORAGE_KEY = 'wedding_anniversary_style_v1';
+        const MUSIC_PLAYLIST_STORAGE_KEY = 'wedding_music_playlist_v1';
         const DEFAULT_STORY_POSTER_CLOUD_ENDPOINT = 'https://my-wedding-poster-library.yuyanp52.workers.dev';
         const STORY_POSTER_DB_NAME = 'wedding_story_poster_library_v1';
         const STORY_POSTER_DB_STORE = 'posters';
         // Cloudflare Worker only accepts poster-* IDs. Keep this reserved ID out
         // of the carousel, but use the same validated storage contract as posters.
-        const PROPOSAL_PHOTO_ID = 'poster-finale-photo';
+        const LEGACY_PROPOSAL_PHOTO_ID = 'poster-finale-photo';
+        const PROPOSAL_PHOTO_IDS = ['poster-finale-photo-1', 'poster-finale-photo-2'];
         const CLOUD_SITE_STATE_MARKER_KEY = 'wedding_cloud_site_state_updated_at_v1';
         const CONTENT_PACKAGE_FORMAT = 'my-wedding-content';
         const CONTENT_PACKAGE_VERSION = 1;
@@ -5502,6 +5661,7 @@
             ROUTE_LABEL_SIZE_STORAGE_KEY,
             STORY_POSTER_CONFIG_STORAGE_KEY,
             ANNIVERSARY_STYLE_STORAGE_KEY,
+            MUSIC_PLAYLIST_STORAGE_KEY,
             HIDDEN_PAGES_STORAGE_KEY
         ];
         const POLAROID_COUNT = 28;
@@ -5786,6 +5946,18 @@
             return isSafeImageDataUrl(value) || isSafeCloudImageUrl(value);
         }
 
+        function isSafeCloudAudioUrl(value) {
+            if (typeof value !== 'string') return false;
+            try {
+                const source = new URL(value);
+                const endpoint = new URL(DEFAULT_STORY_POSTER_CLOUD_ENDPOINT);
+                return source.origin === endpoint.origin
+                    && /^\/media\/assets\/asset-music-[a-zA-Z0-9-]{8,110}$/.test(source.pathname);
+            } catch (error) {
+                return false;
+            }
+        }
+
         function sanitizeImportedValue(value) {
             if (Array.isArray(value)) return value.map(sanitizeImportedValue);
             if (value && typeof value === 'object') {
@@ -5829,6 +6001,13 @@
                     });
                 }
                 return JSON.stringify(safePhotos);
+            }
+            if (key === MUSIC_PLAYLIST_STORAGE_KEY) {
+                const safeTracks = Array.isArray(parsed) ? parsed.slice(0, 30).map(track => ({
+                    title: sanitizeImportedHTML(track && track.title || '背景音乐').replace(/<[^>]*>/g, '').slice(0, 80),
+                    url: track && isSafeCloudAudioUrl(track.url) ? track.url : ''
+                })).filter(track => track.url) : [];
+                return JSON.stringify(safeTracks);
             }
             const cleaned = sanitizeImportedValue(parsed);
             if (key === FREE_ITEM_STORAGE_KEY && Array.isArray(cleaned)) {
@@ -6803,7 +6982,27 @@
         }
 
         let layoutDrag = null;
-        let layoutSaveDebounce = null;
+
+        function getLayoutDragBounds(el) {
+            if (!el.classList.contains('track-story-copy')) return null;
+            const track = el.closest('.track');
+            if (!track) return null;
+            const elementRect = el.getBoundingClientRect();
+            const trackRect = track.getBoundingClientRect();
+            const padding = 12;
+            return {
+                minX: trackRect.left + padding - elementRect.left,
+                maxX: trackRect.right - padding - elementRect.right,
+                minY: -Math.min(180, window.innerHeight * 0.22),
+                maxY: Math.min(180, window.innerHeight * 0.22)
+            };
+        }
+
+        function flushLayoutDragFrame() {
+            if (!layoutDrag) return;
+            layoutDrag.frame = null;
+            setEditableOffset(layoutDrag.el, layoutDrag.nextX, layoutDrag.nextY);
+        }
 
         function onDragHandlePointerDown(e) {
             if (!isEditMode) return;
@@ -6816,33 +7015,55 @@
 
             layoutDrag = {
                 el,
+                handle: e.currentTarget,
+                pointerId: e.pointerId,
                 startX: e.clientX,
                 startY: e.clientY,
                 baseX: Number(el.dataset.ckX || 0),
                 baseY: Number(el.dataset.ckY || 0),
+                nextX: Number(el.dataset.ckX || 0),
+                nextY: Number(el.dataset.ckY || 0),
+                bounds: getLayoutDragBounds(el),
+                frame: null
             };
 
             el.classList.add('ck-dragging');
+            document.body.classList.add('is-layout-dragging');
             e.currentTarget.setPointerCapture(e.pointerId);
-            window.addEventListener('pointermove', onLayoutPointerMove);
-            window.addEventListener('pointerup', onLayoutPointerUp, { once: true });
+            window.addEventListener('pointermove', onLayoutPointerMove, { passive: false });
+            window.addEventListener('pointerup', onLayoutPointerUp);
+            window.addEventListener('pointercancel', onLayoutPointerUp);
         }
 
         function onLayoutPointerMove(e) {
-            if (!layoutDrag) return;
-            const nextX = layoutDrag.baseX + e.clientX - layoutDrag.startX;
-            const nextY = layoutDrag.baseY + e.clientY - layoutDrag.startY;
-            setEditableOffset(layoutDrag.el, nextX, nextY);
-
-            if (layoutSaveDebounce) clearTimeout(layoutSaveDebounce);
-            layoutSaveDebounce = setTimeout(saveLayout, 400);
+            if (!layoutDrag || e.pointerId !== layoutDrag.pointerId) return;
+            e.preventDefault();
+            let deltaX = e.clientX - layoutDrag.startX;
+            let deltaY = e.clientY - layoutDrag.startY;
+            if (layoutDrag.bounds) {
+                deltaX = clamp(deltaX, layoutDrag.bounds.minX, layoutDrag.bounds.maxX);
+                deltaY = clamp(deltaY, layoutDrag.bounds.minY, layoutDrag.bounds.maxY);
+            }
+            layoutDrag.nextX = layoutDrag.baseX + deltaX;
+            layoutDrag.nextY = layoutDrag.baseY + deltaY;
+            if (!layoutDrag.frame) layoutDrag.frame = requestAnimationFrame(flushLayoutDragFrame);
         }
 
-        function onLayoutPointerUp() {
-            if (!layoutDrag) return;
+        function onLayoutPointerUp(e) {
+            if (!layoutDrag || (e && e.pointerId !== layoutDrag.pointerId)) return;
+            if (layoutDrag.frame) {
+                cancelAnimationFrame(layoutDrag.frame);
+                flushLayoutDragFrame();
+            }
+            if (layoutDrag.handle && layoutDrag.handle.hasPointerCapture(layoutDrag.pointerId)) {
+                layoutDrag.handle.releasePointerCapture(layoutDrag.pointerId);
+            }
             layoutDrag.el.classList.remove('ck-dragging');
+            document.body.classList.remove('is-layout-dragging');
             layoutDrag = null;
             window.removeEventListener('pointermove', onLayoutPointerMove);
+            window.removeEventListener('pointerup', onLayoutPointerUp);
+            window.removeEventListener('pointercancel', onLayoutPointerUp);
             saveLayout();
         }
 
@@ -8483,9 +8704,9 @@
             });
         }
 
-        function setProposalRevealPhotoSource(source) {
-            const figure = document.getElementById('proposalRevealPhoto');
-            const image = document.getElementById('proposalRevealPhotoImage');
+        function setProposalRevealPhotoSource(source, index = 0) {
+            const figure = document.getElementById(`proposalRevealPhoto${index + 1}`);
+            const image = document.getElementById(`proposalRevealPhotoImage${index + 1}`);
             if (!figure || !image) return;
             figure.classList.remove('has-photo');
             if (!source) {
@@ -8500,17 +8721,19 @@
             image.src = source;
         }
 
-        async function uploadProposalRevealPhoto(file) {
+        async function uploadProposalRevealPhoto(file, index = 0) {
             if (!isLikelyImageFile(file)) throw new Error('poster-image-decode-failed');
             if (!storyPosterCloudEndpoint) throw new Error('cloud-not-configured');
+            const photoId = PROPOSAL_PHOTO_IDS[index];
+            if (!photoId) throw new Error('poster-image-decode-failed');
             const thumbnail = await createStoryPosterThumbnail(file);
             const createdAt = Date.now();
-            await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(PROPOSAL_PHOTO_ID)}/original`, {
+            await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(photoId)}/original`, {
                 method: 'PUT',
                 headers: { 'Content-Type': file.type || 'application/octet-stream' },
                 body: file
             }, true);
-            await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(PROPOSAL_PHOTO_ID)}/thumbnail`, {
+            await storyPosterCloudRequest(`/api/posters/${encodeURIComponent(photoId)}/thumbnail`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'image/jpeg' },
                 body: thumbnail
@@ -8519,13 +8742,13 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    id: PROPOSAL_PHOTO_ID,
-                    name: '结尾照片',
+                    id: photoId,
+                    name: `结尾照片 ${index + 1}`,
                     caption: '爱你',
                     createdAt
                 })
             }, true);
-            setProposalRevealPhotoSource(`${storyPosterCloudEndpoint}/media/${encodeURIComponent(PROPOSAL_PHOTO_ID)}/original?v=${createdAt}`);
+            setProposalRevealPhotoSource(`${storyPosterCloudEndpoint}/media/${encodeURIComponent(photoId)}/original?v=${createdAt}`, index);
             await loadStoryPosterCloudLibrary();
         }
 
@@ -8637,11 +8860,13 @@
                 const response = await storyPosterCloudRequest('/api/posters', { cache: 'no-store' });
                 const payload = await response.json();
                 const records = Array.isArray(payload.posters) ? payload.posters : [];
-                const proposalPhoto = records.find(record => record && record.id === PROPOSAL_PHOTO_ID);
-                setProposalRevealPhotoSource(proposalPhoto
-                    ? `${storyPosterCloudEndpoint}/media/${encodeURIComponent(PROPOSAL_PHOTO_ID)}/original?v=${encodeURIComponent(proposalPhoto.createdAt || proposalPhoto.id)}`
-                    : '');
-                storyPosterCloudItems = records.filter(record => record && record.id !== PROPOSAL_PHOTO_ID).map(record => ({
+                const proposalRecords = PROPOSAL_PHOTO_IDS.map((id, index) => records.find(record => record && record.id === id)
+                    || (index === 0 ? records.find(record => record && record.id === LEGACY_PROPOSAL_PHOTO_ID) : null));
+                proposalRecords.forEach((record, index) => setProposalRevealPhotoSource(record
+                    ? `${storyPosterCloudEndpoint}/media/${encodeURIComponent(record.id)}/original?v=${encodeURIComponent(record.createdAt || record.id)}`
+                    : '', index));
+                const reservedIds = new Set([LEGACY_PROPOSAL_PHOTO_ID, ...PROPOSAL_PHOTO_IDS]);
+                storyPosterCloudItems = records.filter(record => record && !reservedIds.has(record.id)).map(record => ({
                     id: record.id,
                     type: 'photo',
                     source: 'cloud',
@@ -10792,6 +11017,8 @@
             const answerState = document.getElementById('proposalAnswerState');
             const photoUploadBtn = document.getElementById('proposalPhotoUploadBtn');
             const photoUploadInput = document.getElementById('proposalPhotoUploadInput');
+            const revealPhotos = document.getElementById('proposalRevealPhotos');
+            const firstRevealPhoto = document.getElementById('proposalRevealPhoto1');
             if (!section || !answerBtn || !answerState) return;
 
             if (photoUploadBtn && photoUploadInput) {
@@ -10800,20 +11027,35 @@
                     photoUploadInput.click();
                 });
                 photoUploadInput.addEventListener('change', async () => {
-                    const file = photoUploadInput.files && photoUploadInput.files[0];
-                    if (!file) return;
+                    const files = Array.from(photoUploadInput.files || []).slice(0, 2);
+                    if (!files.length) return;
                     photoUploadBtn.disabled = true;
                     photoUploadBtn.textContent = '正在上传…';
                     try {
-                        await uploadProposalRevealPhoto(file);
-                        showToast('结尾照片已上传；点击“爱你”即可慢慢展开', 2200);
+                        for (let index = 0; index < files.length; index += 1) {
+                            await uploadProposalRevealPhoto(files[index], index);
+                        }
+                        showToast(files.length === 2
+                            ? '两张结尾照片已上传；第一张出现后轻触即可看第二张'
+                            : '第一张结尾照片已上传；可再次选择两张一起更新', 2600);
                     } catch (error) {
                         showToast(getProposalPhotoUploadErrorMessage(error), 2800);
                     } finally {
                         photoUploadInput.value = '';
                         photoUploadBtn.disabled = false;
-                        photoUploadBtn.textContent = '上传结尾照片';
+                        photoUploadBtn.textContent = '上传两张结尾照片';
                     }
+                });
+            }
+
+            if (firstRevealPhoto && revealPhotos) {
+                firstRevealPhoto.addEventListener('click', () => {
+                    if (!section.classList.contains('is-answered') && !isEditMode) return;
+                    if (!document.getElementById('proposalRevealPhoto2')?.classList.contains('has-photo')) {
+                        showToast('请先在编辑模式上传第二张结尾照片', 1900);
+                        return;
+                    }
+                    revealPhotos.classList.add('is-second-visible');
                 });
             }
 
@@ -10843,6 +11085,7 @@
                 }
                 if (section.classList.contains('is-answered')) return;
                 section.classList.add('is-answered');
+                revealPhotos?.classList.remove('is-second-visible');
                 answerBtn.setAttribute('aria-pressed', 'true');
                 answerBtn.disabled = true;
                 setCeremonyMusicScene('celebration');

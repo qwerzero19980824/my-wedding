@@ -104,6 +104,9 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   assert.equal(emptySiteState.status, 200);
   assert.deepEqual(await emptySiteState.json(), { state: null });
 
+  const missingAmapKey = await worker.fetch(request('/api/amap-static-map'), env);
+  assert.equal(missingAmapKey.status, 503);
+
   const deniedSiteStateWrite = await worker.fetch(request('/api/site-state', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -128,7 +131,7 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   const siteStateRecord = (await siteStateWrite.json()).state;
   assert.equal(JSON.parse(siteStateRecord.storage.wedding_content_v1)['track-left-story-1'], '手机端的新故事');
   assert.equal('unexpected' in siteStateRecord.storage, false);
-  assert.equal(Object.keys(siteStateRecord.storage).length, 12);
+  assert.equal(Object.keys(siteStateRecord.storage).length, 13);
 
   const siteStateRead = await worker.fetch(request('/api/site-state'), env);
   assert.equal(siteStateRead.status, 200);
@@ -144,6 +147,10 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   desktopStorage.wedding_fixed_photos_v1 = JSON.stringify({
     'track-left': 'https://my-wedding-poster-library.yuyanp52.workers.dev/media/assets/asset-fixed-track-left-12345678'
   });
+  desktopStorage.wedding_music_playlist_v1 = JSON.stringify([{
+    title: 'Cloud Song',
+    url: 'https://my-wedding-poster-library.yuyanp52.workers.dev/media/assets/asset-music-12345678'
+  }]);
   const desktopWrite = await worker.fetch(authorized('/api/site-state', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -161,6 +168,7 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   assert.equal(roundTripContent['track-left-story-1'], '手机端的新故事');
   assert.equal(roundTripContent['track-right-story-1'], '电脑端补充的故事');
   assert.match(JSON.parse(mobileReadBack.storage.wedding_fixed_photos_v1)['track-left'], /\/media\/assets\//);
+  assert.equal(JSON.parse(mobileReadBack.storage.wedding_music_playlist_v1)[0].title, 'Cloud Song');
 
   const invalidSiteState = await worker.fetch(authorized('/api/site-state', {
     method: 'PUT',

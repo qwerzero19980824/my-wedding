@@ -1,9 +1,11 @@
 # 项目断点保存 — 平行宇宙的相遇
 
 > **最后更新**：2026-07-17
-> **当前版本**：v3.28.1（`index.html` 内 `APP_VERSION` 已同步为 "3.28.1"）
+> **当前版本**：v3.29.0（`index.html` 内 `APP_VERSION` 已同步为 "3.29.0"）
 > **工作目录**：`C:\Users\Administrator\Desktop\my-wedding`  
 > **启动方式**：`python -m http.server 8080` → `http://localhost:8080`
+
+> **当前 Worker**：`118a8014-d54c-49e2-9b28-729dc01becbc`（音乐歌单云同步与高德静态地图代理已发布；高德 Key 待配置）
 
 ---
 
@@ -30,7 +32,8 @@
 | **合并记忆卡片** | 三张卡片 ScrollTrigger 逐个淡入 | `index.html` |
 | **Coverflow Gallery** | 中心直立、左右各三张，共 7 张可见；侧卡统一轻微变暗，支持点按、拖动、按钮、方向键和 50 张以上照片队列，不自动轮转 | `index.html` / `Coverflow Gallery.md` |
 | **恋爱天数计数器** | 以 2018-07-20 为起始日自动显示相恋天数；编辑态可调整字号、字重、颜色和拖动位置，保存到 `wedding_anniversary_style_v1` | `index.html` |
-| **结尾照片揭示** | 最终求婚章节可由管理员上传一张结尾照片；固定使用符合 Worker 校验的 R2 保留记录 `poster-finale-photo`，不进入内容包 | `index.html` / `cloudflare-r2-worker/` |
+| **结尾双照片揭示** | 可上传两张结尾照片；第一张在“爱你”后浮现，轻触第一张再显示第二张；旧 `poster-finale-photo` 自动兼容为第一张 | `index.html` / `cloudflare-r2-worker/` |
+| **多首背景音乐** | 编辑模式可批量上传音频到 R2，歌单随站点快照同步；自动续播并支持手动下一首 | `index.html` / `cloudflare-r2-worker/` |
 | **海报点按与大容量图库** | 海报背景无可见边框；仅点按时放大并显示可编辑白色字幕；字号可调；滚动刻度音与兼容设备震动；可批量选择 80 张以上 4K 原图，IndexedDB 保存原图、轮换读取缩略图 | `index.html` / `PHOTO_STORAGE.md` |
 | **R2 全站多端同步** | `/api/site-state` 同步全部内容包字段；`/api/assets/:id` 保存主叙事、模块、自由框与拍立得清晰照片；轮换图库和结尾照片继续使用海报目录。手机保存后，电脑打开或回到页面会读取云端新版本 | `index.html` / `cloudflare-r2-worker/` |
 | **主人编辑认证** | 公开铅笔入口必须先用 R2 管理口令调用 Worker `/api/auth` 验证；成功后当前标签页才显示上传/编辑工具，口令不持久化 | `index.html` / `cloudflare-r2-worker/` |
