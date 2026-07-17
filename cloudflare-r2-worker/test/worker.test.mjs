@@ -249,10 +249,10 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   const patched = await worker.fetch(authorized(`/api/posters/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ caption: '更新后的白色字幕' })
+    body: JSON.stringify({ caption: '更新后的白色字幕\n第二行也要保留' })
   }), env);
   assert.equal(patched.status, 200);
-  assert.equal((await patched.json()).poster.caption, '更新后的白色字幕');
+  assert.equal((await patched.json()).poster.caption, '更新后的白色字幕\n第二行也要保留');
 
   const foreignOrigin = await worker.fetch(new Request('https://poster-worker.example/', {
     headers: { Origin: 'https://not-allowed.example' }

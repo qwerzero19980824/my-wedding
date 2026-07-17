@@ -1,11 +1,11 @@
 # 项目断点保存 — 平行宇宙的相遇
 
 > **最后更新**：2026-07-17
-> **当前版本**：v3.29.0（`index.html` 内 `APP_VERSION` 已同步为 "3.29.0"）
+> **当前版本**：v3.29.1（`index.html` 内 `APP_VERSION` 已同步为 "3.29.1"）
 > **工作目录**：`C:\Users\Administrator\Desktop\my-wedding`  
 > **启动方式**：`python -m http.server 8080` → `http://localhost:8080`
 
-> **当前 Worker**：`118a8014-d54c-49e2-9b28-729dc01becbc`（音乐歌单云同步与高德静态地图代理已发布；高德 Key 待配置）
+> **当前 Worker**：`a8d60b91-91c4-43b4-a4c3-99cf2e85e2c0`（轮换照片多行说明、音乐歌单云同步与高德静态地图代理已发布；高德 Key 待配置）
 
 ---
 

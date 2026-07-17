@@ -2431,6 +2431,8 @@
             font-weight: 400;
             line-height: 1.55;
             text-align: center;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
             text-shadow: none;
             opacity: 0;
             transform: translateY(8px);
@@ -2504,6 +2506,8 @@
             font-size: 0.9rem;
             line-height: 1.5;
             text-align: center;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
         }
         .story-poster-preview-close {
             position: fixed;
@@ -5273,7 +5277,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.29.0";
+        const APP_VERSION = "3.29.1";
         const BUILD_DATE = "2026-07-17";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -9424,9 +9428,19 @@
 
         function getStoryPosterCaption(item) {
             if (!item) return '';
-            return String(item.source === 'library' || item.source === 'cloud'
+            return normalizeStoryPosterCaptionText(item.source === 'library' || item.source === 'cloud'
                 ? (item.caption || item.title || '我们的照片')
-                : (item.posterCaption || item.title || '我们的照片')).replace(/<[^>]*>/g, '');
+                : (item.posterCaption || item.title || '我们的照片'));
+        }
+
+        function normalizeStoryPosterCaptionText(value) {
+            return String(value || '')
+                .replace(/<[^>]*>/g, '')
+                .replace(/\r\n?/g, '\n')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim()
+                .slice(0, 240);
         }
 
         function activateStoryPosterFocus(index = storyPosterIndex) {
@@ -9501,7 +9515,7 @@
 
         function updateFocusedStoryPosterCaption(event) {
             if (!storyPosterFocusedItem) return;
-            const value = String(event.target.textContent || '').trim();
+            const value = normalizeStoryPosterCaptionText(event.target.innerText || event.target.textContent || '');
             if (storyPosterFocusedItem.source === 'library' || storyPosterFocusedItem.source === 'cloud') {
                 storyPosterFocusedItem.caption = value;
                 storyPosterFocusedItem.title = value || storyPosterFocusedItem.record.name || '我们的照片';

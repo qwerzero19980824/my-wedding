@@ -74,6 +74,15 @@ function cleanText(value, maximum = 160) {
   return String(value || '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, maximum);
 }
 
+function cleanCaption(value, maximum = 240) {
+  return String(value || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[<>\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, maximum);
+}
+
 async function readCatalog(env) {
   const object = await env.POSTERS.get(CATALOG_KEY);
   if (!object) return [];
@@ -227,7 +236,7 @@ async function handleApi(request, env, url) {
     const record = {
       id,
       name: cleanText(input.name, 180) || '我们的照片',
-      caption: cleanText(input.caption, 240) || cleanText(input.name, 180) || '我们的照片',
+      caption: cleanCaption(input.caption, 240) || cleanText(input.name, 180) || '我们的照片',
       createdAt: Number(input.createdAt) || Date.now(),
       originalSize: Number(original.size || 0),
       thumbnailSize: Number(thumbnail.size || 0)
@@ -264,7 +273,7 @@ async function handleApi(request, env, url) {
     const posters = await readCatalog(env);
     const record = posters.find(item => item.id === id);
     if (!record) return json({ error: 'not-found' }, 404);
-    record.caption = cleanText(input.caption, 240) || record.name || '我们的照片';
+    record.caption = cleanCaption(input.caption, 240) || record.name || '我们的照片';
     await writeCatalog(env, posters);
     return json({ poster: record });
   }
