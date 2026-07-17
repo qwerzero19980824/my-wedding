@@ -67,6 +67,7 @@
 - Worker Mock R2 测试和内联脚本语法检查通过；桌面 1280px 与手机 390×844 均加载 20 个平行文本位、28 张拍立得、5 个固定照片位和 33 个图片输入，无横向溢出或页面脚本错误。
 - 正式 Worker 版本 `3c39c01d-acc8-482d-9d47-36a2f1992bcb`：`UPLOAD_TOKEN` 已恢复为 Secret；正确口令 200、错误口令 401、`https://www.cml-zy.love` CORS 预检 204。
 - 非私人临时图片资产线上上传、读取、删除依次返回 200，删除后读取返回 404；测试对象已清理。未向 `/api/site-state` 写入测试内容，避免覆盖手机端现有资料。
+- GitHub Pages 历史部署因 `Coverflow Gallery.md` 内 React 对象语法被 Jekyll/Liquid 误解析而失败；根目录已加入 `.nojekyll`，静态站点发布不再处理项目 Markdown。
 
 ### 未完成 / 待定 ❌
 
