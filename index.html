@@ -384,6 +384,24 @@
             overflow: hidden;
             z-index: 1;
         }
+        #layer-dom .say-yes-btn.is-position-locked {
+            position: fixed;
+            left: var(--say-yes-left, 50%);
+            top: var(--say-yes-top, 70%);
+            width: var(--say-yes-width, auto);
+            height: var(--say-yes-height, auto);
+            box-sizing: border-box;
+            margin: 0;
+            transform: translate(-50%, -50%);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            white-space: nowrap;
+            z-index: 92;
+        }
+        .say-yes-layout-placeholder {
+            display: block;
+            visibility: hidden;
+            pointer-events: none;
+        }
 
         #layer-dom .say-yes-btn::after {
             content: '';
@@ -411,6 +429,12 @@
 
         #layer-dom .say-yes-btn:active {
             transform: scale(0.97);
+        }
+        #layer-dom .say-yes-btn.is-position-locked:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        #layer-dom .say-yes-btn.is-position-locked:active {
+            transform: translate(-50%, -50%) scale(0.97);
         }
 
         /* ---- Layer 3: WebGL Cloth (z:3, top) ---- */
@@ -1748,7 +1772,7 @@
             position: relative;
             z-index: 2;
         }
-        body:not(.edit-mode) [data-ck].ck-deleted {
+        [data-ck].ck-deleted {
             display: none !important;
         }
 
@@ -1789,10 +1813,6 @@
             outline: 2px solid rgba(94,155,168,0.88) !important;
             user-select: none;
             -webkit-user-select: none;
-        }
-        body.edit-mode [data-ck].ck-deleted {
-            opacity: 0.34 !important;
-            text-decoration: line-through;
         }
         body.is-layout-dragging {
             overscroll-behavior: none;
@@ -1910,11 +1930,6 @@
         .ck-edit-controls output { min-width: 38px; text-align: center; }
         .ck-edit-controls [data-ck-width-output] { min-width: 46px; }
         .ck-edit-controls [data-ck-action="delete"] { color: #8b2424; }
-        [data-ck].ck-deleted > .ck-edit-controls [data-ck-action="delete"] {
-            min-width: 46px;
-            background: rgba(110,149,129,0.16);
-            color: #365d4a;
-        }
         @media (max-width: 768px) {
             .ck-edit-controls { top: -52px; left: -4px; }
             .ck-edit-controls button { min-width: 36px; min-height: 36px; }
@@ -5437,7 +5452,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.30.5";
+        const APP_VERSION = "3.30.6";
         const BUILD_DATE = "2026-07-18";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -7085,7 +7100,7 @@
                 el.style.removeProperty('font-size');
             }
             el.classList.toggle('ck-deleted', deleted);
-            el.setAttribute('aria-hidden', String(deleted && !isEditMode));
+            el.setAttribute('aria-hidden', String(deleted));
             updateEditableTextBoxControls(el);
         }
 
@@ -7099,9 +7114,8 @@
             if (sizeOutput) sizeOutput.textContent = `${currentSize}px`;
             if (widthOutput) widthOutput.textContent = el.dataset.ckWidth ? `${el.dataset.ckWidth}px` : '自动';
             if (deleteButton) {
-                const deleted = el.classList.contains('ck-deleted');
-                deleteButton.textContent = deleted ? '恢复' : '删除';
-                deleteButton.title = deleted ? '恢复这个文本框' : '删除这个文本框';
+                deleteButton.textContent = '删除';
+                deleteButton.title = '直接删除这个文本框';
             }
         }
 
@@ -7120,6 +7134,13 @@
                 setEditableOffset(el, 0, 0);
                 setEditableTextBoxStyle(el, null, false);
                 setEditableTextBoxWidth(el, null);
+                if (isEditMode) {
+                    el.contentEditable = 'true';
+                    el.setAttribute('aria-hidden', 'false');
+                    ensureDragHandle(el);
+                    el.addEventListener('input', onContentInput);
+                    el.addEventListener('blur', onContentBlur);
+                }
             });
             scheduleCloudSiteStateSave(0);
             showToast('↺ 所有文字位置、字号和删除状态已复位', 2000);
@@ -7130,19 +7151,49 @@
             applyContent(DEFAULT_CONTENT);
             document.querySelectorAll('[data-ck]').forEach(el => {
                 setEditableTextBoxStyle(el, el.dataset.ckFontSize, false);
-                if (isEditMode) ensureDragHandle(el);
+                if (isEditMode) {
+                    el.contentEditable = 'true';
+                    el.setAttribute('aria-hidden', 'false');
+                    ensureDragHandle(el);
+                    el.addEventListener('input', onContentInput);
+                    el.addEventListener('blur', onContentBlur);
+                }
             });
             saveContent();
             saveLayout();
             showToast('↺ 文字内容已恢复默认', 1600);
         }
 
+        function lockSayYesButtonPosition() {
+            if (!sayYesBtn || sayYesBtn.classList.contains('is-position-locked')) return;
+            const rect = sayYesBtn.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            const placeholder = document.createElement('span');
+            placeholder.className = 'say-yes-layout-placeholder';
+            placeholder.setAttribute('aria-hidden', 'true');
+            placeholder.style.width = `${Math.round(rect.width)}px`;
+            placeholder.style.height = `${Math.round(rect.height)}px`;
+            sayYesBtn.before(placeholder);
+            sayYesBtn.style.setProperty('--say-yes-left', `${((rect.left + rect.width / 2) / window.innerWidth) * 100}%`);
+            sayYesBtn.style.setProperty('--say-yes-top', `${((rect.top + rect.height / 2) / window.innerHeight) * 100}%`);
+            sayYesBtn.style.setProperty('--say-yes-width', `${rect.width}px`);
+            sayYesBtn.style.setProperty('--say-yes-height', `${rect.height}px`);
+            sayYesBtn.classList.add('is-position-locked');
+        }
+
         function enterEditMode() {
+            lockSayYesButtonPosition();
             document.body.classList.add('edit-mode');
             editModeToolbar.setAttribute('aria-hidden', 'false');
             editModeToggle.classList.add('active');
             editModeToggle.querySelector('.tooltip-text').textContent = '编辑模式已开启 — 点击文字修改，拖动小圆点移动';
             document.querySelectorAll('[data-ck]').forEach(el => {
+                const deleted = el.classList.contains('ck-deleted');
+                if (deleted) {
+                    el.contentEditable = 'false';
+                    el.setAttribute('aria-hidden', 'true');
+                    return;
+                }
                 el.contentEditable = 'true';
                 el.setAttribute('lang', 'zh-CN');
                 el.setAttribute('inputmode', 'text');
@@ -7252,10 +7303,10 @@
             captureUndoSnapshot('text-box-style');
             const action = button.dataset.ckAction;
             if (action === 'delete') {
-                setEditableTextBoxStyle(el, el.dataset.ckFontSize, !el.classList.contains('ck-deleted'));
+                setEditableTextBoxStyle(el, el.dataset.ckFontSize, true);
                 if (el.classList.contains('track-story-copy')) updateParallelStoryItemState();
                 saveLayout();
-                showToast(el.classList.contains('ck-deleted') ? '文本框已删除；编辑模式中可点击“恢复”' : '文本框已恢复', 1800);
+                showToast('文本框已直接删除；需要撤回可点“撤销”', 1800);
                 return;
             }
             if (action === 'narrower' || action === 'wider') {
