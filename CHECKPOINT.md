@@ -1,7 +1,7 @@
 # 项目断点保存 — 平行宇宙的相遇
 
-> **最后更新**：2026-07-17
-> **当前版本**：v3.29.1（`index.html` 内 `APP_VERSION` 已同步为 "3.29.1"）
+> **最后更新**：2026-07-18
+> **当前版本**：v3.30.0（`index.html` 内 `APP_VERSION` 已同步为 "3.30.0"）
 > **工作目录**：`C:\Users\Administrator\Desktop\my-wedding`  
 > **启动方式**：`python -m http.server 8080` → `http://localhost:8080`
 
@@ -28,6 +28,7 @@
 | **Say Yes → 滚动内容** | GSAP 白色闪光过渡，隐藏固定图层，激活下方滚动叙事 | `index.html` |
 | **双轨视差** | GSAP ScrollTrigger 同速视差（左右轨均为 -45%），延长为完整的双线叙事滚动 | `index.html` |
 | **平行世界 20 段文本** | 左右各 10 个文本位；编辑模式可填写或逐段删除，空位在正式浏览隐藏；管理员保存后同步到 R2，手机与电脑读取同一份内容，本机 localStorage 作为断网副本 | `index.html` / `cloudflare-r2-worker/` |
+| **全站固定文本框控制** | 所有 `data-ck` 固定文本框均可直接缩小/放大字号、拖动、删除及原位恢复；字号、坐标和删除状态统一保存到云端布局快照 | `index.html` / `cloudflare-r2-worker/` |
 | **相遇粒子** | canvas-confetti 四次爆发 + 文字淡入 + 点击重新触发 | `index.html` |
 | **合并记忆卡片** | 三张卡片 ScrollTrigger 逐个淡入 | `index.html` |
 | **Coverflow Gallery** | 中心直立、左右各三张，共 7 张可见；侧卡统一轻微变暗，支持点按、拖动、按钮、方向键和 50 张以上照片队列，不自动轮转 | `index.html` / `Coverflow Gallery.md` |

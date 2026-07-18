@@ -1734,6 +1734,9 @@
             position: relative;
             z-index: 2;
         }
+        body:not(.edit-mode) [data-ck].ck-deleted {
+            display: none !important;
+        }
 
         /* Editable element indicators (only visible in edit mode) */
         body.edit-mode [data-ck] {
@@ -1759,6 +1762,10 @@
             -webkit-user-select: none;
             will-change: transform;
             transition: none !important;
+        }
+        body.edit-mode [data-ck].ck-deleted {
+            opacity: 0.34 !important;
+            text-decoration: line-through;
         }
         body.is-layout-dragging {
             overscroll-behavior: none;
@@ -1803,6 +1810,60 @@
             cursor: grabbing;
             background: #a92929;
             color: #fff;
+        }
+        .ck-edit-controls {
+            position: absolute;
+            top: -44px;
+            left: 8px;
+            z-index: 44;
+            display: none;
+            align-items: center;
+            gap: 4px;
+            min-height: 32px;
+            padding: 3px 5px;
+            border: 1px solid rgba(169,41,41,0.22);
+            border-radius: 999px;
+            background: rgba(255,253,248,0.96);
+            color: #5a4141;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.14);
+            font: 600 10px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            white-space: nowrap;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        body.edit-mode [data-ck] > .ck-edit-controls { display: inline-flex; }
+        .ck-edit-controls button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            min-height: 28px;
+            padding: 0 7px;
+            border: 0;
+            border-radius: 999px;
+            background: rgba(169,41,41,0.08);
+            color: #7f2c2c;
+            font: inherit;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .ck-edit-controls button:hover,
+        .ck-edit-controls button:focus-visible {
+            background: #a92929;
+            color: #fff;
+            outline: none;
+        }
+        .ck-edit-controls output { min-width: 38px; text-align: center; }
+        .ck-edit-controls [data-ck-action="delete"] { color: #8b2424; }
+        [data-ck].ck-deleted > .ck-edit-controls [data-ck-action="delete"] {
+            min-width: 46px;
+            background: rgba(110,149,129,0.16);
+            color: #365d4a;
+        }
+        @media (max-width: 768px) {
+            .ck-edit-controls { top: -52px; left: -4px; }
+            .ck-edit-controls button { min-width: 36px; min-height: 36px; }
         }
 
         .edit-page-surface:not(#layer-dom):not(.dual-track-stage) {
@@ -5277,7 +5338,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.29.1";
+        const APP_VERSION = "3.30.0";
         const BUILD_DATE = "2026-07-17";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -6429,6 +6490,7 @@
             }
 
             applyLayout(loadLayout());
+            document.querySelectorAll('[data-ck]').forEach(ensureDragHandle);
             initHiddenPages();
             initFreeItems();
             initFixedPhotos();
@@ -6610,8 +6672,8 @@
             document.querySelectorAll('.track-story-copy').forEach(field => {
                 const item = field.closest('.track-story-item');
                 const copy = field.cloneNode(true);
-                copy.querySelectorAll('.ck-drag-handle').forEach(handle => handle.remove());
-                if (item) item.classList.toggle('is-track-story-empty', !copy.textContent.trim());
+                copy.querySelectorAll('.ck-drag-handle, .ck-edit-controls').forEach(handle => handle.remove());
+                if (item) item.classList.toggle('is-track-story-empty', field.classList.contains('ck-deleted') || !copy.textContent.trim());
             });
         }
 
@@ -6627,6 +6689,7 @@
                 if (!item || !field) return;
                 captureUndoSnapshot('delete-parallel-story');
                 field.innerHTML = '';
+                ensureDragHandle(field);
                 item.classList.add('is-track-story-empty');
                 saveContent();
                 showToast('已删除这段故事；可随时用恢复文字找回默认内容', 1800);
@@ -6717,7 +6780,7 @@
 
         function getCleanHTML(el) {
             const clone = el.cloneNode(true);
-            clone.querySelectorAll('.ck-drag-handle').forEach(handle => handle.remove());
+            clone.querySelectorAll('.ck-drag-handle, .ck-edit-controls').forEach(handle => handle.remove());
             return clone.innerHTML;
         }
 
@@ -6863,8 +6926,10 @@
             document.querySelectorAll('[data-ck]').forEach(el => {
                 const x = Number(el.dataset.ckX || 0);
                 const y = Number(el.dataset.ckY || 0);
-                if (x || y) {
-                    layout[el.dataset.ck] = { x, y };
+                const fontSize = Number(el.dataset.ckFontSize || 0);
+                const deleted = el.classList.contains('ck-deleted');
+                if (x || y || fontSize || deleted) {
+                    layout[el.dataset.ck] = { x, y, fontSize: fontSize || null, deleted };
                 }
             });
             return layout;
@@ -6884,7 +6949,37 @@
                 const x = item ? Number(item.x || 0) : 0;
                 const y = item ? Number(item.y || 0) : 0;
                 setEditableOffset(el, x, y);
+                setEditableTextBoxStyle(el, item && item.fontSize, Boolean(item && item.deleted));
             });
+        }
+
+        function setEditableTextBoxStyle(el, fontSize, deleted = false) {
+            const nextSize = Number(fontSize);
+            if (Number.isFinite(nextSize) && nextSize > 0) {
+                const clampedSize = clamp(Math.round(nextSize), 10, 120);
+                el.dataset.ckFontSize = String(clampedSize);
+                el.style.fontSize = `${clampedSize}px`;
+            } else {
+                delete el.dataset.ckFontSize;
+                el.style.removeProperty('font-size');
+            }
+            el.classList.toggle('ck-deleted', deleted);
+            el.setAttribute('aria-hidden', String(deleted && !isEditMode));
+            updateEditableTextBoxControls(el);
+        }
+
+        function updateEditableTextBoxControls(el) {
+            const controls = el.querySelector(':scope > .ck-edit-controls');
+            if (!controls) return;
+            const sizeOutput = controls.querySelector('[data-ck-size-output]');
+            const deleteButton = controls.querySelector('[data-ck-action="delete"]');
+            const currentSize = Math.round(Number(el.dataset.ckFontSize) || parseFloat(getComputedStyle(el).fontSize) || 16);
+            if (sizeOutput) sizeOutput.textContent = `${currentSize}px`;
+            if (deleteButton) {
+                const deleted = el.classList.contains('ck-deleted');
+                deleteButton.textContent = deleted ? '恢复' : '删除';
+                deleteButton.title = deleted ? '恢复这个文本框' : '删除这个文本框';
+            }
         }
 
         function setEditableOffset(el, x, y) {
@@ -6898,17 +6993,23 @@
         function resetLayout() {
             captureUndoSnapshot('reset-layout');
             localStorage.removeItem(LAYOUT_STORAGE_KEY);
-            document.querySelectorAll('[data-ck]').forEach(el => setEditableOffset(el, 0, 0));
-            showToast('↺ 文字位置已复位', 1600);
+            document.querySelectorAll('[data-ck]').forEach(el => {
+                setEditableOffset(el, 0, 0);
+                setEditableTextBoxStyle(el, null, false);
+            });
+            scheduleCloudSiteStateSave(0);
+            showToast('↺ 所有文字位置、字号和删除状态已复位', 2000);
         }
 
         function resetContent() {
             captureUndoSnapshot('reset-content');
             applyContent(DEFAULT_CONTENT);
             document.querySelectorAll('[data-ck]').forEach(el => {
+                setEditableTextBoxStyle(el, el.dataset.ckFontSize, false);
                 if (isEditMode) ensureDragHandle(el);
             });
             saveContent();
+            saveLayout();
             showToast('↺ 文字内容已恢复默认', 1600);
         }
 
@@ -6919,6 +7020,7 @@
             editModeToggle.querySelector('.tooltip-text').textContent = '编辑模式已开启 — 点击文字修改，拖动小圆点移动';
             document.querySelectorAll('[data-ck]').forEach(el => {
                 el.contentEditable = 'true';
+                el.setAttribute('aria-hidden', 'false');
                 ensureDragHandle(el);
                 el.addEventListener('input', onContentInput);
                 el.addEventListener('blur', onContentBlur);
@@ -6928,7 +7030,7 @@
             setFixedPhotosEditable(true);
             scheduleFreeItemFlowUpdate();
             updateEditorStorageMeter();
-            showToast('✏️ 编辑模式已开启：可改文字、拖位置、加文本框/照片框', 3200);
+            showToast('✏️ 可改文字、拖位置、调字号，也可删除或恢复任意文本框', 3400);
         }
 
         function exitEditMode() {
@@ -6938,6 +7040,7 @@
             editModeToggle.querySelector('.tooltip-text').textContent = '点击开启内容编辑模式';
             document.querySelectorAll('[data-ck]').forEach(el => {
                 el.contentEditable = 'false';
+                el.setAttribute('aria-hidden', String(el.classList.contains('ck-deleted')));
                 el.removeEventListener('input', onContentInput);
                 el.removeEventListener('blur', onContentBlur);
             });
@@ -6945,7 +7048,6 @@
             setStoryModulesEditable(false);
             setFreeItemsEditable(false);
             setFixedPhotosEditable(false);
-            removeDragHandles();
             scheduleFreeItemFlowUpdate();
             showToast('✅ 编辑模式已关闭，内容已自动保存', 2000);
         }
@@ -6968,20 +7070,56 @@
         }
 
         function ensureDragHandle(el) {
-            if (el.querySelector(':scope > .ck-drag-handle')) return;
-            const handle = document.createElement('span');
-            handle.className = 'ck-drag-handle';
-            handle.textContent = '↕';
-            handle.title = '拖动移动文字位置';
-            handle.contentEditable = 'false';
-            handle.addEventListener('pointerdown', onDragHandlePointerDown);
-            el.prepend(handle);
+            if (!el.querySelector(':scope > .ck-drag-handle')) {
+                const handle = document.createElement('span');
+                handle.className = 'ck-drag-handle';
+                handle.textContent = '↕';
+                handle.title = '拖动移动文字位置';
+                handle.contentEditable = 'false';
+                handle.addEventListener('pointerdown', onDragHandlePointerDown);
+                el.prepend(handle);
+            }
+            if (!el.querySelector(':scope > .ck-edit-controls')) {
+                const controls = document.createElement('span');
+                controls.className = 'ck-edit-controls';
+                controls.contentEditable = 'false';
+                controls.innerHTML = '<button type="button" data-ck-action="smaller" title="缩小字号">−</button><output data-ck-size-output>--</output><button type="button" data-ck-action="larger" title="放大字号">＋</button><button type="button" data-ck-action="delete" title="删除这个文本框">删除</button>';
+                controls.addEventListener('click', onEditableTextBoxControlClick);
+                el.prepend(controls);
+            }
+            updateEditableTextBoxControls(el);
+        }
+
+        function onEditableTextBoxControlClick(event) {
+            const button = event.target.closest('[data-ck-action]');
+            const el = button && button.closest('[data-ck]');
+            if (!button || !el || !isEditMode) return;
+            event.preventDefault();
+            event.stopPropagation();
+            captureUndoSnapshot('text-box-style');
+            const action = button.dataset.ckAction;
+            if (action === 'delete') {
+                setEditableTextBoxStyle(el, el.dataset.ckFontSize, !el.classList.contains('ck-deleted'));
+                if (el.classList.contains('track-story-copy')) updateParallelStoryItemState();
+                saveLayout();
+                showToast(el.classList.contains('ck-deleted') ? '文本框已删除；编辑模式中可点击“恢复”' : '文本框已恢复', 1800);
+                return;
+            }
+            const currentSize = Math.round(Number(el.dataset.ckFontSize) || parseFloat(getComputedStyle(el).fontSize) || 16);
+            const step = currentSize >= 48 ? 4 : currentSize >= 24 ? 2 : 1;
+            const nextSize = action === 'larger' ? currentSize + step : currentSize - step;
+            setEditableTextBoxStyle(el, clamp(nextSize, 10, 120), el.classList.contains('ck-deleted'));
+            saveLayout();
         }
 
         function removeDragHandles() {
             document.querySelectorAll('.ck-drag-handle').forEach(handle => {
                 handle.removeEventListener('pointerdown', onDragHandlePointerDown);
                 handle.remove();
+            });
+            document.querySelectorAll('.ck-edit-controls').forEach(controls => {
+                controls.removeEventListener('click', onEditableTextBoxControlClick);
+                controls.remove();
             });
         }
 
