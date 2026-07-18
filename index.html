@@ -1729,7 +1729,9 @@
 
         [data-ck] {
             transform: translate3d(var(--ck-x, 0px), var(--ck-y, 0px), 0);
+            box-sizing: border-box;
         }
+        span[data-ck].ck-has-width { display: inline-block; }
         [data-ck].ck-has-layout {
             position: relative;
             z-index: 2;
@@ -1762,6 +1764,11 @@
             -webkit-user-select: none;
             will-change: transform;
             transition: none !important;
+        }
+        body.edit-mode [data-ck].ck-resizing {
+            outline: 2px solid rgba(94,155,168,0.88) !important;
+            user-select: none;
+            -webkit-user-select: none;
         }
         body.edit-mode [data-ck].ck-deleted {
             opacity: 0.34 !important;
@@ -1811,6 +1818,32 @@
             background: #a92929;
             color: #fff;
         }
+        .ck-resize-handle {
+            position: absolute;
+            right: -15px;
+            bottom: -15px;
+            z-index: 43;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: 1px solid rgba(94,155,168,0.58);
+            border-radius: 50%;
+            background: rgba(255,255,255,0.96);
+            color: #3d7782;
+            box-shadow: 0 5px 16px rgba(0,0,0,0.14);
+            cursor: ew-resize;
+            font: 700 13px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        body.edit-mode [data-ck] > .ck-resize-handle { display: flex; }
+        body.edit-mode [data-ck].ck-resizing > .ck-resize-handle {
+            background: #3d7782;
+            color: #fff;
+        }
         .ck-edit-controls {
             position: absolute;
             top: -44px;
@@ -1855,6 +1888,7 @@
             outline: none;
         }
         .ck-edit-controls output { min-width: 38px; text-align: center; }
+        .ck-edit-controls [data-ck-width-output] { min-width: 46px; }
         .ck-edit-controls [data-ck-action="delete"] { color: #8b2424; }
         [data-ck].ck-deleted > .ck-edit-controls [data-ck-action="delete"] {
             min-width: 46px;
@@ -1864,6 +1898,7 @@
         @media (max-width: 768px) {
             .ck-edit-controls { top: -52px; left: -4px; }
             .ck-edit-controls button { min-width: 36px; min-height: 36px; }
+            .ck-resize-handle { width: 38px; height: 38px; right: -19px; bottom: -19px; }
         }
 
         .edit-page-surface:not(#layer-dom):not(.dual-track-stage) {
@@ -5338,7 +5373,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.30.0";
+        const APP_VERSION = "3.30.1";
         const BUILD_DATE = "2026-07-17";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -6672,7 +6707,7 @@
             document.querySelectorAll('.track-story-copy').forEach(field => {
                 const item = field.closest('.track-story-item');
                 const copy = field.cloneNode(true);
-                copy.querySelectorAll('.ck-drag-handle, .ck-edit-controls').forEach(handle => handle.remove());
+                copy.querySelectorAll('.ck-drag-handle, .ck-resize-handle, .ck-edit-controls').forEach(handle => handle.remove());
                 if (item) item.classList.toggle('is-track-story-empty', field.classList.contains('ck-deleted') || !copy.textContent.trim());
             });
         }
@@ -6780,7 +6815,7 @@
 
         function getCleanHTML(el) {
             const clone = el.cloneNode(true);
-            clone.querySelectorAll('.ck-drag-handle, .ck-edit-controls').forEach(handle => handle.remove());
+            clone.querySelectorAll('.ck-drag-handle, .ck-resize-handle, .ck-edit-controls').forEach(handle => handle.remove());
             return clone.innerHTML;
         }
 
@@ -6927,9 +6962,10 @@
                 const x = Number(el.dataset.ckX || 0);
                 const y = Number(el.dataset.ckY || 0);
                 const fontSize = Number(el.dataset.ckFontSize || 0);
+                const width = Number(el.dataset.ckWidth || 0);
                 const deleted = el.classList.contains('ck-deleted');
-                if (x || y || fontSize || deleted) {
-                    layout[el.dataset.ck] = { x, y, fontSize: fontSize || null, deleted };
+                if (x || y || fontSize || width || deleted) {
+                    layout[el.dataset.ck] = { x, y, fontSize: fontSize || null, width: width || null, deleted };
                 }
             });
             return layout;
@@ -6950,7 +6986,25 @@
                 const y = item ? Number(item.y || 0) : 0;
                 setEditableOffset(el, x, y);
                 setEditableTextBoxStyle(el, item && item.fontSize, Boolean(item && item.deleted));
+                setEditableTextBoxWidth(el, item && item.width);
             });
+        }
+
+        function setEditableTextBoxWidth(el, width) {
+            const nextWidth = Number(width);
+            if (Number.isFinite(nextWidth) && nextWidth > 0) {
+                const clampedWidth = clamp(Math.round(nextWidth), 80, 1200);
+                el.dataset.ckWidth = String(clampedWidth);
+                el.style.width = `${clampedWidth}px`;
+                el.style.maxWidth = 'calc(100vw - 32px)';
+                el.classList.add('ck-has-width');
+            } else {
+                delete el.dataset.ckWidth;
+                el.style.removeProperty('width');
+                el.style.removeProperty('max-width');
+                el.classList.remove('ck-has-width');
+            }
+            updateEditableTextBoxControls(el);
         }
 
         function setEditableTextBoxStyle(el, fontSize, deleted = false) {
@@ -6972,9 +7026,11 @@
             const controls = el.querySelector(':scope > .ck-edit-controls');
             if (!controls) return;
             const sizeOutput = controls.querySelector('[data-ck-size-output]');
+            const widthOutput = controls.querySelector('[data-ck-width-output]');
             const deleteButton = controls.querySelector('[data-ck-action="delete"]');
             const currentSize = Math.round(Number(el.dataset.ckFontSize) || parseFloat(getComputedStyle(el).fontSize) || 16);
             if (sizeOutput) sizeOutput.textContent = `${currentSize}px`;
+            if (widthOutput) widthOutput.textContent = el.dataset.ckWidth ? `${el.dataset.ckWidth}px` : '自动';
             if (deleteButton) {
                 const deleted = el.classList.contains('ck-deleted');
                 deleteButton.textContent = deleted ? '恢复' : '删除';
@@ -6996,6 +7052,7 @@
             document.querySelectorAll('[data-ck]').forEach(el => {
                 setEditableOffset(el, 0, 0);
                 setEditableTextBoxStyle(el, null, false);
+                setEditableTextBoxWidth(el, null);
             });
             scheduleCloudSiteStateSave(0);
             showToast('↺ 所有文字位置、字号和删除状态已复位', 2000);
@@ -7030,7 +7087,7 @@
             setFixedPhotosEditable(true);
             scheduleFreeItemFlowUpdate();
             updateEditorStorageMeter();
-            showToast('✏️ 可改文字、拖位置、调字号，也可删除或恢复任意文本框', 3400);
+            showToast('✏️ 可改文字、拖位置、调字号；拖右下手柄可直接拉长文本框', 3600);
         }
 
         function exitEditMode() {
@@ -7083,9 +7140,18 @@
                 const controls = document.createElement('span');
                 controls.className = 'ck-edit-controls';
                 controls.contentEditable = 'false';
-                controls.innerHTML = '<button type="button" data-ck-action="smaller" title="缩小字号">−</button><output data-ck-size-output>--</output><button type="button" data-ck-action="larger" title="放大字号">＋</button><button type="button" data-ck-action="delete" title="删除这个文本框">删除</button>';
+                controls.innerHTML = '<button type="button" data-ck-action="smaller" title="缩小字号">字−</button><output data-ck-size-output>--</output><button type="button" data-ck-action="larger" title="放大字号">字＋</button><button type="button" data-ck-action="narrower" title="文本框变窄">框−</button><output data-ck-width-output>自动</output><button type="button" data-ck-action="wider" title="文本框变宽">框＋</button><button type="button" data-ck-action="delete" title="删除这个文本框">删除</button>';
                 controls.addEventListener('click', onEditableTextBoxControlClick);
                 el.prepend(controls);
+            }
+            if (!el.querySelector(':scope > .ck-resize-handle')) {
+                const resizeHandle = document.createElement('span');
+                resizeHandle.className = 'ck-resize-handle';
+                resizeHandle.textContent = '↔';
+                resizeHandle.title = '左右拖动，调整文本框宽度';
+                resizeHandle.contentEditable = 'false';
+                resizeHandle.addEventListener('pointerdown', onTextBoxResizePointerDown);
+                el.append(resizeHandle);
             }
             updateEditableTextBoxControls(el);
         }
@@ -7105,6 +7171,14 @@
                 showToast(el.classList.contains('ck-deleted') ? '文本框已删除；编辑模式中可点击“恢复”' : '文本框已恢复', 1800);
                 return;
             }
+            if (action === 'narrower' || action === 'wider') {
+                const currentWidth = Math.round(Number(el.dataset.ckWidth) || el.getBoundingClientRect().width || 160);
+                const bounds = getEditableTextBoxWidthBounds(el);
+                const nextWidth = action === 'wider' ? currentWidth + 40 : currentWidth - 40;
+                setEditableTextBoxWidth(el, clamp(nextWidth, bounds.min, bounds.max));
+                saveLayout();
+                return;
+            }
             const currentSize = Math.round(Number(el.dataset.ckFontSize) || parseFloat(getComputedStyle(el).fontSize) || 16);
             const step = currentSize >= 48 ? 4 : currentSize >= 24 ? 2 : 1;
             const nextSize = action === 'larger' ? currentSize + step : currentSize - step;
@@ -7117,10 +7191,84 @@
                 handle.removeEventListener('pointerdown', onDragHandlePointerDown);
                 handle.remove();
             });
+            document.querySelectorAll('.ck-resize-handle').forEach(handle => {
+                handle.removeEventListener('pointerdown', onTextBoxResizePointerDown);
+                handle.remove();
+            });
             document.querySelectorAll('.ck-edit-controls').forEach(controls => {
                 controls.removeEventListener('click', onEditableTextBoxControlClick);
                 controls.remove();
             });
+        }
+
+        let textBoxResize = null;
+
+        function getEditableTextBoxWidthBounds(el) {
+            const parentRect = el.parentElement ? el.parentElement.getBoundingClientRect() : null;
+            const viewportWidth = Math.max(120, window.innerWidth - 32);
+            const parentWidth = parentRect && parentRect.width > 0 ? parentRect.width : viewportWidth;
+            return { min: 80, max: Math.max(80, Math.min(1200, viewportWidth, parentWidth)) };
+        }
+
+        function flushTextBoxResizeFrame() {
+            if (!textBoxResize) return;
+            textBoxResize.frame = null;
+            setEditableTextBoxWidth(textBoxResize.el, textBoxResize.nextWidth);
+        }
+
+        function onTextBoxResizePointerDown(event) {
+            if (!isEditMode) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const el = event.currentTarget.closest('[data-ck]');
+            if (!el) return;
+            captureUndoSnapshot('resize-text-box');
+            const bounds = getEditableTextBoxWidthBounds(el);
+            textBoxResize = {
+                el,
+                handle: event.currentTarget,
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                baseWidth: el.getBoundingClientRect().width,
+                nextWidth: el.getBoundingClientRect().width,
+                bounds,
+                frame: null
+            };
+            el.classList.add('ck-resizing');
+            document.body.classList.add('is-layout-dragging');
+            event.currentTarget.setPointerCapture(event.pointerId);
+            window.addEventListener('pointermove', onTextBoxResizePointerMove, { passive: false });
+            window.addEventListener('pointerup', onTextBoxResizePointerUp);
+            window.addEventListener('pointercancel', onTextBoxResizePointerUp);
+        }
+
+        function onTextBoxResizePointerMove(event) {
+            if (!textBoxResize || event.pointerId !== textBoxResize.pointerId) return;
+            event.preventDefault();
+            textBoxResize.nextWidth = clamp(
+                textBoxResize.baseWidth + event.clientX - textBoxResize.startX,
+                textBoxResize.bounds.min,
+                textBoxResize.bounds.max
+            );
+            if (!textBoxResize.frame) textBoxResize.frame = requestAnimationFrame(flushTextBoxResizeFrame);
+        }
+
+        function onTextBoxResizePointerUp(event) {
+            if (!textBoxResize || event.pointerId !== textBoxResize.pointerId) return;
+            if (textBoxResize.frame) {
+                cancelAnimationFrame(textBoxResize.frame);
+                flushTextBoxResizeFrame();
+            }
+            if (textBoxResize.handle.hasPointerCapture(textBoxResize.pointerId)) {
+                textBoxResize.handle.releasePointerCapture(textBoxResize.pointerId);
+            }
+            textBoxResize.el.classList.remove('ck-resizing');
+            document.body.classList.remove('is-layout-dragging');
+            textBoxResize = null;
+            window.removeEventListener('pointermove', onTextBoxResizePointerMove);
+            window.removeEventListener('pointerup', onTextBoxResizePointerUp);
+            window.removeEventListener('pointercancel', onTextBoxResizePointerUp);
+            saveLayout();
         }
 
         let layoutDrag = null;

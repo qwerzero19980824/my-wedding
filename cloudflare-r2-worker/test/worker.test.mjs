@@ -152,7 +152,7 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
     url: 'https://my-wedding-poster-library.yuyanp52.workers.dev/media/assets/asset-music-12345678'
   }]);
   desktopStorage.wedding_layout_v1 = JSON.stringify({
-    'proposal-title': { x: 18, y: -12, fontSize: 44, deleted: false },
+    'proposal-title': { x: 18, y: -12, fontSize: 44, width: 720, deleted: false },
     'proposal-letter': { x: 0, y: 0, fontSize: 18, deleted: true }
   });
   const desktopWrite = await worker.fetch(authorized('/api/site-state', {
@@ -175,6 +175,7 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   assert.equal(JSON.parse(mobileReadBack.storage.wedding_music_playlist_v1)[0].title, 'Cloud Song');
   const syncedLayout = JSON.parse(mobileReadBack.storage.wedding_layout_v1);
   assert.equal(syncedLayout['proposal-title'].fontSize, 44);
+  assert.equal(syncedLayout['proposal-title'].width, 720);
   assert.equal(syncedLayout['proposal-letter'].deleted, true);
 
   const invalidSiteState = await worker.fetch(authorized('/api/site-state', {
