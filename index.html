@@ -1991,7 +1991,8 @@
         body.edit-mode .free-edit-item.color-open {
             z-index: 85;
         }
-        body.edit-mode .free-edit-item.free-item-dragging {
+        body.edit-mode .free-edit-item.free-item-dragging,
+        body.edit-mode .free-edit-item.free-item-resizing {
             outline: 2px solid rgba(169, 41, 41, 0.76);
             user-select: none;
             -webkit-user-select: none;
@@ -2024,8 +2025,43 @@
         .free-item-controls .free-item-drag {
             cursor: grab;
         }
+        .free-item-controls .free-item-width-step {
+            width: 30px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+        }
         .free-edit-item.free-item-dragging .free-item-drag {
             cursor: grabbing;
+            background: #a92929;
+            color: #fff;
+        }
+        .free-item-resize {
+            position: absolute;
+            top: 50%;
+            right: 2px;
+            z-index: 9;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            transform: translate(50%, -50%);
+            border: 1px solid rgba(169, 41, 41, 0.5);
+            border-radius: 50%;
+            background: rgba(255,255,255,0.96);
+            color: #a92929;
+            font: 700 15px/1 sans-serif;
+            box-shadow: 0 5px 16px rgba(0,0,0,0.16);
+            cursor: ew-resize;
+            touch-action: none;
+            pointer-events: auto;
+        }
+        body.edit-mode .free-edit-text .free-item-resize {
+            display: flex;
+        }
+        .free-edit-item.free-item-resizing .free-item-resize {
             background: #a92929;
             color: #fff;
         }
@@ -2080,6 +2116,14 @@
             line-height: 1.8;
             box-shadow: none;
             text-shadow: 0 1px 18px rgba(0,0,0,0.12);
+        }
+        @media (max-width: 768px) {
+            .free-item-resize {
+                right: 4px;
+                width: 40px;
+                height: 40px;
+                font-size: 17px;
+            }
         }
         .free-font-panel {
             position: absolute;
@@ -5373,8 +5417,8 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.30.1";
-        const BUILD_DATE = "2026-07-17";
+        const APP_VERSION = "3.30.2";
+        const BUILD_DATE = "2026-07-18";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
         const DEFAULTS = {
@@ -5842,6 +5886,7 @@
         let moduleSaveDebounce = null;
         let freeItemSaveDebounce = null;
         let freeItemDrag = null;
+        let freeItemWidthResize = null;
         let freeItemFlowTick = null;
         let freeItemResizeTimer = null;
         let polaroidItems = [];
@@ -7564,7 +7609,7 @@
                     el.focus();
                 }
             });
-            showToast(type === 'photo' ? '＋ 已添加照片框，可拖动位置' : '＋ 已添加文本框，可直接编辑', 1600);
+            showToast(type === 'photo' ? '＋ 已添加照片框，可拖动位置' : '＋ 已添加文本框；拖右侧 ↔ 可调宽度', 2200);
         }
 
         function getSurfaceByPage(pageId) {
@@ -7649,6 +7694,8 @@
             el.style.setProperty('--free-font-color', fontColor || 'var(--free-fg)');
 
             const textFontControls = item.type === 'photo' ? '' : `
+                <button type="button" class="free-item-width-step" title="文本框变窄" data-free-action="narrower">窄</button>
+                <button type="button" class="free-item-width-step" title="文本框变宽" data-free-action="wider">宽</button>
                 <button type="button" title="字体" data-free-action="font">字</button>
                 <div class="free-font-panel" aria-label="文本框字体设置">
                     <label>字号 <span>${fontSize}px</span><input type="range" data-free-font="fontSize" min="12" max="72" step="1" value="${fontSize}"></label>
@@ -7683,6 +7730,7 @@
             } else {
                 el.innerHTML = `${controls}
                     <div class="free-text-box" data-free-field="content">${item.content || '点击写下这一页想补充的话'}</div>
+                    <button type="button" class="free-item-resize" title="左右拖动调整文本框宽度" data-free-action="resize" aria-label="左右拖动调整文本框宽度">↔</button>
                 `;
             }
 
@@ -7697,6 +7745,8 @@
             });
             const dragControl = el.querySelector('[data-free-action="drag"]');
             if (dragControl) dragControl.addEventListener('pointerdown', onFreeItemDragStart);
+            const resizeControl = el.querySelector('[data-free-action="resize"]');
+            if (resizeControl) resizeControl.addEventListener('pointerdown', onFreeItemResizeStart);
 
             return el;
         }
@@ -7883,7 +7933,7 @@
                 return;
             }
             const actionBtn = e.target.closest('[data-free-action]');
-            if (!actionBtn || actionBtn.dataset.freeAction === 'drag') return;
+            if (!actionBtn || ['drag', 'resize'].includes(actionBtn.dataset.freeAction)) return;
             const itemEl = actionBtn.closest('.free-edit-item');
             if (!itemEl) return;
 
@@ -7906,7 +7956,17 @@
             const index = freeItems.findIndex(item => item.id === itemEl.dataset.freeItemId);
             if (index < 0) return;
 
-            if (action === 'bg') {
+            if (action === 'narrower' || action === 'wider') {
+                const surface = itemEl.closest('.edit-page-surface');
+                if (!surface) return;
+                freeItems[index].width = Number(freeItems[index].width || 260) + (action === 'wider' ? 40 : -40);
+                normalizeFreeItemToSurface(freeItems[index], surface);
+                itemEl.style.setProperty('--free-w', `${Math.round(freeItems[index].width)}px`);
+                itemEl.style.setProperty('--free-x', `${Math.round(freeItems[index].x)}px`);
+                persistFreeItems();
+                showToast(action === 'wider' ? '文本框已加宽' : '文本框已变窄', 1000);
+                return;
+            } else if (action === 'bg') {
                 freeItems[index].bg = normalizeFreeBackground(actionBtn.dataset.freeBg);
                 persistFreeItems();
                 renderFreeItems();
@@ -7977,6 +8037,72 @@
             freeItemDrag = null;
             window.removeEventListener('pointermove', onFreeItemDragMove);
             persistFreeItems();
+        }
+
+        function onFreeItemResizeStart(e) {
+            const resizeBtn = e.target.closest('[data-free-action="resize"]');
+            if (!resizeBtn || !isEditMode) return;
+            const itemEl = resizeBtn.closest('.free-edit-item');
+            const item = itemEl ? freeItems.find(entry => entry.id === itemEl.dataset.freeItemId && entry.type === 'text') : null;
+            const surface = itemEl ? itemEl.closest('.edit-page-surface') : null;
+            if (!itemEl || !item || !surface) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            commitFreeItemEdits();
+            captureUndoSnapshot('free-item-width');
+            normalizeFreeItemToSurface(item, surface);
+
+            const rect = surface.getBoundingClientRect();
+            const baseWidth = Number(item.width || 260);
+            const leftEdge = Number(item.x || rect.width / 2) - baseWidth / 2;
+            freeItemWidthResize = {
+                item,
+                itemEl,
+                resizeBtn,
+                pointerId: e.pointerId,
+                startX: e.clientX,
+                baseWidth,
+                leftEdge,
+                minWidth: 140,
+                maxWidth: Math.max(140, rect.width - 16 - leftEdge)
+            };
+
+            itemEl.classList.add('free-item-resizing');
+            resizeBtn.setPointerCapture(e.pointerId);
+            window.addEventListener('pointermove', onFreeItemResizeMove, { passive: false });
+            window.addEventListener('pointerup', onFreeItemResizeEnd);
+            window.addEventListener('pointercancel', onFreeItemResizeEnd);
+        }
+
+        function onFreeItemResizeMove(e) {
+            if (!freeItemWidthResize || e.pointerId !== freeItemWidthResize.pointerId) return;
+            e.preventDefault();
+            const nextWidth = clamp(
+                freeItemWidthResize.baseWidth + e.clientX - freeItemWidthResize.startX,
+                freeItemWidthResize.minWidth,
+                freeItemWidthResize.maxWidth
+            );
+            const nextX = freeItemWidthResize.leftEdge + nextWidth / 2;
+            freeItemWidthResize.item.width = Math.round(nextWidth);
+            freeItemWidthResize.item.x = Math.round(nextX);
+            freeItemWidthResize.itemEl.style.setProperty('--free-w', `${Math.round(nextWidth)}px`);
+            freeItemWidthResize.itemEl.style.setProperty('--free-x', `${Math.round(nextX)}px`);
+        }
+
+        function onFreeItemResizeEnd(e) {
+            if (!freeItemWidthResize || (e && e.pointerId !== freeItemWidthResize.pointerId)) return;
+            const { itemEl, resizeBtn, pointerId } = freeItemWidthResize;
+            if (resizeBtn.hasPointerCapture && resizeBtn.hasPointerCapture(pointerId)) {
+                resizeBtn.releasePointerCapture(pointerId);
+            }
+            itemEl.classList.remove('free-item-resizing');
+            freeItemWidthResize = null;
+            window.removeEventListener('pointermove', onFreeItemResizeMove);
+            window.removeEventListener('pointerup', onFreeItemResizeEnd);
+            window.removeEventListener('pointercancel', onFreeItemResizeEnd);
+            persistFreeItems();
+            showToast('文本框宽度已保存并同步', 1200);
         }
 
         function clamp(value, min, max) {

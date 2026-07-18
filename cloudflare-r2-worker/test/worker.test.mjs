@@ -155,6 +155,15 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
     'proposal-title': { x: 18, y: -12, fontSize: 44, width: 720, deleted: false },
     'proposal-letter': { x: 0, y: 0, fontSize: 18, deleted: true }
   });
+  desktopStorage.wedding_free_items_v1 = JSON.stringify([{
+    id: 'free-parallel-text-1',
+    pageId: 'parallel',
+    type: 'text',
+    x: 260,
+    y: 320,
+    width: 460,
+    content: '手机新建的自由文本框'
+  }]);
   const desktopWrite = await worker.fetch(authorized('/api/site-state', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -177,6 +186,9 @@ test('R2 poster lifecycle, authorization, CORS and limits', async () => {
   assert.equal(syncedLayout['proposal-title'].fontSize, 44);
   assert.equal(syncedLayout['proposal-title'].width, 720);
   assert.equal(syncedLayout['proposal-letter'].deleted, true);
+  const syncedFreeItems = JSON.parse(mobileReadBack.storage.wedding_free_items_v1);
+  assert.equal(syncedFreeItems[0].content, '手机新建的自由文本框');
+  assert.equal(syncedFreeItems[0].width, 460);
 
   const invalidSiteState = await worker.fetch(authorized('/api/site-state', {
     method: 'PUT',
