@@ -224,7 +224,7 @@
         }
 
         #layer-dom .hero-title {
-            font-family: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+            font-family: "Playfair Display", "Cormorant Garamond", "Noto Serif SC", "Songti SC", Georgia, serif;
             font-size: clamp(2rem, 5vw, 3.5rem);
             font-weight: 500;
             color: var(--romantic-red);
@@ -1747,6 +1747,14 @@
             border-radius: 3px;
             transition: outline-color 0.2s ease;
             z-index: 35;
+        }
+        body.edit-mode [contenteditable="true"] {
+            user-select: text;
+            -webkit-user-select: text;
+            -webkit-touch-callout: default;
+        }
+        body.edit-mode [contenteditable="true"].is-ime-composing {
+            caret-color: #a92929;
         }
         body.edit-mode [data-ck]:hover {
             outline-color: rgba(169, 41, 41, 0.6) !important;
@@ -5417,7 +5425,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.30.2";
+        const APP_VERSION = "3.30.3";
         const BUILD_DATE = "2026-07-18";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -6662,6 +6670,8 @@
             document.addEventListener('click', onEditToolbarClick, true);
             document.addEventListener('focusin', onEditorFocusIn, true);
             document.addEventListener('focusout', onEditorFocusOut, true);
+            document.addEventListener('compositionstart', onContentCompositionStart, true);
+            document.addEventListener('compositionend', onContentCompositionEnd, true);
             document.addEventListener('keydown', onEditorShortcut, true);
             initStoryModules();
             initParallelStoryItems();
@@ -6985,7 +6995,7 @@
         }
 
         function onEditorShortcut(e) {
-            if (!isEditMode || !(e.ctrlKey || e.metaKey)) return;
+            if (!isEditMode || e.isComposing || e.keyCode === 229 || !(e.ctrlKey || e.metaKey)) return;
             const key = e.key.toLowerCase();
             if (key === 's') {
                 e.preventDefault();
@@ -7122,6 +7132,8 @@
             editModeToggle.querySelector('.tooltip-text').textContent = '编辑模式已开启 — 点击文字修改，拖动小圆点移动';
             document.querySelectorAll('[data-ck]').forEach(el => {
                 el.contentEditable = 'true';
+                el.setAttribute('lang', 'zh-CN');
+                el.setAttribute('inputmode', 'text');
                 el.setAttribute('aria-hidden', 'false');
                 ensureDragHandle(el);
                 el.addEventListener('input', onContentInput);
@@ -7142,6 +7154,7 @@
             editModeToggle.querySelector('.tooltip-text').textContent = '点击开启内容编辑模式';
             document.querySelectorAll('[data-ck]').forEach(el => {
                 el.contentEditable = 'false';
+                el.classList.remove('is-ime-composing');
                 el.setAttribute('aria-hidden', String(el.classList.contains('ck-deleted')));
                 el.removeEventListener('input', onContentInput);
                 el.removeEventListener('blur', onContentBlur);
@@ -7158,6 +7171,22 @@
             const el = e.currentTarget;
             if (!el || !el.dataset.ck) return;
             contentDirty.set(el.dataset.ck, el);
+            if (e.isComposing || el.classList.contains('is-ime-composing')) return;
+            if (el.classList.contains('track-story-copy')) updateParallelStoryItemState();
+            scheduleContentSave();
+        }
+
+        function onContentCompositionStart(e) {
+            const el = e.target.closest('[data-ck]');
+            if (!isEditMode || !el || el.contentEditable !== 'true') return;
+            el.classList.add('is-ime-composing');
+        }
+
+        function onContentCompositionEnd(e) {
+            const el = e.target.closest('[data-ck]');
+            if (!el) return;
+            el.classList.remove('is-ime-composing');
+            contentDirty.set(el.dataset.ck, el);
             if (el.classList.contains('track-story-copy')) updateParallelStoryItemState();
             scheduleContentSave();
         }
@@ -7165,6 +7194,7 @@
         function onContentBlur(e) {
             const el = e.currentTarget;
             if (el && el.dataset.ck) {
+                el.classList.remove('is-ime-composing');
                 contentDirty.set(el.dataset.ck, el);
                 if (el.classList.contains('track-story-copy')) updateParallelStoryItemState();
             }

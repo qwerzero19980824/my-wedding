@@ -1,7 +1,7 @@
 # 项目断点保存 — 平行宇宙的相遇
 
 > **最后更新**：2026-07-18
-> **当前版本**：v3.30.2（`index.html` 内 `APP_VERSION` 已同步为 "3.30.2"）
+> **当前版本**：v3.30.3（`index.html` 内 `APP_VERSION` 已同步为 "3.30.3"）
 > **工作目录**：`C:\Users\Administrator\Desktop\my-wedding`  
 > **启动方式**：`python -m http.server 8080` → `http://localhost:8080`
 
@@ -30,6 +30,7 @@
 | **平行世界 20 段文本** | 左右各 10 个文本位；编辑模式可填写或逐段删除，空位在正式浏览隐藏；管理员保存后同步到 R2，手机与电脑读取同一份内容，本机 localStorage 作为断网副本 | `index.html` / `cloudflare-r2-worker/` |
 | **全站固定文本框控制** | 所有 `data-ck` 固定文本框均可直接缩小/放大字号、拖动位置、拖右下手柄调整宽度、删除及原位恢复；宽度、字号、坐标和删除状态统一保存到云端布局快照 | `index.html` / `cloudflare-r2-worker/` |
 | **自由文本框宽度控制** | 每页“新建文本框”生成的自由文本框支持右侧手柄横向拉伸及“窄 / 宽”按钮微调；宽度随 `wedding_free_items_v1` 同步云端 | `index.html` / `cloudflare-r2-worker/` |
+| **中文输入法兼容** | 编辑模式下所有原有文本框显式允许文字选择和中文键盘输入；拼音合成期间暂停自动保存，选字提交后再保存并同步 | `index.html` |
 | **相遇粒子** | canvas-confetti 四次爆发 + 文字淡入 + 点击重新触发 | `index.html` |
 | **合并记忆卡片** | 三张卡片 ScrollTrigger 逐个淡入 | `index.html` |
 | **Coverflow Gallery** | 中心直立、左右各三张，共 7 张可见；侧卡统一轻微变暗，支持点按、拖动、按钮、方向键和 50 张以上照片队列，不自动轮转 | `index.html` / `Coverflow Gallery.md` |
