@@ -322,11 +322,16 @@
             pointer-events: none;
         }
         .anniversary-editor-controls {
+            position: fixed;
+            left: 50%;
+            bottom: 1rem;
+            z-index: 104;
             display: none;
             width: min(460px, 90vw);
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 0.55rem;
-            margin-top: 0.8rem;
+            box-sizing: border-box;
+            transform: translateX(-50%);
             padding: 0.7rem;
             border: 1px solid rgba(169,41,41,0.18);
             border-radius: 12px;
@@ -354,6 +359,12 @@
             background: #fff;
         }
         .anniversary-editor-controls input[type="color"] { padding: 2px; cursor: pointer; }
+        @media (max-width: 768px) {
+            .anniversary-editor-controls {
+                bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+                width: calc(100vw - 1.5rem);
+            }
+        }
 
         #layer-dom .say-yes-btn {
             position: relative;
@@ -5425,7 +5436,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.30.3";
+        const APP_VERSION = "3.30.4";
         const BUILD_DATE = "2026-07-18";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
