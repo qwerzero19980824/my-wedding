@@ -112,7 +112,7 @@
         }
 
         button:focus-visible,
-        [contenteditable="true"]:focus-visible,
+        [contenteditable]:not([contenteditable="false"]):focus-visible,
         input:focus-visible,
         textarea:focus-visible,
         [role="button"]:focus-visible {
@@ -1784,13 +1784,89 @@
             transition: outline-color 0.2s ease;
             z-index: 35;
         }
-        body.edit-mode [contenteditable="true"] {
+        body.edit-mode [contenteditable]:not([contenteditable="false"]) {
             user-select: text;
             -webkit-user-select: text;
             -webkit-touch-callout: default;
         }
-        body.edit-mode [contenteditable="true"].is-ime-composing {
+        body.edit-mode [contenteditable]:not([contenteditable="false"]).is-ime-composing {
             caret-color: #a92929;
+        }
+        body.edit-mode .track-story-copy {
+            min-width: 80px;
+            min-height: 2.2em;
+            max-width: calc(50vw - 32px) !important;
+            pointer-events: auto !important;
+            cursor: text;
+            touch-action: manipulation;
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            -webkit-user-modify: read-write-plaintext-only;
+        }
+        body.edit-mode .track-story-copy > .ck-edit-text {
+            display: inline-block;
+            min-width: 100%;
+            min-height: 2.2em;
+            pointer-events: auto;
+            cursor: text;
+        }
+        body.edit-mode #dualTrackWrapper {
+            height: auto !important;
+            min-height: 100vh;
+        }
+        body.edit-mode #dualTrackWrapper > .pin-spacer {
+            width: 100% !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            transform: none !important;
+        }
+        body.edit-mode #dualTrackWrapper .dual-track-stage {
+            position: relative !important;
+            inset: auto !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            overflow: visible !important;
+            transform: none !important;
+        }
+        body.edit-mode #dualTrackWrapper .track {
+            position: relative !important;
+            inset: auto !important;
+            width: 100% !important;
+            height: auto !important;
+            min-width: 0;
+            overflow: visible !important;
+        }
+        body.edit-mode #dualTrackWrapper .track-inner {
+            position: relative !important;
+            inset: auto !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 100vh;
+            padding-top: 5rem;
+            padding-bottom: 5rem;
+            transform: none !important;
+        }
+        body.edit-mode #dualTrackWrapper .track-story {
+            width: min(100%, 420px);
+            max-width: 100%;
+            gap: 4rem;
+            padding-bottom: 3rem;
+        }
+        body.edit-mode #dualTrackWrapper .divider-line {
+            position: absolute;
+            inset: 0 auto 0 50%;
+            height: 100%;
+            transform: none !important;
+        }
+        body.edit-mode .ceremony-music-btn,
+        body.edit-mode .ceremony-music-next-btn {
+            pointer-events: none;
+            opacity: 0.18;
         }
         body.edit-mode [data-ck]:hover {
             outline-color: rgba(169, 41, 41, 0.6) !important;
@@ -2700,7 +2776,7 @@
             cursor: pointer;
         }
         body.story-poster-preview-open { overflow: hidden; }
-        body.edit-mode .story-poster-focus-caption[contenteditable="true"] {
+        body.edit-mode .story-poster-focus-caption[contenteditable]:not([contenteditable="false"]) {
             outline: 1px dashed rgba(169,41,41,0.46);
             outline-offset: 5px;
             border-radius: 3px;
@@ -4520,6 +4596,14 @@
                 max-width: 100%;
                 font-size: 0.9rem;
             }
+            body.edit-mode #dualTrackWrapper .track-left .track-inner,
+            body.edit-mode #dualTrackWrapper .track-right .track-inner {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            body.edit-mode #dualTrackWrapper .track-story {
+                gap: 3.5rem;
+            }
             .track-story-delete {
                 width: 28px;
                 height: 28px;
@@ -5285,18 +5369,18 @@
                     <div class="polaroid-memory-card-shell" id="polaroidMemoryCardShell"></div>
                     <aside class="polaroid-memory-story" aria-label="这张照片的故事">
                         <p class="memory-story-kicker" id="memoryStoryKicker">Memory 01</p>
-                        <h3 class="memory-story-title" contenteditable="true" data-memory-field="title"></h3>
+                        <h3 class="memory-story-title" contenteditable="plaintext-only" lang="zh-CN" inputmode="text" spellcheck="false" data-memory-field="title"></h3>
                         <div class="memory-story-meta">
                             <div class="memory-story-chip">
                                 <span class="memory-story-label">Date</span>
-                                <div class="memory-story-value" contenteditable="true" data-memory-field="date"></div>
+                                <div class="memory-story-value" contenteditable="plaintext-only" lang="zh-CN" inputmode="text" spellcheck="false" data-memory-field="date"></div>
                             </div>
                             <div class="memory-story-chip">
                                 <span class="memory-story-label">Place</span>
-                                <div class="memory-story-value" contenteditable="true" data-memory-field="place"></div>
+                                <div class="memory-story-value" contenteditable="plaintext-only" lang="zh-CN" inputmode="text" spellcheck="false" data-memory-field="place"></div>
                             </div>
                         </div>
-                        <div class="memory-story-body" contenteditable="true" data-memory-field="story"></div>
+                        <div class="memory-story-body" contenteditable="plaintext-only" lang="zh-CN" inputmode="text" spellcheck="false" data-memory-field="story"></div>
                         <button type="button" class="memory-story-save" data-memory-action="save">保存这段故事</button>
                     </aside>
                 </div>
@@ -5452,7 +5536,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.30.6";
+        const APP_VERSION = "3.30.7";
         const BUILD_DATE = "2026-07-18";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -6896,6 +6980,8 @@
         }
 
         function getCleanHTML(el) {
+            const textRoot = el.querySelector(':scope > .ck-edit-text');
+            if (textRoot) return textRoot.innerHTML;
             const clone = el.cloneNode(true);
             clone.querySelectorAll('.ck-drag-handle, .ck-resize-handle, .ck-edit-controls').forEach(handle => handle.remove());
             return clone.innerHTML;
@@ -7105,7 +7191,7 @@
         }
 
         function updateEditableTextBoxControls(el) {
-            const controls = el.querySelector(':scope > .ck-edit-controls');
+            const controls = el._ckEditControls || el.querySelector(':scope > .ck-edit-controls');
             if (!controls) return;
             const sizeOutput = controls.querySelector('[data-ck-size-output]');
             const widthOutput = controls.querySelector('[data-ck-width-output]');
@@ -7135,11 +7221,11 @@
                 setEditableTextBoxStyle(el, null, false);
                 setEditableTextBoxWidth(el, null);
                 if (isEditMode) {
-                    el.contentEditable = 'true';
+                    setPlainTextEditable(el, true);
                     el.setAttribute('aria-hidden', 'false');
                     ensureDragHandle(el);
                     el.addEventListener('input', onContentInput);
-                    el.addEventListener('blur', onContentBlur);
+                    el.addEventListener('blur', onContentBlur, true);
                 }
             });
             scheduleCloudSiteStateSave(0);
@@ -7152,11 +7238,11 @@
             document.querySelectorAll('[data-ck]').forEach(el => {
                 setEditableTextBoxStyle(el, el.dataset.ckFontSize, false);
                 if (isEditMode) {
-                    el.contentEditable = 'true';
+                    setPlainTextEditable(el, true);
                     el.setAttribute('aria-hidden', 'false');
                     ensureDragHandle(el);
                     el.addEventListener('input', onContentInput);
-                    el.addEventListener('blur', onContentBlur);
+                    el.addEventListener('blur', onContentBlur, true);
                 }
             });
             saveContent();
@@ -7181,52 +7267,121 @@
             sayYesBtn.classList.add('is-position-locked');
         }
 
+        const EDITABLE_TEXT_FIELD_SELECTOR = [
+            '.ck-edit-text',
+            '[data-ck]',
+            '[data-free-field]',
+            '[data-module-field]',
+            '[data-polaroid-field="note"]',
+            '[data-memory-field]',
+            '[data-memory-note]',
+            '#storyPosterFocusCaption'
+        ].join(', ');
+
+        function setPlainTextEditable(field, enabled) {
+            if (!field) return;
+            field.contentEditable = enabled ? 'plaintext-only' : 'false';
+            if (enabled) {
+                field.setAttribute('lang', 'zh-CN');
+                field.setAttribute('inputmode', 'text');
+                field.setAttribute('spellcheck', 'false');
+                field.setAttribute('tabindex', '0');
+            } else {
+                field.removeAttribute('tabindex');
+            }
+        }
+
+        function onEditableTextPointerDown(event) {
+            const editor = event.currentTarget;
+            if (!editor.isContentEditable) return;
+            event.preventDefault();
+            editor.focus({ preventScroll: true });
+            const selection = window.getSelection && window.getSelection();
+            const caretRange = document.caretRangeFromPoint
+                ? document.caretRangeFromPoint(event.clientX, event.clientY)
+                : null;
+            if (selection && caretRange && editor.contains(caretRange.startContainer)) {
+                selection.removeAllRanges();
+                selection.addRange(caretRange);
+            } else {
+                placeCaretAtEnd(editor);
+            }
+        }
+
+        function refreshParallelEditorLayout(keepParallelInView = false) {
+            requestAnimationFrame(() => {
+                normalizeParallelStoryLayout();
+                if (keepParallelInView) {
+                    const stage = document.querySelector('.dual-track-stage');
+                    if (stage) stage.scrollIntoView({ block: 'start' });
+                }
+                if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+            });
+        }
+
+        function setParallelParallaxEnabled(enabled) {
+            if (typeof ScrollTrigger === 'undefined') return;
+            const trigger = ScrollTrigger.getById('dual-track-parallax');
+            if (!trigger) return;
+            if (enabled) trigger.enable();
+            else trigger.disable(true);
+        }
+
         function enterEditMode() {
+            const parallelWrapper = document.getElementById('dualTrackWrapper');
+            const parallelRect = parallelWrapper && parallelWrapper.getBoundingClientRect();
+            const keepParallelInView = Boolean(parallelRect && parallelRect.top < window.innerHeight && parallelRect.bottom > 0);
             lockSayYesButtonPosition();
             document.body.classList.add('edit-mode');
+            setParallelParallaxEnabled(false);
+            if (window.matchMedia('(max-width: 768px)').matches) setEditToolbarCollapsed(true);
             editModeToolbar.setAttribute('aria-hidden', 'false');
             editModeToggle.classList.add('active');
             editModeToggle.querySelector('.tooltip-text').textContent = '编辑模式已开启 — 点击文字修改，拖动小圆点移动';
             document.querySelectorAll('[data-ck]').forEach(el => {
                 const deleted = el.classList.contains('ck-deleted');
                 if (deleted) {
-                    el.contentEditable = 'false';
+                    setPlainTextEditable(el, false);
                     el.setAttribute('aria-hidden', 'true');
                     return;
                 }
-                el.contentEditable = 'true';
-                el.setAttribute('lang', 'zh-CN');
-                el.setAttribute('inputmode', 'text');
+                setPlainTextEditable(el, true);
                 el.setAttribute('aria-hidden', 'false');
                 ensureDragHandle(el);
                 el.addEventListener('input', onContentInput);
-                el.addEventListener('blur', onContentBlur);
+                el.addEventListener('blur', onContentBlur, true);
             });
             setStoryModulesEditable(true);
             setFreeItemsEditable(true);
             setFixedPhotosEditable(true);
             scheduleFreeItemFlowUpdate();
+            refreshParallelEditorLayout(keepParallelInView);
             updateEditorStorageMeter();
             showToast('✏️ 可改文字、拖位置、调字号；拖右下手柄可直接拉长文本框', 3600);
         }
 
         function exitEditMode() {
             document.body.classList.remove('edit-mode');
+            setParallelParallaxEnabled(true);
             editModeToolbar.setAttribute('aria-hidden', 'true');
             editModeToggle.classList.remove('active');
             editModeToggle.querySelector('.tooltip-text').textContent = '点击开启内容编辑模式';
             document.querySelectorAll('[data-ck]').forEach(el => {
-                el.contentEditable = 'false';
+                setPlainTextEditable(el, false);
+                setPlainTextEditable(el.querySelector(':scope > .ck-edit-text'), false);
                 el.classList.remove('is-ime-composing');
                 el.setAttribute('aria-hidden', String(el.classList.contains('ck-deleted')));
                 el.removeEventListener('input', onContentInput);
-                el.removeEventListener('blur', onContentBlur);
+                el.removeEventListener('blur', onContentBlur, true);
             });
             saveAllEditorState(false);
             setStoryModulesEditable(false);
             setFreeItemsEditable(false);
             setFixedPhotosEditable(false);
             scheduleFreeItemFlowUpdate();
+            requestAnimationFrame(() => {
+                if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+            });
             showToast('✅ 编辑模式已关闭，内容已自动保存', 2000);
         }
 
@@ -7240,18 +7395,22 @@
         }
 
         function onContentCompositionStart(e) {
-            const el = e.target.closest('[data-ck]');
-            if (!isEditMode || !el || el.contentEditable !== 'true') return;
-            el.classList.add('is-ime-composing');
+            const editor = e.target.closest(EDITABLE_TEXT_FIELD_SELECTOR);
+            if (!editor || !editor.isContentEditable) return;
+            const field = editor.classList.contains('ck-edit-text') ? editor.closest('[data-ck]') : editor;
+            editor.classList.add('is-ime-composing');
+            if (field && field !== editor) field.classList.add('is-ime-composing');
         }
 
         function onContentCompositionEnd(e) {
-            const el = e.target.closest('[data-ck]');
-            if (!el) return;
-            el.classList.remove('is-ime-composing');
-            contentDirty.set(el.dataset.ck, el);
-            if (el.classList.contains('track-story-copy')) updateParallelStoryItemState();
-            scheduleContentSave();
+            const editor = e.target.closest(EDITABLE_TEXT_FIELD_SELECTOR);
+            if (!editor) return;
+            const field = editor.classList.contains('ck-edit-text') ? editor.closest('[data-ck]') : editor;
+            editor.classList.remove('is-ime-composing');
+            if (field && field !== editor) field.classList.remove('is-ime-composing');
+            window.setTimeout(() => {
+                if (editor.isConnected) editor.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 0);
         }
 
         function onContentBlur(e) {
@@ -7265,38 +7424,83 @@
         }
 
         function ensureDragHandle(el) {
-            if (!el.querySelector(':scope > .ck-drag-handle')) {
+            const isTrackStory = el.classList.contains('track-story-copy');
+            let textRoot = el.querySelector(':scope > .ck-edit-text');
+            if (isTrackStory) {
+                if (textRoot) {
+                    el.innerHTML = textRoot.innerHTML;
+                    textRoot = null;
+                }
+                setPlainTextEditable(el, !el.classList.contains('ck-deleted'));
+            } else {
+                if (!textRoot) {
+                    textRoot = document.createElement('span');
+                    textRoot.className = 'ck-edit-text';
+                    const contentNodes = Array.from(el.childNodes).filter(node => !(
+                        node.nodeType === Node.ELEMENT_NODE
+                        && node.matches('.ck-drag-handle, .ck-resize-handle, .ck-edit-controls')
+                    ));
+                    contentNodes.forEach(node => textRoot.append(node));
+                    el.prepend(textRoot);
+                }
+                el.removeAttribute('contenteditable');
+                el.removeAttribute('tabindex');
+                el.removeAttribute('inputmode');
+                setPlainTextEditable(textRoot, !el.classList.contains('ck-deleted'));
+                if (!textRoot.dataset.ckPointerFocusBound) {
+                    textRoot.dataset.ckPointerFocusBound = 'true';
+                    textRoot.addEventListener('pointerdown', onEditableTextPointerDown);
+                }
+            }
+            const toolHost = isTrackStory ? el.closest('.track-story-item') : el;
+            if (!toolHost) return;
+            let handle = toolHost.querySelector(':scope > .ck-drag-handle');
+            if (!handle) {
                 const handle = document.createElement('span');
                 handle.className = 'ck-drag-handle';
                 handle.textContent = '↕';
                 handle.title = '拖动移动文字位置';
                 handle.contentEditable = 'false';
                 handle.addEventListener('pointerdown', onDragHandlePointerDown);
-                el.prepend(handle);
+                toolHost.prepend(handle);
+                handle._ckOwner = el;
+            } else {
+                handle._ckOwner = el;
             }
-            if (!el.querySelector(':scope > .ck-edit-controls')) {
+            let controls = toolHost.querySelector(':scope > .ck-edit-controls');
+            if (!controls) {
                 const controls = document.createElement('span');
                 controls.className = 'ck-edit-controls';
                 controls.contentEditable = 'false';
                 controls.innerHTML = '<button type="button" data-ck-action="smaller" title="缩小字号">字−</button><output data-ck-size-output>--</output><button type="button" data-ck-action="larger" title="放大字号">字＋</button><button type="button" data-ck-action="narrower" title="文本框变窄">框−</button><output data-ck-width-output>自动</output><button type="button" data-ck-action="wider" title="文本框变宽">框＋</button><button type="button" data-ck-action="delete" title="删除这个文本框">删除</button>';
                 controls.addEventListener('click', onEditableTextBoxControlClick);
-                el.prepend(controls);
+                toolHost.prepend(controls);
+                controls._ckOwner = el;
+                el._ckEditControls = controls;
+            } else {
+                controls._ckOwner = el;
+                el._ckEditControls = controls;
             }
-            if (!el.querySelector(':scope > .ck-resize-handle')) {
+            let resizeHandle = toolHost.querySelector(':scope > .ck-resize-handle');
+            if (!resizeHandle) {
                 const resizeHandle = document.createElement('span');
                 resizeHandle.className = 'ck-resize-handle';
                 resizeHandle.textContent = '↔';
                 resizeHandle.title = '左右拖动，调整文本框宽度';
                 resizeHandle.contentEditable = 'false';
                 resizeHandle.addEventListener('pointerdown', onTextBoxResizePointerDown);
-                el.append(resizeHandle);
+                toolHost.append(resizeHandle);
+                resizeHandle._ckOwner = el;
+            } else {
+                resizeHandle._ckOwner = el;
             }
             updateEditableTextBoxControls(el);
         }
 
         function onEditableTextBoxControlClick(event) {
             const button = event.target.closest('[data-ck-action]');
-            const el = button && button.closest('[data-ck]');
+            const controls = button && button.closest('.ck-edit-controls');
+            const el = controls && (controls._ckOwner || button.closest('[data-ck]'));
             if (!button || !el || !isEditMode) return;
             event.preventDefault();
             event.stopPropagation();
@@ -7358,7 +7562,7 @@
             if (!isEditMode) return;
             event.preventDefault();
             event.stopPropagation();
-            const el = event.currentTarget.closest('[data-ck]');
+            const el = event.currentTarget._ckOwner || event.currentTarget.closest('[data-ck]');
             if (!el) return;
             captureUndoSnapshot('resize-text-box');
             const bounds = getEditableTextBoxWidthBounds(el);
@@ -7417,13 +7621,41 @@
             if (!track) return null;
             const elementRect = el.getBoundingClientRect();
             const trackRect = track.getBoundingClientRect();
+            const currentX = Number(el.dataset.ckX || 0);
             const padding = 12;
+            const naturalLeft = elementRect.left - currentX;
+            const naturalRight = elementRect.right - currentX;
+            let minX = trackRect.left + padding - naturalLeft;
+            let maxX = trackRect.right - padding - naturalRight;
+            if (minX > maxX) {
+                const centeredX = ((trackRect.left + trackRect.right) - (naturalLeft + naturalRight)) / 2;
+                minX = centeredX;
+                maxX = centeredX;
+            }
+            const verticalLimit = Math.min(180, window.innerHeight * 0.22);
             return {
-                minX: trackRect.left + padding - elementRect.left,
-                maxX: trackRect.right - padding - elementRect.right,
-                minY: -Math.min(180, window.innerHeight * 0.22),
-                maxY: Math.min(180, window.innerHeight * 0.22)
+                minX,
+                maxX,
+                minY: -verticalLimit,
+                maxY: verticalLimit
             };
+        }
+
+        function normalizeParallelStoryLayout() {
+            if (!isEditMode) return;
+            let changed = false;
+            document.querySelectorAll('.track-story-copy:not(.ck-deleted)').forEach(el => {
+                const bounds = getLayoutDragBounds(el);
+                if (!bounds) return;
+                const currentX = Number(el.dataset.ckX || 0);
+                const currentY = Number(el.dataset.ckY || 0);
+                const nextX = clamp(currentX, bounds.minX, bounds.maxX);
+                const nextY = clamp(currentY, bounds.minY, bounds.maxY);
+                if (Math.round(nextX) === Math.round(currentX) && Math.round(nextY) === Math.round(currentY)) return;
+                setEditableOffset(el, nextX, nextY);
+                changed = true;
+            });
+            if (changed) saveLayout();
         }
 
         function flushLayoutDragFrame() {
@@ -7437,7 +7669,7 @@
             e.preventDefault();
             e.stopPropagation();
 
-            const el = e.currentTarget.closest('[data-ck]');
+            const el = e.currentTarget._ckOwner || e.currentTarget.closest('[data-ck]');
             if (!el) return;
             captureUndoSnapshot('drag-text');
 
@@ -7466,14 +7698,14 @@
         function onLayoutPointerMove(e) {
             if (!layoutDrag || e.pointerId !== layoutDrag.pointerId) return;
             e.preventDefault();
-            let deltaX = e.clientX - layoutDrag.startX;
-            let deltaY = e.clientY - layoutDrag.startY;
+            let nextX = layoutDrag.baseX + e.clientX - layoutDrag.startX;
+            let nextY = layoutDrag.baseY + e.clientY - layoutDrag.startY;
             if (layoutDrag.bounds) {
-                deltaX = clamp(deltaX, layoutDrag.bounds.minX, layoutDrag.bounds.maxX);
-                deltaY = clamp(deltaY, layoutDrag.bounds.minY, layoutDrag.bounds.maxY);
+                nextX = clamp(nextX, layoutDrag.bounds.minX, layoutDrag.bounds.maxX);
+                nextY = clamp(nextY, layoutDrag.bounds.minY, layoutDrag.bounds.maxY);
             }
-            layoutDrag.nextX = layoutDrag.baseX + deltaX;
-            layoutDrag.nextY = layoutDrag.baseY + deltaY;
+            layoutDrag.nextX = nextX;
+            layoutDrag.nextY = nextY;
             if (!layoutDrag.frame) layoutDrag.frame = requestAnimationFrame(flushLayoutDragFrame);
         }
 
@@ -7911,7 +8143,7 @@
 
         function setFreeItemsEditable(enabled) {
             document.querySelectorAll('[data-free-field]').forEach(field => {
-                field.contentEditable = enabled ? 'true' : 'false';
+                setPlainTextEditable(field, enabled);
             });
             document.querySelectorAll('[data-free-photo-upload]').forEach(button => {
                 button.tabIndex = enabled ? 0 : -1;
@@ -7941,6 +8173,7 @@
         function onFreeItemInput(e) {
             const field = e.target.closest('[data-free-field]');
             if (!field) return;
+            if (e.isComposing || field.classList.contains('is-ime-composing')) return;
             updateFreeItemFromField(field);
             scheduleFreeItemSave();
         }
@@ -8473,7 +8706,7 @@
                                 <span class="polaroid-number">${number}</span>
                             </div>
                             <div class="polaroid-face polaroid-back">
-                                <div class="polaroid-note" contenteditable="true" data-polaroid-field="note">${note}</div>
+                                <div class="polaroid-note" contenteditable="plaintext-only" lang="zh-CN" inputmode="text" spellcheck="false" data-polaroid-field="note">${note}</div>
                                 <button type="button" class="polaroid-flip-btn" data-polaroid-action="flip" aria-label="回到第 ${number} 张拍立得照片正面">回到照片</button>
                                 <span class="polaroid-number">${number}-2</span>
                             </div>
@@ -8641,7 +8874,7 @@
                             <span class="polaroid-number">${number}</span>
                         </div>
                         <div class="polaroid-face polaroid-back">
-                            <div class="polaroid-note" contenteditable="true" data-memory-note>${note}</div>
+                            <div class="polaroid-note" contenteditable="plaintext-only" lang="zh-CN" inputmode="text" spellcheck="false" data-memory-note>${note}</div>
                             <button type="button" class="polaroid-flip-btn" data-memory-action="flip" aria-label="翻回第 ${number} 张拍立得正面">翻转</button>
                             <span class="polaroid-number">${number}-2</span>
                         </div>
@@ -8709,7 +8942,9 @@
         }
 
         function onPolaroidMemoryInput(e) {
-            if (!e.target.closest('[data-memory-field], [data-memory-note]')) return;
+            const field = e.target.closest('[data-memory-field], [data-memory-note]');
+            if (!field) return;
+            if (e.isComposing || field.classList.contains('is-ime-composing')) return;
             commitPolaroidMemoryEdits();
             schedulePolaroidSave();
         }
@@ -8829,6 +9064,7 @@
         function onPolaroidInput(e) {
             const note = e.target.closest('[data-polaroid-field="note"]');
             if (!note) return;
+            if (e.isComposing || note.classList.contains('is-ime-composing')) return;
             const item = getPolaroidItem(note);
             if (!item) return;
             item.note = note.innerHTML;
@@ -9963,7 +10199,7 @@
             if (storyPosterPreviewBtn) storyPosterPreviewBtn.hidden = false;
             if (caption) {
                 caption.textContent = getStoryPosterCaption(storyPosterFocusedItem);
-                caption.contentEditable = isEditMode ? 'true' : 'false';
+                setPlainTextEditable(caption, isEditMode);
             }
             layoutStoryPosters();
             if (storyPosterFocusedItem.source === 'library' && storyPosterFocusedItem.record && storyPosterFocusedItem.record.original) {
@@ -10020,6 +10256,7 @@
 
         function updateFocusedStoryPosterCaption(event) {
             if (!storyPosterFocusedItem) return;
+            if (event.isComposing || event.target.classList.contains('is-ime-composing')) return;
             const value = normalizeStoryPosterCaptionText(event.target.innerText || event.target.textContent || '');
             if (storyPosterFocusedItem.source === 'library' || storyPosterFocusedItem.source === 'cloud') {
                 storyPosterFocusedItem.caption = value;
@@ -10214,14 +10451,14 @@
 
         function setStoryModulesEditable(enabled) {
             storyModuleList.querySelectorAll('[data-module-field]').forEach(field => {
-                field.contentEditable = enabled ? 'true' : 'false';
+                setPlainTextEditable(field, enabled);
             });
             storyModuleList.querySelectorAll('[data-module-photo-upload]').forEach(button => {
                 button.tabIndex = enabled ? 0 : -1;
                 button.setAttribute('aria-disabled', String(!enabled));
             });
             const posterCaption = document.getElementById('storyPosterFocusCaption');
-            if (posterCaption) posterCaption.contentEditable = enabled && storyPosterFocusedItem ? 'true' : 'false';
+            if (posterCaption) setPlainTextEditable(posterCaption, enabled && storyPosterFocusedItem);
         }
 
         function commitStoryModuleEdits() {
@@ -10240,6 +10477,7 @@
 
         function onStoryModuleInput(e) {
             if (!e.target.matches('[data-module-field]')) return;
+            if (e.isComposing || e.target.classList.contains('is-ime-composing')) return;
             updateStoryModuleFromField(e.target);
             scheduleModuleSave();
         }
@@ -11291,6 +11529,7 @@
 
             const parallaxTL = gsap.timeline({
                 scrollTrigger: {
+                    id: 'dual-track-parallax',
                     trigger: '#dualTrackWrapper',
                     start: 'top top',
                     end: 'bottom bottom',
