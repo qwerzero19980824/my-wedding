@@ -274,10 +274,14 @@
 
         .anniversary-counter {
             --anniversary-font-size: 78px;
+            --anniversary-font-size-mobile: 56px;
+            --anniversary-font-size-phone: 53px;
             --anniversary-font-weight: 600;
             --anniversary-font-color: #a92929;
             --anniversary-offset-x: 0px;
             --anniversary-offset-y: 0px;
+            --anniversary-offset-x-mobile: 0px;
+            --anniversary-offset-y-mobile: 0px;
             display: grid;
             justify-items: center;
             gap: 0.7rem;
@@ -4574,6 +4578,58 @@
            Responsive
            ========================================== */
         @media (max-width: 768px) {
+            #layer-dom .hero-copy-stage {
+                width: calc(100vw - 1.25rem);
+                padding: 1rem 0.65rem;
+            }
+            #layer-dom [data-ck] {
+                transform: translate3d(
+                    clamp(-30vw, var(--ck-x-mobile, 0px), 30vw),
+                    clamp(-18svh, var(--ck-y-mobile, 0px), 18svh),
+                    0
+                );
+            }
+            #layer-dom .hero-title {
+                max-width: calc(100vw - 2rem);
+                margin-bottom: 0.9rem;
+                font-size: clamp(1.75rem, 8.6vw, 2.5rem);
+                line-height: 1.16;
+                letter-spacing: 0.07em;
+                overflow-wrap: anywhere;
+            }
+            #layer-dom .hero-title[data-ck-font-size] {
+                font-size: clamp(1.75rem, min(var(--ck-font-size-mobile), 10vw), 2.625rem) !important;
+            }
+            #layer-dom .hero-text {
+                max-width: calc(100vw - 1.5rem);
+                margin-bottom: 1.5rem;
+                padding: 0.35rem 0.45rem;
+                font-size: clamp(0.95rem, 4.7vw, 1.2rem);
+                line-height: 1.75;
+                letter-spacing: 0.045em;
+                overflow-wrap: anywhere;
+            }
+            #layer-dom .hero-text[data-ck-font-size] {
+                font-size: clamp(1rem, min(var(--ck-font-size-mobile), 5.8vw), 1.45rem) !important;
+            }
+            .anniversary-counter {
+                margin-top: -0.35rem;
+                margin-bottom: 1.25rem;
+                padding-bottom: 82px;
+            }
+            .anniversary-days {
+                font-size: clamp(2.25rem, min(var(--anniversary-font-size-mobile), 18vw), 4rem);
+                transform: translate(
+                    clamp(-30vw, var(--anniversary-offset-x-mobile), 30vw),
+                    clamp(-18svh, var(--anniversary-offset-y-mobile), 18svh)
+                );
+            }
+            #layer-dom .say-yes-btn {
+                max-width: calc(100vw - 2rem);
+                padding: 12px 30px;
+                font-size: 14px;
+                letter-spacing: 2px;
+            }
             .controls-toggle { top: 10px; left: 10px; }
             .controls {
                 top: 10px; left: 10px;
@@ -4756,6 +4812,15 @@
         }
 
         @media (max-width: 480px) {
+            #layer-dom .hero-title[data-ck-font-size] {
+                font-size: clamp(1.65rem, min(var(--ck-font-size-mobile), 9.5vw), 2.25rem) !important;
+            }
+            #layer-dom .hero-text[data-ck-font-size] {
+                font-size: clamp(1rem, min(var(--ck-font-size-mobile), 5.5vw), 1.3rem) !important;
+            }
+            .anniversary-days {
+                font-size: clamp(2.1rem, min(var(--anniversary-font-size-phone), 17vw), 3.75rem);
+            }
             .controls {
                 left: 5px;
                 width: calc(100vw - 10px);
@@ -5536,7 +5601,7 @@
         /* ==========================================
            CONFIG — Default parameters
            ========================================== */
-        const APP_VERSION = "3.30.7";
+        const APP_VERSION = "3.30.8";
         const BUILD_DATE = "2026-07-18";
         const STORAGE_KEY = "wedding_veil_config_v2";
 
@@ -6593,10 +6658,14 @@
             const next = normalizeAnniversaryStyle(style);
             anniversaryStyle = next;
             anniversaryCounter.style.setProperty('--anniversary-font-size', `${next.fontSize}px`);
+            anniversaryCounter.style.setProperty('--anniversary-font-size-mobile', `${clamp(Math.round(next.fontSize * 0.72), 36, 64)}px`);
+            anniversaryCounter.style.setProperty('--anniversary-font-size-phone', `${clamp(Math.round(next.fontSize * 0.68), 34, 60)}px`);
             anniversaryCounter.style.setProperty('--anniversary-font-weight', String(next.fontWeight));
             anniversaryCounter.style.setProperty('--anniversary-font-color', next.color);
             anniversaryCounter.style.setProperty('--anniversary-offset-x', `${next.offsetX}px`);
             anniversaryCounter.style.setProperty('--anniversary-offset-y', `${next.offsetY}px`);
+            anniversaryCounter.style.setProperty('--anniversary-offset-x-mobile', `${Math.round(next.offsetX * 0.55)}px`);
+            anniversaryCounter.style.setProperty('--anniversary-offset-y-mobile', `${Math.round(next.offsetY * 0.55)}px`);
             if (anniversarySizeInput) anniversarySizeInput.value = String(next.fontSize);
             if (anniversarySizeValue) anniversarySizeValue.textContent = `${next.fontSize}px`;
             if (anniversaryWeightInput) anniversaryWeightInput.value = String(next.fontWeight);
@@ -7180,9 +7249,18 @@
             if (Number.isFinite(nextSize) && nextSize > 0) {
                 const clampedSize = clamp(Math.round(nextSize), 10, 120);
                 el.dataset.ckFontSize = String(clampedSize);
+                el.style.setProperty('--ck-font-size-desktop', `${clampedSize}px`);
+                const mobileSize = el.classList.contains('hero-title')
+                    ? clamp(Math.round(clampedSize * 0.62), 28, 42)
+                    : el.classList.contains('hero-text')
+                        ? clamp(Math.round(clampedSize * 0.56), 16, 23)
+                        : clamp(Math.round(clampedSize * 0.72), 12, 64);
+                el.style.setProperty('--ck-font-size-mobile', `${mobileSize}px`);
                 el.style.fontSize = `${clampedSize}px`;
             } else {
                 delete el.dataset.ckFontSize;
+                el.style.removeProperty('--ck-font-size-desktop');
+                el.style.removeProperty('--ck-font-size-mobile');
                 el.style.removeProperty('font-size');
             }
             el.classList.toggle('ck-deleted', deleted);
@@ -7210,6 +7288,8 @@
             el.dataset.ckY = String(Math.round(y));
             el.style.setProperty('--ck-x', `${Math.round(x)}px`);
             el.style.setProperty('--ck-y', `${Math.round(y)}px`);
+            el.style.setProperty('--ck-x-mobile', `${Math.round(x * 0.55)}px`);
+            el.style.setProperty('--ck-y-mobile', `${Math.round(y * 0.55)}px`);
             el.classList.toggle('ck-has-layout', Boolean(Math.round(x) || Math.round(y)));
         }
 

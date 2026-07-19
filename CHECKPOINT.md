@@ -1,7 +1,7 @@
 # 项目断点保存 — 平行宇宙的相遇
 
-> **最后更新**：2026-07-18
-> **当前版本**：v3.30.7（`index.html` 内 `APP_VERSION` 已同步为 "3.30.7"）
+> **最后更新**：2026-07-19
+> **当前版本**：v3.30.8（`index.html` 内 `APP_VERSION` 已同步为 "3.30.8"）
 > **工作目录**：`C:\Users\Administrator\Desktop\my-wedding`  
 > **启动方式**：`python -m http.server 8080` → `http://localhost:8080`
 
