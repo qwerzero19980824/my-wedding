@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#eee7db">
+  <title>撸多多 · 和小猫待一会儿</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header><a href="../">← 回到我们的故事</a><span>cml & zy · 一起生活的小角落</span></header>
+  <main>
+    <div class="intro"><p class="eyebrow">A LITTLE MOMENT TOGETHER</p><h1>和小猫，待一会儿。</h1><p>把鼠标慢慢移近，让它认识你。<br>也可以拿起逗猫棒，陪它玩一小会儿。</p></div>
+    <section class="room" aria-label="小猫互动房间">
+      <div class="window" aria-hidden="true"><i></i></div><div class="sunlight" aria-hidden="true"></div>
+      <div class="plant" aria-hidden="true">✧</div><div class="rug" aria-hidden="true"></div>
+      <canvas tabindex="0" role="img" aria-label="互动小猫：轻点抚摸，拖动移动；方向键走动，空格抚摸，J 跳跃"></canvas>
+      <div class="room-top"><span class="room-name">午后的窗边</span><button id="scene" type="button">换成月夜 ☾</button></div>
+      <p id="status" role="status" aria-live="polite">小猫正在晒太阳</p>
+      <span class="prototype">互动原型 · 临时示意猫，待真实照片定制</span>
+    </section>
+    <nav class="tools" aria-label="陪猫咪玩"><button data-tool="pet" aria-pressed="true">♡ 摸摸头</button><button data-tool="wand" aria-pressed="false">⌁ 逗猫棒</button><button data-action="jump">↟ 跳一下</button><button data-action="stretch">伸懒腰</button><button data-action="groom">理理毛</button><button data-action="yawn">打哈欠</button><button data-action="sit">坐下</button><button data-action="sleep">☾ 睡一会儿</button></nav>
+    <div class="foot"><p>轻点小猫抚摸 · 拖动调整位置 · 逗猫棒模式下轻点房间，引它跑过来</p><div><button id="pause" type="button" aria-pressed="false">暂停动画</button><button id="hide" type="button" aria-pressed="false">隐藏小猫</button></div></div>
+  </main>
+  <footer>不着急，我们有一整个下午。</footer>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
